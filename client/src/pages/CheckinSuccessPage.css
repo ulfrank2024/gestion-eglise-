@@ -1,0 +1,50 @@
+.checkin-success-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f0f2f5;
+  font-family: 'Arial', sans-serif; /* Add a modern font */
+}
+
+.checkin-success-card {
+  text-align: center;
+  padding: 40px;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Enhanced shadow */
+  max-width: 600px; /* Max width for better readability */
+  width: 90%;
+}
+
+.success-icon {
+  color: #28a745;
+  font-size: 90px; /* Slightly larger icon */
+  margin-bottom: 25px;
+  animation: scaleIn 0.5s ease-out; /* Add animation */
+}
+
+h1 {
+  font-size: 2.2em; /* Adjusted font size */
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.biblical-quote {
+  font-size: 1.1em; /* Slightly smaller font size */
+  font-style: italic;
+  color: #666;
+  margin-top: 25px; /* Added margin-top for separation */
+  line-height: 1.5;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

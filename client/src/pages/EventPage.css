@@ -1,0 +1,229 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Styles par défaut pour ordinateur (Desktop First) */
+.pageStyle {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f0f2f5; /* Fond blanc cassé pour l'ordinateur */
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.contentWrapperStyle {
+  display: flex;
+  flex-direction: row;
+  max-width: 900px;
+  width: 100%;
+  background: none;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15); /* Ombre plus prononcée */
+  border-radius: 15px;
+  overflow: hidden; /* Pour que les coins arrondis s'appliquent à l'image */
+  border: none; /* Supprimer la bordure par défaut */
+}
+
+.imageContainer {
+  width: 50%;
+  background-image: var(--background-image-url);
+  background-size: cover;
+  background-position: center;
+}
+
+.textContainer {
+  width: 50%;
+  padding: 40px;
+  background-color: white;
+  color: #333;
+  text-align: center;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.logoStyle {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  /* border: 3px solid #007bff; */ /* Supprimé */
+  object-fit: cover;
+  /* box-shadow: 0 4px 15px rgba(0,0,0,0.1); */ /* Supprimé */
+}
+
+.langSelectorStyle {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.langButtonStyle {
+  background: none;
+  border: 1px solid #ccc; /* Bordure grise pour le mode clair */
+  color: #555; /* Texte gris pour le mode clair */
+  padding: 5px 15px;
+  cursor: pointer;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.langButtonStyle:hover {
+  background-color: #f0f0f0;
+}
+
+.langButtonStyle.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+  font-weight: bold;
+}
+
+.event-page-intro-text {
+  font-size: 1.1em;
+  color: #666;
+  margin-top: 20px;
+  margin-bottom: 5px;
+}
+
+.titleStyle {
+  margin-top: 0;
+  font-size: 2.2rem;
+  font-weight: bold;
+  color: #000; /* Titre noir pour une meilleure lisibilité sur fond blanc */
+  text-shadow: none; /* Pas d'ombre sur fond blanc */
+}
+
+.date-container {
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.date-container p {
+  margin: 5px 0;
+}
+
+.descriptionStyle {
+  margin-top: 10px;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #555;
+}
+
+.buttonStyle {
+  margin-top: 30px;
+  padding: 12px 30px;
+  font-size: 1.2rem;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  transition: transform 0.2s, background-color 0.2s;
+  background-color: #007bff; /* Style par défaut du bouton */
+  color: white;
+}
+
+.buttonStyle:hover {
+    transform: scale(1.05);
+}
+
+/* Media Query pour mobile (< 768px) */
+@media (max-width: 768px) {
+  .pageStyle {
+    background-image: var(--background-image-url);
+    background-size: cover;
+    background-position: center;
+    padding: 0;
+  }
+
+  .contentWrapperStyle {
+    flex-direction: column;
+    background-color: rgba(0, 0, 0, 0.85);
+    border-radius: 15px;
+    padding: 25px;
+    margin: 0 25px;
+    max-width: calc(100% - 50px);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+  }
+
+  .imageContainer {
+    display: none; /* Cacher le bloc image en mobile */
+  }
+
+  .textContainer {
+    width: 100%;
+    padding: 0;
+    background: none;
+    color: white; /* Rétablir la couleur du texte */
+  }
+
+  .logoStyle {
+    width: 100px;
+    height: 100px;
+    border-color: white;
+  }
+  
+  .langButtonStyle {
+    border-color: white;
+    color: white;
+  }
+
+  .langButtonStyle.active {
+    background-color: white;
+    color: #333;
+    border-color: white;
+  }
+
+  .event-page-intro-text {
+    color: #e0e0e0;
+  }
+
+  .titleStyle {
+    font-size: 1.8rem;
+    color: white;
+    text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
+  }
+  
+  .date-container {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #f0f0f0;
+  }
+
+  .descriptionStyle {
+    font-size: 1rem;
+    color: white;
+  }
+
+  .buttonStyle {
+    padding: 10px 25px;
+    font-size: 1rem;
+  }
+}
+
+/* Animations (inchangées) */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+  opacity: 0;
+}
+.fade-in-up-1 { animation-delay: 0.1s; }
+.fade-in-up-2 { animation-delay: 0.2s; }
+.fade-in-up-3 { animation-delay: 0.3s; }
+.fade-in-up-4 { animation-delay: 0.4s; }
+.fade-in-up-5 { animation-delay: 0.5s; }
+.fade-in-up-6 { animation-delay: 0.6s; }

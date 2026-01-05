@@ -1,0 +1,192 @@
+/* Styles par défaut pour ordinateur (Desktop First) */
+.welcome-page-container {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f0f2f5; /* Fond blanc cassé pour l'ordinateur */
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.content-overlay { /* Renommé en .content-overlay pour maintenir la cohérence */
+  display: flex;
+  flex-direction: row;
+  max-width: 900px;
+  width: 100%;
+  background: none;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15); /* Ombre plus prononcée */
+  border-radius: 15px;
+  overflow: hidden; /* Pour que les coins arrondis s'appliquent à l'image */
+  border: none; /* Supprimer la bordure par défaut */
+}
+
+.imageContainer {
+  width: 50%;
+  background-image: var(--background-image-url);
+  background-size: cover;
+  background-position: center;
+}
+
+.textContainer {
+  width: 50%;
+  padding: 40px;
+  background-color: white;
+  color: #333;
+  text-align: center;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.logoStyle {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  /* Suppression de la bordure et de l'ombre pour le mode ordinateur */
+}
+
+.welcome-title {
+  font-size: 2.2rem;
+  font-weight: bold;
+  margin-bottom: 20px;
+  letter-spacing: 1px;
+  text-shadow: none; /* Pas d'ombre sur fond blanc */
+  color: #000; /* Titre noir pour une meilleure lisibilité sur fond blanc */
+}
+
+.event-intro {
+  font-size: 1.1em;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.event-name {
+  font-size: 2rem;
+  margin-bottom: 30px;
+  font-style: italic;
+  color: #000;
+}
+
+.language-switcher-container {
+  margin-top: auto; /* Pousser le sélecteur de langue vers le bas */
+  padding-top: 20px;
+  border-top: 1px solid #eee; /* Ligne de séparation claire */
+}
+
+.lang-button {
+  padding: 10px 20px;
+  margin: 0 10px;
+  cursor: pointer;
+  border: 1px solid #ccc; /* Bordure grise pour le mode clair */
+  border-radius: 5px;
+  background-color: transparent;
+  color: #555; /* Texte gris pour le mode clair */
+  font-size: 1em;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.lang-button:hover {
+  background-color: #f0f0f0;
+}
+
+.lang-button.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+  font-weight: bold;
+}
+
+.loading-container, .error-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 1.5em;
+}
+
+.error-container {
+  color: #ff6b6b;
+}
+
+/* Media Query pour mobile (< 768px) */
+@media (max-width: 768px) {
+  .welcome-page-container {
+    background-image: var(--background-image-url);
+    background-size: cover;
+    background-position: center;
+    padding: 0;
+  }
+
+  .content-overlay {
+    flex-direction: column;
+    background: rgba(0, 0, 0, 0.85); /* Fond sombre pour mobile */
+    border-radius: 15px;
+    padding: 25px;
+    margin: 0 25px; /* Marge latérale pour le cadre */
+    max-width: calc(100% - 50px);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+  }
+
+  .imageContainer {
+    display: none; /* Cacher le bloc image en mobile */
+  }
+
+  .textContainer {
+    width: 100%;
+    padding: 0;
+    background: none;
+    color: white; /* Rétablir la couleur du texte pour mobile */
+  }
+
+  .logoStyle {
+    border: 3px solid white; /* Rétablir la bordure blanche pour le logo en mobile */
+  }
+
+  .welcome-title {
+    font-size: 3.5em;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
+    color: #FFFFFF; /* Rétablir la couleur blanche */
+  }
+
+  .event-intro {
+    color: #e0e0e0;
+  }
+
+  .event-name {
+    font-size: 2.2em;
+    color: #f5f5f5;
+  }
+
+  .language-switcher-container {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  .lang-button {
+    border-color: white; /* Rétablir la bordure blanche pour les boutons de langue */
+    color: white;
+  }
+  
+  .lang-button:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .lang-button.active {
+    background-color: white;
+    color: #333;
+    border-color: white;
+  }
+}
+
+/* Animations (inchangées) */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}

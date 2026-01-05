@@ -1,0 +1,228 @@
+/* client/src/pages/AdminEventDetailPage.css */
+
+.event-detail-container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  color: #333;
+}
+
+.event-detail-header {
+  border-bottom: 1px solid #dee2e6;
+  padding-bottom: 1rem;
+  margin-bottom: 2rem;
+}
+
+.event-detail-header h2 {
+  font-size: 2.2rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* --- Mode Affichage --- */
+.event-display-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+}
+
+.event-main-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.event-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.detail-card, .qr-card, .attendees-card, .email-card, .form-builder-card {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+}
+
+.detail-card h3, .qr-card h3, .attendees-card h3, .email-card h3 {
+  margin-top: 0;
+  font-size: 1.5rem;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  margin-bottom: 0.75rem;
+}
+.detail-item strong {
+  font-weight: 600;
+  width: 150px;
+  color: #555;
+}
+.detail-item span {
+  flex: 1;
+}
+.event-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  margin-top: 1rem;
+}
+
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+/* --- Formulaires (Édition et Email) --- */
+.event-form {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  padding: 2rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: #495057;
+}
+
+.form-group input[type="text"],
+.form-group input[type="datetime-local"],
+.form-group textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 1rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="datetime-local"]:focus,
+.form-group textarea:focus {
+  border-color: #80bdff;
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.form-group input[type="file"] {
+    width: 100%;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.checkbox-group input {
+    width: auto;
+    margin: 0;
+}
+
+
+/* --- Tableau des participants --- */
+.attendees-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.attendees-table th, .attendees-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #dee2e6;
+}
+.attendees-table thead th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+.attendees-table tbody tr:hover {
+  background-color: #f1f3f5;
+}
+
+/* --- QR Code --- */
+.qr-code-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+.qr-code-display a {
+  word-break: break-all;
+  text-align: center;
+}
+
+
+/* --- Boutons --- */
+.btn {
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+  text-decoration: none;
+  display: inline-block;
+  color: white;
+}
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary { background-color: #007bff; }
+.btn-primary:hover { background-color: #0069d9; }
+
+.btn-secondary { background-color: #6c757d; }
+.btn-secondary:hover { background-color: #5a6268; }
+
+.btn-warning { background-color: #ffc107; color: #212529; }
+.btn-warning:hover { background-color: #e0a800; }
+
+.btn-danger { background-color: #dc3545; }
+.btn-danger:hover { background-color: #c82333; }
+
+.btn-info { background-color: #17a2b8; }
+.btn-info:hover { background-color: #138496; }
+
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+/* --- Messages --- */
+.error-message, .success-message {
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1.5rem;
+}
+.error-message {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+.success-message {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+.loading-message{
+  text-align: center;
+  font-size: 1.2rem;
+  padding: 2rem;
+}

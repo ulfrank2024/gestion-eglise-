@@ -1,0 +1,152 @@
+/* client/src/pages/AdminEventsListPage.css */
+
+.admin-events-container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.admin-events-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.admin-events-header h2 {
+  font-size: 2rem;
+  color: #333;
+  margin: 0;
+}
+
+.create-event-btn {
+  padding: 0.75rem 1.5rem;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.create-event-btn:hover {
+  background-color: #218838;
+}
+
+.events-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  background-color: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.events-table th,
+.events-table td {
+  padding: 1rem 1.25rem;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.events-table thead tr {
+  background-color: #f8f9fa;
+}
+
+.events-table th {
+  font-weight: 600;
+  color: #495057;
+  border-bottom: 2px solid #dee2e6;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.events-table tbody tr {
+  border-bottom: 1px solid #dee2e6;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.events-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.events-table tbody tr:hover {
+  background-color: #f1f3f5;
+}
+
+.actions-cell {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.action-btn {
+  padding: 0.5rem 0.75rem;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.action-btn:hover {
+  opacity: 0.85;
+}
+
+.manage-btn {
+  background-color: #007bff;
+}
+
+.attendees-btn {
+  background-color: #6c757d;
+}
+
+.no-events-message {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.1rem;
+  color: #6c757d;
+}
+
+.loading-message, .error-message {
+    text-align: center;
+    padding: 2rem;
+    font-size: 1.2rem;
+}
+
+.error-message {
+    color: #dc3545;
+}
+
+/* Styles pour le statut des événements */
+.status-circle {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.status-active-circle {
+  background-color: #28a745; /* Vert pour "Actif" */
+}
+
+.status-archived-circle {
+  background-color: #dc3545; /* Rouge pour "Archivé" */
+}
+
+.status-active-text {
+  color: #28a745; /* Vert pour "Actif" */
+  font-weight: 600;
+}
+
+.status-archived-text {
+  color: #dc3545; /* Rouge pour "Archivé" */
+  font-weight: 600;
+}
