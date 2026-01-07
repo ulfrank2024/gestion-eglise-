@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import apiClient from '../api/api';
+import { api } from '../api/api'; // Utilisation de l'exportation nommée 'api'
 
 function AttendeesModal({ eventId, onClose }) {
   const { t } = useTranslation();
@@ -11,8 +11,8 @@ function AttendeesModal({ eventId, onClose }) {
   useEffect(() => {
     const fetchAttendees = async () => {
       try {
-        const response = await apiClient.get(`/admin/events/${eventId}/attendees`);
-        setAttendees(response.data.attendees);
+        const response = await api.admin.listAttendees(eventId); // Utilisation de api.admin.listAttendees
+        setAttendees(response.attendees);
       } catch (err) {
         setError(err.message || 'Failed to fetch attendees');
         console.error('Error fetching attendees:', err);

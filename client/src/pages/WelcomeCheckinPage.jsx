@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom'; // Importation de useNavigate
 import { useTranslation } from 'react-i18next';
-import apiClient from '../api/api';
-import logo from '../assets/logo_eden.jpg'; // Importation du logo
+import { api } from '../api/api'; // Utilisation de notre objet api
+import logo from '../assets/logo_eden.jpg';
 import './WelcomeCheckinPage.css';
 
 function WelcomeCheckinPage() {
-  const { id } = useParams();
+  const { churchId, id } = useParams(); // Récupérer churchId et id de l'URL
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate(); // Initialisation de useNavigate
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -15,10 +16,16 @@ function WelcomeCheckinPage() {
   useEffect(() => {
     const fetchEventDetails = async () => {
       try {
-        const response = await apiClient.get(`/public/events/${id}`);
-        setEvent(response.data);
+        if (!churchId) {
+          setError(t('error_church_id_missing_public'));
+          setLoading(false);
+          navigate('/'); // Rediriger vers la page d'accueil si churchId est manquant
+          return;
+        }
+        const response = await api.public.getEventDetails(churchId, id); // Passer churchId et id à l'API
+        setEvent(response);
       } catch (err) {
-        setError(t('error_fetching_event_details'));
+        setError(err.response?.data?.error || err.message || t('error_fetching_event_details'));
         console.error('Error fetching event details:', err);
       } finally {
         setLoading(false);
@@ -26,7 +33,7 @@ function WelcomeCheckinPage() {
     };
 
     fetchEventDetails();
-  }, [id, t]);
+  }, [churchId, id, t, navigate]); // Ajout de churchId et navigate aux dépendances
 
   // Gérer le style de débordement du body pour cette page uniquement
   useEffect(() => {
@@ -40,8 +47,6 @@ function WelcomeCheckinPage() {
     i18n.changeLanguage(lang);
   };
 
-  // Le style de l'image de fond est maintenant géré par une classe et une variable CSS
-  // pour un meilleur contrôle en mode responsive.
   const pageStyle = {
     '--background-image-url': event ? `url(${event.background_image_url})` : 'none'
   };

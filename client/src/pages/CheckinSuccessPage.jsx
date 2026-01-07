@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaCheckCircle } from 'react-icons/fa';
 import { useLocation } from 'react-router-dom';
-import apiClient from '../api/api';
+import { api } from '../api/api';
 import './CheckinSuccessPage.css';
 
 function CheckinSuccessPage() {

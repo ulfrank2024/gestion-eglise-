@@ -1,36 +1,61 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom'; // Ajout de useNavigate
 import { useTranslation } from 'react-i18next';
 import {
   PieChart, Pie, Cell,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
-import apiClient from '../api/api';
+import { api } from '../api/api'; // Utilisation de notre objet api
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
 function AdminStatisticsPage() {
   const { t } = useTranslation();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [eventsData, setEventsData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [churchId, setChurchId] = useState(null);
 
   // State for single event stats
   const [eventStats, setEventStats] = useState(null);
   const [eventName, setEventName] = useState('');
-  const location = useLocation();
 
   useEffect(() => {
+    const storedToken = localStorage.getItem('supabase.auth.token');
+    let parsedUser = null;
+    if (storedToken) {
+        try {
+            parsedUser = JSON.parse(storedToken).user;
+        } catch (e) {
+            console.error("Error parsing user token:", e);
+        }
+    }
+    
+    const currentChurchId = parsedUser?.user_metadata?.church_id;
+    if (!currentChurchId) {
+        setError(t('error_church_id_missing'));
+        setLoading(false);
+        navigate('/admin/login');
+        return;
+    }
+    setChurchId(currentChurchId);
+
     const params = new URLSearchParams(location.search);
     const eventId = params.get('eventId');
 
     const fetchAllEventsStats = async () => {
       try {
-        const response = await apiClient.get('/admin/events');
-        setEventsData(response.data);
+        setError('');
+        const events = await api.admin.listEvents(); // Utilisation de api.admin.listEvents
+        setEventsData(events);
       } catch (err) {
-        setError(err.message || 'Failed to fetch events for statistics');
         console.error('Error fetching events for statistics:', err);
+        setError(err.response?.data?.error || err.message || t('error_fetching_events_for_statistics'));
+        if (err.response?.status === 401 || err.response?.status === 403) {
+            navigate('/admin/login');
+        }
       } finally {
         setLoading(false);
       }
@@ -39,27 +64,33 @@ function AdminStatisticsPage() {
     const fetchSingleEventStats = async (id) => {
       setLoading(true);
       try {
+        setError('');
         // Fetch event details to get the name
-        const eventResponse = await apiClient.get(`/admin/events/${id}`);
-        setEventName(eventResponse.data.name_fr);
+        const eventResponse = await api.admin.getEventDetails(id); // Utilisation de api.admin.getEventDetails
+        setEventName(eventResponse.name_fr);
 
         // Fetch event statistics
-        const statsResponse = await apiClient.get(`/admin/events/${id}/statistics`);
-        setEventStats(statsResponse.data);
+        const statsResponse = await api.admin.getEventStatistics(id); // Utilisation de api.admin.getEventStatistics
+        setEventStats(statsResponse);
       } catch (err) {
-        setError(err.message || 'Failed to fetch event statistics');
         console.error('Error fetching event statistics:', err);
+        setError(err.response?.data?.error || err.message || t('error_fetching_event_statistics'));
+        if (err.response?.status === 401 || err.response?.status === 403) {
+            navigate('/admin/login');
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    if (eventId) {
-      fetchSingleEventStats(eventId);
-    } else {
-      fetchAllEventsStats();
+    if (currentChurchId) { // Seulement si churchId est disponible
+        if (eventId) {
+            fetchSingleEventStats(eventId);
+        } else {
+            fetchAllEventsStats();
+        }
     }
-  }, [location.search]);
+  }, [location.search, t, navigate]);
 
   if (loading) return <p>{t('loading')}...</p>;
   if (error) return <p style={{ color: 'red' }}>{t('error')}: {error}</p>;

@@ -90,12 +90,94 @@ export const api = {
         const { data } = await apiClient.get('/admin/events', { params });
         return data;
     },
+    createEvent: async (eventData) => {
+        const { data } = await apiClient.post('/admin/events', eventData);
+        return data;
+    },
+    getEventDetails: async (id) => {
+        const { data } = await apiClient.get(`/admin/events/${id}`);
+        return data;
+    },
+    updateEvent: async (id, eventData) => {
+        const { data } = await apiClient.put(`/admin/events/${id}`, eventData);
+        return data;
+    },
+    deleteEvent: async (id) => {
+        await apiClient.delete(`/admin/events/${id}`);
+    },
+    getCheckinQRCode: async (id) => {
+        const { data } = await apiClient.get(`/admin/events/${id}/qrcode-checkin`);
+        return data;
+    },
+    listAttendees: async (eventId) => {
+        const { data } = await apiClient.get(`/admin/events/${eventId}/attendees`);
+        return data;
+    },
+    sendThankYouEmails: async (eventId, emailData) => {
+        await apiClient.post(`/admin/events/${eventId}/send-thanks`, emailData);
+    },
+    // --- Form Fields ---
+    getEventFormFields: async (eventId) => {
+        const { data } = await apiClient.get(`/admin/events/${eventId}/form-fields`);
+        return data;
+    },
+    createFormField: async (eventId, fieldData) => {
+        const { data } = await apiClient.post(`/admin/events/${eventId}/form-fields`, fieldData);
+        return data;
+    },
+    updateFormField: async (fieldId, fieldData) => {
+        const { data } = await apiClient.put(`/admin/form-fields/${fieldId}`, fieldData);
+        return data;
+    },
+    deleteFormField: async (fieldId) => {
+        await apiClient.delete(`/admin/form-fields/${fieldId}`);
+    },
+    getEventStatistics: async (id) => {
+        const { data } = await apiClient.get(`/admin/events/${id}/statistics`);
+        return data;
+    },
     // ... autres fonctions pour les admins
+    getChurchDetails: async (churchId) => {
+      const { data } = await apiClient.get(`/church-admin/${churchId}/settings`);
+      return data;
+    },
+    updateChurchSettings: async (churchId, churchData) => {
+      const { data } = await apiClient.put(`/church-admin/${churchId}/settings`, churchData);
+      return data;
+    },
+    // --- Church Users ---
+    listChurchUsers: async (churchId) => {
+      const { data } = await apiClient.get(`/church-admin/${churchId}/users`);
+      return data;
+    },
+    inviteChurchUser: async (churchId, userData) => {
+      const { data } = await apiClient.post(`/church-admin/${churchId}/users`, userData);
+      return data;
+    },
+    updateChurchUserRole: async (churchId, userId, newRole) => {
+      const { data } = await apiClient.put(`/church-admin/${churchId}/users/${userId}`, { role: newRole });
+      return data;
+    },
+    removeChurchUser: async (churchId, userId) => {
+      await apiClient.delete(`/church-admin/${churchId}/users/${userId}`);
+    },
   },
 
   public: {
     listEvents: async (churchId) => {
       const { data } = await apiClient.get(`/public/${churchId}/events`);
+      return data;
+    },
+    getEventDetails: async (churchId, id) => {
+      const { data } = await apiClient.get(`/public/${churchId}/events/${id}`);
+      return data;
+    },
+    getEventFormFields: async (churchId, eventId) => {
+      const { data } = await apiClient.get(`/public/${churchId}/events/${eventId}/form-fields`);
+      return data;
+    },
+    registerAttendee: async (churchId, eventId, payload) => {
+      const { data } = await apiClient.post(`/public/${churchId}/events/${eventId}/register`, payload);
       return data;
     },
     // ... autres fonctions publiques

@@ -170,4 +170,31 @@ router.put('/:churchId/settings', protect, isAdminChurch, async (req, res) => {
   }
 });
 
+// GET /api/church-admin/:churchId/settings - Obtenir les informations de l'église (Admin d'Église)
+router.get('/:churchId/settings', protect, isAdminChurch, async (req, res) => {
+  const { churchId } = req.params;
+
+  // Vérifier que l'admin actuel gère bien cette église
+  if (req.user.church_id !== churchId) {
+    return res.status(403).json({ error: 'Forbidden: You can only view settings for your own church.' });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('churches')
+      .select('*')
+      .eq('id', churchId)
+      .single();
+
+    if (error) throw error;
+    if (!data) {
+      return res.status(404).json({ error: 'Church not found.' });
+    }
+    res.status(200).json(data);
+  } catch (error) {
+    console.error('Error fetching church settings:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

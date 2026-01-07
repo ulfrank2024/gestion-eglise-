@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import apiClient from '../api/api';
+import { api } from '../api/api'; // Utilisation de notre objet api
 import './RegistrationModal.css';
 
-function RegistrationModal({ isOpen, onClose, eventId }) {
+function RegistrationModal({ isOpen, onClose, eventId, churchId }) { // Ajout de churchId aux props
   const { t, i18n } = useTranslation();
   const [formFields, setFormFields] = useState([]);
   const [formData, setFormData] = useState({});
@@ -13,7 +13,6 @@ function RegistrationModal({ isOpen, onClose, eventId }) {
 
   useEffect(() => {
     if (isOpen) {
-      // Reset state when modal opens
       setRegistrationMessage('');
       setError('');
       setRegistrationLoading(false);
@@ -21,25 +20,27 @@ function RegistrationModal({ isOpen, onClose, eventId }) {
 
       const fetchFormFields = async () => {
         try {
-          const response = await apiClient.get(`/public/events/${eventId}/form-fields`);
-          const fields = response.data;
-          setFormFields(fields);
+          if (!churchId) { // Vérifier si churchId est disponible
+            setError(t('error_church_id_missing_public')); // Nouvelle clé de traduction
+            return;
+          }
+          const data = await api.public.getEventFormFields(churchId, eventId); // Utiliser churchId
+          setFields(data);
           
           const initialFormData = {};
-          fields.forEach(field => {
-            // Use a consistent key, e.g., the English label, for the form state
+          data.forEach(field => { // Utiliser 'data' au lieu de 'fields'
             initialFormData[field.label_en] = field.field_type === 'checkbox' ? false : '';
           });
           setFormData(initialFormData);
 
         } catch (err) {
           console.error('Failed to fetch form fields', err);
-          setError(t('error_fetching_fields'));
+          setError(err.response?.data?.error || err.message || t('error_fetching_fields'));
         }
       };
       fetchFormFields();
     }
-  }, [isOpen, eventId, t]);
+  }, [isOpen, eventId, churchId, t]); // Ajout de churchId aux dépendances
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -55,7 +56,12 @@ function RegistrationModal({ isOpen, onClose, eventId }) {
     setRegistrationMessage('');
     setError('');
 
-    // --- New logic to build the payload ---
+    if (!churchId) { // Vérifier si churchId est disponible
+      setError(t('error_church_id_missing_public'));
+      setRegistrationLoading(false);
+      return;
+    }
+
     const emailField = formFields.find(f => f.field_type === 'email');
     const nameField = formFields.find(f => f.label_en.toLowerCase().includes('name'));
 
@@ -75,7 +81,7 @@ function RegistrationModal({ isOpen, onClose, eventId }) {
     };
     
     try {
-      await apiClient.post(`/public/events/${eventId}/register`, payload);
+      await api.public.registerAttendee(churchId, eventId, payload); // Utiliser churchId
       
       setRegistrationMessage(t('registration_successful'));
       const registeredEvents = JSON.parse(localStorage.getItem('registeredEvents')) || {};
@@ -96,7 +102,7 @@ function RegistrationModal({ isOpen, onClose, eventId }) {
             onClose(true);
         }, 1500);
       } else {
-        setError(err.response?.data?.error || err.message || 'Registration failed.');
+        setError(err.response?.data?.error || err.message || t('registration_failed')); // Nouvelle clé
       }
       console.error('Registration error:', err);
     } finally {
@@ -106,7 +112,7 @@ function RegistrationModal({ isOpen, onClose, eventId }) {
 
   const renderField = (field) => {
     const label = i18n.language === 'fr' ? field.label_fr : field.label_en;
-    const fieldName = field.label_en; // Use English label as the key
+    const fieldName = field.label_en;
 
     switch (field.field_type) {
       case 'checkbox':
@@ -122,7 +128,7 @@ function RegistrationModal({ isOpen, onClose, eventId }) {
             <label htmlFor={field.id}>{label}{field.is_required && '*'}</label>
           </div>
         );
-      default: // Handles text, email, etc.
+      default:
         return (
           <div key={field.id}>
             <label htmlFor={field.id} className="formField">{label}{field.is_required && ' *'}</label>

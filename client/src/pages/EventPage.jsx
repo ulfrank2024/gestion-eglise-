@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom'; // Ajout de useNavigate
 import { useTranslation } from 'react-i18next';
 import RegistrationModal from '../components/RegistrationModal';
 import logo from '../assets/logo_eden.jpg';
 import './EventPage.css';
-import apiClient from '../api/api';
+import { api } from '../api/api'; // Utilisation de notre objet api
 
 function EventPage() {
   const { t, i18n } = useTranslation();
-  const { id } = useParams();
+  const { churchId, id } = useParams(); // Récupérer churchId et id de l'URL
+  const navigate = useNavigate(); // Initialisation de useNavigate
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -18,10 +19,17 @@ function EventPage() {
   useEffect(() => {
     const fetchEvent = async () => {
       try {
-        const response = await apiClient.get(`/public/events/${id}`);
-        setEvent(response.data);
+        if (!churchId) {
+          setError(t('error_church_id_missing_public'));
+          setLoading(false);
+          navigate('/'); // Rediriger vers la page d'accueil si churchId est manquant
+          return;
+        }
+        const response = await api.public.getEventDetails(churchId, id); // Passer churchId et id à l'API
+        setEvent(response);
       } catch (err) {
-        setError(err.message || 'Failed to fetch event');
+        setError(err.response?.data?.error || err.message || t('error_fetching_event_details'));
+        console.error('Error fetching event:', err);
       } finally {
         setLoading(false);
       }
@@ -36,7 +44,7 @@ function EventPage() {
 
     fetchEvent();
     checkRegistrationStatus();
-  }, [id]);
+  }, [churchId, id, t, navigate]); // Ajout de churchId et navigate aux dépendances
 
   const handleLanguageChange = (lang) => {
     i18n.changeLanguage(lang);
@@ -110,6 +118,7 @@ function EventPage() {
         isOpen={isModalOpen} 
         onClose={handleCloseModal}
         eventId={id} 
+        churchId={churchId} /* Passer churchId à RegistrationModal */
       />
     </div>
   );

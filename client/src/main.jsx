@@ -3,7 +3,8 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './i18n'; // Importation de la configuration i18n
 import { I18nextProvider } from 'react-i18next'; // Importation de I18nextProvider
-import i18n from './i18n'; // Importation de l'instance i18n
+import i18n from './i18n';
+import './index.css'; // Importation du fichier CSS principal
 
 // Layouts
 import AdminLayout from './layouts/AdminLayout';
@@ -40,12 +41,21 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <BrowserRouter>
         <Routes>
           {/* Public Routes */}
-          <Route path="/" element={<PublicLayout />}>
-            <Route index element={<PublicEventsListPage />} /> {/* Nouvelle page d'accueil */}
+          <Route path="/:churchId" element={<PublicLayout />}>
+            <Route index element={<PublicEventsListPage />} />
             <Route path="event/:id" element={<EventPage />} />
-            <Route path="welcome/:id" element={<WelcomeCheckinPage />} /> {/* Nouvelle route */}
+            <Route path="welcome/:id" element={<WelcomeCheckinPage />} />
             <Route path="checkin-success" element={<CheckinSuccessPage />} />
-            <Route path="*" element={<NotFoundPage />} /> {/* Catch-all for 404 */}
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
+
+          {/* Fallback for old root public routes (optional, can be removed after migration) */}
+          <Route path="/" element={<PublicLayout />}>
+            <Route index element={<PublicEventsListPage />} />
+            <Route path="event/:id" element={<EventPage />} />
+            <Route path="welcome/:id" element={<WelcomeCheckinPage />} />
+            <Route path="checkin-success" element={<CheckinSuccessPage />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Route>
 
           {/* Admin Login - No Layout */}

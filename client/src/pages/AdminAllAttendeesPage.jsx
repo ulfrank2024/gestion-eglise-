@@ -1,27 +1,55 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import apiClient from '../api/api';
+import { api } from '../api/api'; // Utiliser notre objet api
+import { useNavigate } from 'react-router-dom'; // Pour la redirection
 
 function AdminAllAttendeesPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [attendees, setAttendees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [churchId, setChurchId] = useState(null);
 
   useEffect(() => {
+    const storedToken = localStorage.getItem('supabase.auth.token');
+    let parsedUser = null;
+    if (storedToken) {
+        try {
+            parsedUser = JSON.parse(storedToken).user;
+        } catch (e) {
+            console.error("Error parsing user token:", e);
+        }
+    }
+    
+    const currentChurchId = parsedUser?.user_metadata?.church_id;
+    if (!currentChurchId) {
+        setError(t('error_church_id_missing'));
+        setLoading(false);
+        navigate('/admin/login');
+        return;
+    }
+    setChurchId(currentChurchId);
+
     const fetchAllAttendees = async () => {
       try {
-        const response = await apiClient.get('/admin/attendees');
+        const response = await api.admin.listAttendees(); // churchId est géré par le backend via le token
         setAttendees(response.data);
       } catch (err) {
-        setError(err.message || 'Failed to fetch attendees');
+        console.error('Error fetching all attendees:', err);
+        setError(err.response?.data?.error || err.message || t('error_fetching_all_attendees'));
+        if (err.response?.status === 401 || err.response?.status === 403) {
+            navigate('/admin/login');
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    fetchAllAttendees();
-  }, []);
+    if (currentChurchId) { // Seulement si churchId est disponible
+        fetchAllAttendees();
+    }
+  }, [t, navigate]);
 
   if (loading) return <p>{t('loading')}...</p>;
   if (error) return <p>{t('error')}: {error}</p>;

@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-// import axios from 'axios'; // Supprimé
-import { useNavigate, Link } from 'react-router-dom'; // Ajout de Link
+import { useNavigate, Link } from 'react-router-dom';
 import {
   PieChart, Pie, Cell,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
-import apiClient from '../api/api'; // Importation du client API centralisé
-import './AdminEventsListPage.css'; // Import des styles pour les indicateurs de statut
+import { api } from '../api/api'; // Utilisation de notre objet api
+import './AdminEventsListPage.css';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
@@ -17,51 +16,67 @@ function AdminDashboardPage() {
   const [totalEvents, setTotalEvents] = useState(0);
   const [totalAttendees, setTotalAttendees] = useState(0);
   const [latestEvents, setLatestEvents] = useState([]);
-  const [eventsData, setEventsData] = useState([]); // Pour les données des graphes
+  const [eventsData, setEventsData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [churchId, setChurchId] = useState(null);
 
   useEffect(() => {
+    const storedToken = localStorage.getItem('supabase.auth.token');
+    let parsedUser = null;
+    if (storedToken) {
+        try {
+            parsedUser = JSON.parse(storedToken).user;
+        } catch (e) {
+            console.error("Error parsing user token:", e);
+        }
+    }
+    
+    const currentChurchId = parsedUser?.user_metadata?.church_id;
+    if (!currentChurchId) {
+        setError(t('error_church_id_missing'));
+        setLoading(false);
+        navigate('/admin/login');
+        return;
+    }
+    setChurchId(currentChurchId);
+
+
     const fetchDashboardData = async () => {
       try {
-        // const token = localStorage.getItem('supabase.auth.token'); // Géré par l'intercepteur
-        // const config = {
-        //   headers: {
-        //     Authorization: `Bearer ${JSON.parse(token).access_token}`,
-        //   },
-        // };
-
-        // Fetch all events to calculate totals and latest events
-        const eventsResponse = await apiClient.get('/admin/events'); // Utilisation d'apiClient
-        const events = eventsResponse.data;
-        setEventsData(events); // Pour les graphes
+        setError('');
+        // L'API côté serveur gère le filtrage par church_id via le token d'authentification
+        const events = await api.admin.listEvents(); // Utilisation de api.admin.listEvents
+        setEventsData(events);
 
         setTotalEvents(events.length);
         const attendeesCount = events.reduce((sum, event) => sum + (event.attendeeCount || 0), 0);
         setTotalAttendees(attendeesCount);
 
-        // Sort by creation date and take the latest (assuming 'created_at' field exists)
         const sortedEvents = [...events].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-        setLatestEvents(sortedEvents.slice(0, 5)); // Get top 5 latest events
+        setLatestEvents(sortedEvents.slice(0, 5));
 
       } catch (err) {
-        setError(err.message || 'Failed to fetch dashboard data');
         console.error('Error fetching dashboard data:', err);
+        setError(err.response?.data?.error || err.message || t('error_fetching_dashboard_data'));
+        if (err.response?.status === 401 || err.response?.status === 403) {
+            navigate('/admin/login');
+        }
       } finally {
         setLoading(false);
       }
     };
+    if (currentChurchId) {
+        fetchDashboardData();
+    }
+  }, [t, navigate]);
 
-    fetchDashboardData();
-  }, []);
-
-  // Données pour les graphes (simplifiées pour le dashboard)
   const pieData = [
     { name: t('total_events'), value: totalEvents },
     { name: t('total_attendees'), value: totalAttendees },
   ];
 
-  const barData = eventsData.slice(0, 3).map(event => ({ // Seuls les 3 premiers événements pour le dashboard
+  const barData = eventsData.slice(0, 3).map(event => ({
     name: event.name_fr,
     participants: event.attendeeCount || 0,
   })).sort((a, b) => a.name.localeCompare(b.name));
@@ -85,7 +100,6 @@ function AdminDashboardPage() {
       </div>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-around', marginTop: '20px' }}>
-        {/* Aperçu Graphique Circulaire */}
         <div style={{ width: '45%', minWidth: '300px', marginBottom: '40px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', borderRadius: '8px', padding: '15px' }}>
           <h3>{t('events_and_attendees_overview')}</h3>
           <ResponsiveContainer width="100%" height={200}>
@@ -110,7 +124,6 @@ function AdminDashboardPage() {
           </ResponsiveContainer>
         </div>
 
-        {/* Aperçu Graphique à Barres */}
         <div style={{ width: '45%', minWidth: '300px', marginBottom: '40px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', borderRadius: '8px', padding: '15px' }}>
           <h3>{t('top_events_by_participants')}</h3>
           <ResponsiveContainer width="100%" height={200}>

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '../supabaseClient';
-import apiClient from '../api/api';
+import { api } from '../api/api';
 import ConfirmationModal from '../components/ConfirmationModal';
 import FormFieldBuilder from '../components/FormFieldBuilder';
 import './AdminEventDetailPage.css';

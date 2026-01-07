@@ -9,7 +9,7 @@ Transformer l'application actuelle en une plateforme multi-églises, où chaque 
 
 ### Phase 1 : Planification et Conception de l'Architecture Multi-Tenant
 
-- [ ] **Clarification des Besoins (Super-Admin vs. Admin d'Église)**
+- [x] **Clarification des Besoins (Super-Admin vs. Admin d'Église)**
     * Définir précisément les rôles et permissions.
     * Identifier les fonctionnalités exclusives du Super-Admin et des Admins d'Église.
 
@@ -45,9 +45,13 @@ Transformer l'application actuelle en une plateforme multi-églises, où chaque 
 
 - [ ] **Refonte de l'Interface Utilisateur (UI)**
     * [ ] **Page de Connexion / Inscription** : Adapter pour les nouvelles églises.
-    * [x] **Tableau de bord Super-Admin** : Nouvelle interface pour lister, créer, modifier, supprimer les églises. Vue d'ensemble des statistiques de la plateforme. (Page de connexion et de listing des églises créées).
-    * [ ] **Tableau de bord Admin d'Église** : Baser sur l'interface actuelle. Affichage du logo personnalisé. Sections "Paramètres de l'Église" et "Membres d'Équipe".
-    * [ ] **Pages publiques d'événements** : Accessibles via un sous-domaine spécifique à l'église. Le frontend doit déterminer le `church_id` à partir du sous-domaine.
+    * [x] **Tableau de bord Super-Admin** : Nouvelle interface pour lister, créer, modifier, supprimer les églises. Vue d'ensemble des statistiques de la plateforme. (CRUD pour les églises implémenté).
+    * [x] **Tableau de bord Admin d'Église** : Baser sur l'interface actuelle.
+        * [x] Affichage du logo personnalisé de l'église.
+        * [x] Section "Paramètres de l'Église" pour que l'Admin d'Église puisse modifier le nom, le logo, le sous-domaine, etc.
+        * [x] Section "Membres d'Équipe" pour gérer les utilisateurs autorisés à administrer cette église.
+        * [x] Adapter toutes les pages Admin (AdminEventsListPage, AdminEventNewPage, AdminEventDetailPage, AdminAllAttendeesPage, AdminDashboardPage, AdminStatisticsPage, AdminEventHistoryPage) pour gérer le `churchId` et utiliser l'objet `api`.
+    - [x] **Pages publiques d'événements** : Accessibles via un sous-domaine spécifique à l'église. Le frontend doit déterminer le `church_id` à partir du sous-domaine. (Implémenté via `:churchId` dans l'URL pour PublicEventsListPage, EventPage, WelcomeCheckinPage).
 
 ### Phase 4 : Infrastructure et Déploiement
 

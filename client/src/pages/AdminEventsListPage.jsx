@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import AttendeesModal from '../components/AttendeesModal';
-import apiClient from '../api/api';
-import './AdminEventsListPage.css'; // Importer le nouveau fichier CSS
+import { api } from '../api/api'; // Utiliser notre objet api
+import './AdminEventsListPage.css';
 
 function AdminEventsListPage() {
   const { t } = useTranslation();
@@ -13,12 +13,19 @@ function AdminEventsListPage() {
   const [error, setError] = useState('');
   const [showAttendeesModal, setShowAttendeesModal] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState(null);
-  const [filterStatus, setFilterStatus] = useState('active'); // 'active', 'completed', 'all'
+  const [filterStatus, setFilterStatus] = useState('active');
+  const [churchId, setChurchId] = useState(null);
 
   useEffect(() => {
-    const fetchEvents = async () => {
+    const fetchEvents = async (currentChurchId) => {
       try {
         setLoading(true);
+        setError('');
+
+        if (!currentChurchId) {
+            throw new Error(t('error_church_id_missing'));
+        }
+
         const params = {};
         if (filterStatus === 'active') {
           params.is_archived = false;
@@ -27,18 +34,42 @@ function AdminEventsListPage() {
         } else if (filterStatus === 'all') {
           // Ne pas ajouter le paramètre is_archived pour afficher tous les événements
         }
-        const response = await apiClient.get('/admin/events', { params });
-        setEvents(response.data);
+        
+        // L'API côté serveur gère le filtrage par church_id via le token d'authentification
+        const data = await api.admin.listEvents(params.is_archived);
+        setEvents(data);
       } catch (err) {
-        setError(err.message || 'Failed to fetch events');
         console.error('Error fetching events:', err);
+        setError(err.response?.data?.error || err.message || t('error_fetching_events'));
+        if (err.response?.status === 401 || err.response?.status === 403) {
+            navigate('/admin/login');
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    fetchEvents();
-  }, [filterStatus]); // Déclencher la récupération des événements lors du changement de filterStatus
+    const storedToken = localStorage.getItem('supabase.auth.token');
+    let parsedUser = null;
+    if (storedToken) {
+        try {
+            parsedUser = JSON.parse(storedToken).user;
+        } catch (e) {
+            console.error("Error parsing user token:", e);
+        }
+    }
+    
+    const currentChurchId = parsedUser?.user_metadata?.church_id;
+    if (!currentChurchId) {
+        setError(t('error_church_id_missing'));
+        setLoading(false);
+        navigate('/admin/login');
+        return;
+    }
+    setChurchId(currentChurchId); // Stocker le churchId pour d'autres utilisations si nécessaire
+    fetchEvents(currentChurchId); // Appeler fetchEvents avec le churchId
+
+  }, [filterStatus, t, navigate]);
 
   const handleManageEvent = (id) => {
     navigate(`/admin/events/${id}`);
@@ -92,7 +123,7 @@ function AdminEventsListPage() {
               <th>{t('event_name_fr')}</th>
               <th>{t('event_name_en')}</th>
               <th>{t('attendees_count')}</th>
-              <th>{t('status')}</th> {/* Nouvelle colonne Statut */}
+              <th>{t('status')}</th>
               <th>{t('actions')}</th>
             </tr>
           </thead>
@@ -109,7 +140,7 @@ function AdminEventsListPage() {
                   <span className={event.is_archived ? 'status-archived-text' : 'status-active-text'}>
                     {event.is_archived ? t('eventStatus.archived') : t('eventStatus.active')}
                   </span>
-                </td> {/* Affichage du statut avec couleurs */}
+                </td>
                 <td className="actions-cell">
                   <button
                     onClick={() => handleManageEvent(event.id)}

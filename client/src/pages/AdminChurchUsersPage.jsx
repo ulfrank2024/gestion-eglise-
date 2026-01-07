@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import axios from 'axios';
+import { api } from '../api/api'; // Utiliser notre objet api
+import { useNavigate } from 'react-router-dom'; // Pour la redirection
 
 function AdminChurchUsersPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [churchUsers, setChurchUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -11,99 +13,99 @@ function AdminChurchUsersPage() {
   const [roleToInvite, setRoleToInvite] = useState('member'); // Default role
   const [inviteError, setInviteError] = useState(null);
   const [inviteSuccess, setInviteSuccess] = useState(null);
+  const [churchId, setChurchId] = useState(null);
 
-  const fetchChurchUsers = async () => {
+  const fetchChurchUsers = async (currentChurchId) => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('supabase.auth.token');
-      if (!token) {
-        setError('Authentication token not found.');
-        setLoading(false);
-        return;
+      setError(null);
+
+      if (!currentChurchId) {
+        throw new Error(t('error_church_id_missing'));
       }
 
-      const response = await axios.get('/api/admin/church-users', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setChurchUsers(response.data);
+      const data = await api.admin.listChurchUsers(currentChurchId);
+      setChurchUsers(data);
     } catch (err) {
       console.error('Error fetching church users:', err);
-      setError(err.response?.data?.error || err.message || 'Failed to fetch church users');
+      setError(err.response?.data?.error || err.message || t('error_fetching_church_users'));
+      if (err.response?.status === 401 || err.response?.status === 403) {
+          navigate('/admin/login');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchChurchUsers();
-  }, []);
+    const storedToken = localStorage.getItem('supabase.auth.token');
+    let parsedUser = null;
+    if (storedToken) {
+        try {
+            parsedUser = JSON.parse(storedToken).user;
+        } catch (e) {
+            console.error("Error parsing user token:", e);
+        }
+    }
+    
+    const currentChurchId = parsedUser?.user_metadata?.church_id;
+    if (!currentChurchId) {
+        setError(t('error_church_id_missing'));
+        setLoading(false);
+        navigate('/admin/login');
+        return;
+    }
+    setChurchId(currentChurchId);
+    fetchChurchUsers(currentChurchId);
+  }, [t, navigate]);
 
   const handleInviteSubmit = async (e) => {
     e.preventDefault();
     setInviteError(null);
     setInviteSuccess(null);
-    try {
-      const token = localStorage.getItem('supabase.auth.token');
-      if (!token) {
-        setInviteError('Authentication token not found.');
+    if (!churchId) {
+        setInviteError(t('error_church_id_missing'));
         return;
-      }
+    }
 
-      await axios.post('/api/admin/church-users', { email: emailToInvite, role: roleToInvite }, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    try {
+      await api.admin.inviteChurchUser(churchId, { email: emailToInvite, role: roleToInvite });
       setInviteSuccess(t('user_invited_successfully'));
       setEmailToInvite('');
       setRoleToInvite('member');
-      fetchChurchUsers(); // Refresh the list
+      fetchChurchUsers(churchId); // Refresh the list
     } catch (err) {
       console.error('Error inviting user:', err);
-      setInviteError(err.response?.data?.error || err.message || 'Failed to invite user');
+      setInviteError(err.response?.data?.error || err.message || t('error_inviting_user'));
     }
   };
 
   const handleChangeRole = async (userId, newRole) => {
-    try {
-      const token = localStorage.getItem('supabase.auth.token');
-      if (!token) {
-        alert('Authentication token not found.');
+    if (!churchId) {
+        alert(t('error_church_id_missing'));
         return;
-      }
-
-      await axios.put(`/api/admin/church-users/${userId}`, { role: newRole }, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      fetchChurchUsers(); // Refresh the list
+    }
+    try {
+      await api.admin.updateChurchUserRole(churchId, userId, newRole);
+      fetchChurchUsers(churchId); // Refresh the list
     } catch (err) {
       console.error('Error changing user role:', err);
-      alert(err.response?.data?.error || err.message || 'Failed to change user role');
+      alert(err.response?.data?.error || err.message || t('error_changing_user_role'));
     }
   };
 
   const handleRemoveUser = async (userId) => {
+    if (!churchId) {
+        alert(t('error_church_id_missing'));
+        return;
+    }
     if (!window.confirm(t('confirm_remove_user_from_church'))) return;
     try {
-      const token = localStorage.getItem('supabase.auth.token');
-      if (!token) {
-        alert('Authentication token not found.');
-        return;
-      }
-
-      await axios.delete(`/api/admin/church-users/${userId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      fetchChurchUsers(); // Refresh the list
+      await api.admin.removeChurchUser(churchId, userId);
+      fetchChurchUsers(churchId); // Refresh the list
     } catch (err) {
       console.error('Error removing user:', err);
-      alert(err.response?.data?.error || err.message || 'Failed to remove user');
+      alert(err.response?.data?.error || err.message || t('error_removing_user'));
     }
   };
 
@@ -138,7 +140,7 @@ function AdminChurchUsersPage() {
                 onChange={(e) => setRoleToInvite(e.target.value)}
               >
                 <option value="member">{t('member')}</option>
-                <option value="admin">{t('admin')}</option>
+                <option value="church_admin">{t('admin')}</option> {/* Use 'church_admin' role */}
               </select>
             </div>
             {inviteError && <div className="alert alert-danger">{inviteError}</div>}
@@ -163,23 +165,23 @@ function AdminChurchUsersPage() {
           <tbody>
             {churchUsers.map((user) => (
               <tr key={user.user_id}>
-                <td>{user.users?.email || 'N/A'}</td> {/* Assuming 'users' is the joined table from public.auth.users */}
+                <td>{user.auth_users?.email || 'N/A'}</td> {/* 'auth_users' is the alias from backend join */}
                 <td>
                   <select
                     className="form-control"
                     value={user.role}
                     onChange={(e) => handleChangeRole(user.user_id, e.target.value)}
-                    disabled={user.role === 'admin' && churchUsers.filter(u => u.role === 'admin').length === 1} // Prevent removing last admin role
+                    disabled={user.role === 'church_admin' && churchUsers.filter(u => u.role === 'church_admin').length === 1} // Prevent removing last admin role
                   >
                     <option value="member">{t('member')}</option>
-                    <option value="admin">{t('admin')}</option>
+                    <option value="church_admin">{t('admin')}</option>
                   </select>
                 </td>
                 <td>
                   <button 
                     onClick={() => handleRemoveUser(user.user_id)} 
                     className="btn btn-danger btn-sm"
-                    disabled={user.role === 'admin' && churchUsers.filter(u => u.role === 'admin').length === 1} // Prevent removing last admin
+                    disabled={user.role === 'church_admin' && churchUsers.filter(u => u.role === 'church_admin').length === 1} // Prevent removing last admin
                   >
                     {t('remove')}
                   </button>

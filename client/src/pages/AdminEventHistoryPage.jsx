@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import AttendeesModal from '../components/AttendeesModal';
-import apiClient from '../api/api';
-import './AdminEventsListPage.css'; // Utiliser le même CSS
+import { api } from '../api/api'; // Utilisation de notre objet api
+import './AdminEventsListPage.css';
 
 function AdminEventHistoryPage() {
   const { t } = useTranslation();
@@ -13,30 +13,58 @@ function AdminEventHistoryPage() {
   const [error, setError] = useState('');
   const [showAttendeesModal, setShowAttendeesModal] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState(null);
-  const [filterStatus, setFilterStatus] = useState('completed'); // Par défaut: terminés
+  const [filterStatus, setFilterStatus] = useState('completed');
+  const [churchId, setChurchId] = useState(null);
 
   useEffect(() => {
+    const storedToken = localStorage.getItem('supabase.auth.token');
+    let parsedUser = null;
+    if (storedToken) {
+        try {
+            parsedUser = JSON.parse(storedToken).user;
+        } catch (e) {
+            console.error("Error parsing user token:", e);
+        }
+    }
+    
+    const currentChurchId = parsedUser?.user_metadata?.church_id;
+    if (!currentChurchId) {
+        setError(t('error_church_id_missing'));
+        setLoading(false);
+        navigate('/admin/login');
+        return;
+    }
+    setChurchId(currentChurchId);
+
     const fetchEvents = async () => {
       try {
         setLoading(true);
+        setError('');
         const params = {};
         if (filterStatus === 'completed') {
           params.is_archived = true;
         } else if (filterStatus === 'all') {
           // Aucun filtre is_archived pour 'all'
         }
-        const response = await apiClient.get('/admin/events', { params });
-        setEvents(response.data);
+        
+        // L'API côté serveur gère le filtrage par church_id via le token d'authentification
+        const data = await api.admin.listEvents(params.is_archived);
+        setEvents(data);
       } catch (err) {
-        setError(err.message || 'Failed to fetch events');
         console.error('Error fetching events:', err);
+        setError(err.response?.data?.error || err.message || t('error_fetching_events_history'));
+        if (err.response?.status === 401 || err.response?.status === 403) {
+            navigate('/admin/login');
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    fetchEvents();
-  }, [filterStatus]);
+    if (currentChurchId) { // Seulement si churchId est disponible
+        fetchEvents();
+    }
+  }, [filterStatus, t, navigate]);
 
   const handleManageEvent = (id) => {
     navigate(`/admin/events/${id}`);
@@ -58,7 +86,7 @@ function AdminEventHistoryPage() {
   return (
     <div className="admin-events-container">
       <div className="admin-events-header">
-        <h2>{t('event_history')}</h2> {/* Nouveau titre */}
+        <h2>{t('event_history')}</h2>
         <div className="filter-controls">
           <label htmlFor="statusFilter">{t('filter_by_status')}:</label>
           <select

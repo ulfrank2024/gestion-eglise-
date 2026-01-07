@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from 'react-router-dom'; // Importation de useNavigate
-import apiClient from '../api/api';
-import logo from '../assets/logo_eden.jpg'; // Importation du logo
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { api } from '../api/api';
+import logo from '../assets/logo_eden.jpg';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCalendarAlt, faInfoCircle, faUserShield } from '@fortawesome/free-solid-svg-icons'; // Ajout de faUserShield
+import { faCalendarAlt, faInfoCircle, faUserShield } from '@fortawesome/free-solid-svg-icons';
 
 function PublicEventsListPage() {
   const { t, i18n } = useTranslation();
-  const navigate = useNavigate(); // Initialisation de useNavigate
+  const navigate = useNavigate();
+  const { churchId } = useParams();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -16,10 +17,15 @@ function PublicEventsListPage() {
   useEffect(() => {
     const fetchPublicEvents = async () => {
       try {
-        const response = await apiClient.get('/public/events');
-        setEvents(response.data);
+        if (!churchId) {
+          setError(t('error_church_id_missing_public'));
+          setLoading(false);
+          return;
+        }
+        const response = await api.public.listEvents(churchId);
+        setEvents(response);
       } catch (err) {
-        setError(err.message || 'Failed to fetch public events');
+        setError(err.response?.data?.error || err.message || t('error_fetching_public_events'));
         console.error('Error fetching public events:', err);
       } finally {
         setLoading(false);
@@ -27,7 +33,7 @@ function PublicEventsListPage() {
     };
 
     fetchPublicEvents();
-  }, []);
+  }, [churchId, t]);
 
   const handleLanguageChange = (lang) => {
     i18n.changeLanguage(lang);
@@ -45,8 +51,8 @@ function PublicEventsListPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
         <img src={logo} alt="Logo" style={{ width: '80px', height: 'auto', borderRadius: '100px' }} />
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button 
-            onClick={handleAdminLogin} 
+          <button
+            onClick={handleAdminLogin}
             style={{ padding: '8px 12px', cursor: 'pointer', background: '#007bff', color: 'white', border: 'none', borderRadius: '4px' }}
           >
             <FontAwesomeIcon icon={faUserShield} style={{ marginRight: '5px' }} /> {t('admin_login_button')}
@@ -61,16 +67,16 @@ function PublicEventsListPage() {
       {events.length === 0 ? (
         <div className="fade-in-up fade-in-up-2" style={{ textAlign: 'center', padding: '50px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
           <FontAwesomeIcon icon={faInfoCircle} style={{ fontSize: '3em', color: '#6c757d', marginBottom: '20px' }} />
-          <p style={{ fontSize: '1.2em', color: '#6c757d' }}>{t('no_public_events_available')}</p> {/* Nouvelle traduction */}
-          <p style={{ fontSize: '0.9em', color: '#888', marginTop: '10px' }}>{t('check_back_later_or_contact_admin')}</p> {/* Nouvelle traduction */}
+          <p style={{ fontSize: '1.2em', color: '#6c757d' }}>{t('no_public_events_available')}</p>
+          <p style={{ fontSize: '0.9em', color: '#888', marginTop: '10px' }}>{t('check_back_later_or_contact_admin')}</p>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '30px' }}>
           {events.map((event, index) => (
-            <Link 
-              to={`/event/${event.id}`} 
-              key={event.id} 
-              className={`event-card fade-in-up fade-in-up-${index + 2}`} 
+            <Link
+              to={`/${churchId}/event/${event.id}`}
+              key={event.id}
+              className={`event-card fade-in-up fade-in-up-${index + 2}`}
               style={{ textDecoration: 'none', color: 'inherit' }}
             >
               <div style={{ border: '1px solid #ddd', borderRadius: '10px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
@@ -88,7 +94,6 @@ function PublicEventsListPage() {
         </div>
       )}
 
-      {/* Texte biblique */}
       <p style={{ fontSize: '0.8em', fontStyle: 'italic', textAlign: 'center', marginTop: '60px', color: '#666' }}>
         {t('bible_verse')}
       </p>

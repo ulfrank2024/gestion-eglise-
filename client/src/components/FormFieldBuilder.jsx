@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import apiClient from '../api/api';
-import ConfirmationModal from './ConfirmationModal'; // Importer la modale de confirmation
+import { api } from '../api/api'; // Utiliser notre objet api
+import { supabase } from '../supabaseClient'; // Pour récupérer le churchId
+import { useNavigate } from 'react-router-dom'; // Pour la redirection
+import ConfirmationModal from './ConfirmationModal';
 import './FormFieldBuilder.css';
 
 function FormFieldBuilder({ eventId }) {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const [fields, setFields] = useState([]);
   const [newField, setNewField] = useState({
     label_fr: '',
@@ -19,21 +22,46 @@ function FormFieldBuilder({ eventId }) {
   // États pour la modale de confirmation
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [fieldToDelete, setFieldToDelete] = useState(null);
+  const [churchId, setChurchId] = useState(null); // Ajout de churchId
 
   useEffect(() => {
+    const storedToken = localStorage.getItem('supabase.auth.token');
+    let parsedUser = null;
+    if (storedToken) {
+        try {
+            parsedUser = JSON.parse(storedToken).user;
+        } catch (e) {
+            console.error("Error parsing user token:", e);
+        }
+    }
+    
+    const currentChurchId = parsedUser?.user_metadata?.church_id;
+    if (!currentChurchId) {
+        setError(t('error_church_id_missing'));
+        setLoading(false);
+        navigate('/admin/login');
+        return;
+    }
+    setChurchId(currentChurchId);
+
     const fetchFields = async () => {
       try {
-        const response = await apiClient.get(`/admin/events/${eventId}/form-fields`);
-        setFields(response.data);
+        const data = await api.admin.getEventFormFields(eventId);
+        setFields(data);
       } catch (err) {
-        setError(t('error_fetching_fields'));
         console.error('Error fetching form fields:', err);
+        setError(err.response?.data?.error || err.message || t('error_fetching_fields'));
+        if (err.response?.status === 401 || err.response?.status === 403) {
+            navigate('/admin/login');
+        }
       } finally {
         setLoading(false);
       }
     };
-    fetchFields();
-  }, [eventId, t]);
+    if (currentChurchId) { // Only fetch if churchId is available
+        fetchFields();
+    }
+  }, [eventId, t, navigate]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -46,21 +74,27 @@ function FormFieldBuilder({ eventId }) {
   const handleAddField = async (e) => {
     e.preventDefault();
     if (!newField.label_fr || !newField.label_en) {
-      // Remplacer l'alerte par un message d'erreur plus doux
       setError(t('labels_are_required'));
       return;
     }
-    setError(''); // Clear error on successful validation
+    setError('');
+    if (!churchId) {
+        setError(t('error_church_id_missing'));
+        return;
+    }
     try {
-      const response = await apiClient.post(`/admin/events/${eventId}/form-fields`, {
+      const response = await api.admin.createFormField(eventId, {
         ...newField,
         order: fields.length + 1,
       });
-      setFields(prev => [...prev, response.data]);
-      setNewField({ label_fr: '', label_en: '', field_type: 'text', is_required: true }); // Reset form
+      setFields(prev => [...prev, response]); // L'API retourne directement l'objet créé
+      setNewField({ label_fr: '', label_en: '', field_type: 'text', is_required: true });
     } catch (err) {
-      setError(t('error_adding_field'));
       console.error('Error adding form field:', err);
+      setError(err.response?.data?.error || err.message || t('error_adding_field'));
+      if (err.response?.status === 401 || err.response?.status === 403) {
+            navigate('/admin/login');
+      }
     }
   };
 
@@ -71,12 +105,22 @@ function FormFieldBuilder({ eventId }) {
 
   const handleConfirmDelete = async () => {
     if (!fieldToDelete) return;
+    setError('');
+    if (!churchId) {
+        setError(t('error_church_id_missing'));
+        setIsModalOpen(false);
+        setFieldToDelete(null);
+        return;
+    }
     try {
-      await apiClient.delete(`/admin/form-fields/${fieldToDelete}`);
+      await api.admin.deleteFormField(fieldToDelete);
       setFields(prev => prev.filter(field => field.id !== fieldToDelete));
     } catch (err) {
-      setError(t('error_deleting_field'));
       console.error('Error deleting form field:', err);
+      setError(err.response?.data?.error || err.message || t('error_deleting_field'));
+      if (err.response?.status === 401 || err.response?.status === 403) {
+            navigate('/admin/login');
+      }
     } finally {
       setIsModalOpen(false);
       setFieldToDelete(null);

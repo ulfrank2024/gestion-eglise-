@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // Ajout de useEffect
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-// import axios from 'axios'; // Supprimé
-import { supabase } from '../supabaseClient'; // Importation du client Supabase
-import apiClient from '../api/api'; // Importation du client API centralisé
+import { supabase } from '../supabaseClient';
+import { api } from '../api/api'; // Utiliser notre objet api
 
 function AdminEventNewPage() {
   const { t } = useTranslation();
@@ -12,13 +11,36 @@ function AdminEventNewPage() {
   const [eventNameEn, setEventNameEn] = useState('');
   const [descriptionFr, setDescriptionFr] = useState('');
   const [descriptionEn, setDescriptionEn] = useState('');
-  const [backgroundImageFile, setBackgroundImageFile] = useState(null); // Pour le fichier d'image
-  const [imageUrl, setImageUrl] = useState(''); // Pour stocker l'URL après l'upload ou si déjà fournie
+  const [backgroundImageFile, setBackgroundImageFile] = useState(null);
+  const [imageUrl, setImageUrl] = useState('');
   const [eventStartDate, setEventStartDate] = useState('');
-  const [isCompleted, setIsCompleted] = useState(false);  // Nouvelle checkbox archivé
+  const [isCompleted, setIsCompleted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [churchId, setChurchId] = useState(null);
+
+  useEffect(() => {
+    const storedToken = localStorage.getItem('supabase.auth.token');
+    let parsedUser = null;
+    if (storedToken) {
+        try {
+            parsedUser = JSON.parse(storedToken).user;
+        } catch (e) {
+            console.error("Error parsing user token:", e);
+        }
+    }
+    
+    const currentChurchId = parsedUser?.user_metadata?.church_id;
+    if (!currentChurchId) {
+        setError(t('error_church_id_missing'));
+        setLoading(false);
+        navigate('/admin/login');
+        return;
+    }
+    setChurchId(currentChurchId);
+  }, [t, navigate]);
+
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -34,24 +56,28 @@ function AdminEventNewPage() {
     setError('');
     setSuccess('');
 
-    let finalImageUrl = imageUrl; // Commence avec l'URL potentiellement fournie manuellement
+    if (!churchId) {
+        setError(t('error_church_id_missing'));
+        setLoading(false);
+        return;
+    }
+
+    let finalImageUrl = imageUrl;
 
     try {
-      // Upload de l'image si un fichier est sélectionné
       if (backgroundImageFile) {
         const fileExt = backgroundImageFile.name.split('.').pop();
         const fileName = `${Date.now()}.${fileExt}`;
         const filePath = `event_backgrounds/${fileName}`;
 
         const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('event_images') // Assurez-vous d'avoir un bucket nommé 'event_images' dans Supabase Storage
+          .from('event_images')
           .upload(filePath, backgroundImageFile);
 
         if (uploadError) {
-          throw new Error(`Error uploading image: ${uploadError.message}`);
+          throw new Error(`${t('error_uploading_image')}: ${uploadError.message}`);
         }
         
-        // Obtenir l'URL publique de l'image
         const { data: publicUrlData } = supabase.storage
           .from('event_images')
           .getPublicUrl(filePath);
@@ -59,12 +85,10 @@ function AdminEventNewPage() {
         finalImageUrl = publicUrlData.publicUrl;
 
       } else if (!imageUrl) {
-        // Si aucun fichier et aucune URL n'est fournie, ce n'est pas une erreur critique, l'image sera juste absente.
         finalImageUrl = null;
       }
 
-      // const token = localStorage.getItem('supabase.auth.token'); // Géré par l'intercepteur
-      const response = await apiClient.post('/admin/events', {
+      await api.admin.createEvent({
         name_fr: eventNameFr,
         name_en: eventNameEn,
         description_fr: descriptionFr,
@@ -72,10 +96,9 @@ function AdminEventNewPage() {
         background_image_url: finalImageUrl,
         event_start_date: eventStartDate || null,
         is_archived: isCompleted,
-      }); // Suppression de la config
+      });
 
-      setSuccess('Event created successfully!');
-      // Optionnel: Réinitialiser le formulaire ou rediriger
+      setSuccess(t('event_created_successfully'));
       setEventNameFr('');
       setEventNameEn('');
       setDescriptionFr('');
@@ -88,7 +111,7 @@ function AdminEventNewPage() {
 
     } catch (err) {
       console.error('Error creating event:', err);
-      setError(err.message || 'Failed to create event');
+      setError(err.response?.data?.error || err.message || t('error_creating_event'));
     } finally {
       setLoading(false);
     }
@@ -205,7 +228,7 @@ function AdminEventNewPage() {
         {success && <p style={{ color: 'green', marginBottom: '15px' }}>{success}</p>}
 
         <button type="submit" disabled={loading} style={{ width: '100%', padding: '10px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-          {loading ? 'Creating...' : t('submit')}
+          {loading ? t('creating') : t('submit')}
         </button>
       </form>
     </div>
