@@ -1,4 +1,4 @@
-const { supabase } = require('../db/supabase');
+const { supabase, supabaseAdmin } = require('../db/supabase');
 
 // Middleware pour vérifier l'authentification
 const protect = async (req, res, next) => {
@@ -22,10 +22,9 @@ const protect = async (req, res, next) => {
     req.user = data.user; 
 
     // Récupérer le church_id et le rôle de l'utilisateur à partir de la table church_users
-    // Un utilisateur peut avoir plusieurs rôles/églises, mais pour le contexte actuel,
-    // on suppose qu'il y a un rôle principal ou que le RLS gérera l'accès.
-    // Pour un super_admin, church_id sera NULL.
-    const { data: churchUserData, error: churchUserError } = await supabase
+    // Utiliser supabaseAdmin pour contourner RLS lors de la récupération du rôle,
+    // car le middleware doit toujours être capable de déterminer le rôle.
+    const { data: churchUserData, error: churchUserError } = await supabaseAdmin
       .from('church_users')
       .select('church_id, role')
       .eq('user_id', req.user.id)

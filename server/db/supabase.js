@@ -1,19 +1,23 @@
-require('dotenv').config({ path: '../.env' }); // Assurez-vous que le chemin vers .env est correct
 const { createClient } = require('@supabase/supabase-js');
 
 const supabaseUrl = process.env.SUPABASE_URL;
-// Utilisation de la clé de rôle de service si disponible, sinon la clé anon.
-// La clé de rôle de service est nécessaire pour contourner les politiques RLS pour les opérations serveur.
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabaseAnonKey = process.env.SUPABASE_KEY;
 
 if (!supabaseUrl) {
   throw new Error('Supabase URL is required.');
 }
-if (!supabaseServiceRoleKey && !supabaseAnonKey) {
-  throw new Error('Supabase Service Role Key or Anon Key are required.');
+if (!supabaseAnonKey) {
+  throw new Error('Supabase Anon Key is required.');
+}
+if (!supabaseServiceRoleKey) {
+    throw new Error('Supabase Service Role Key is required.');
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceRoleKey || supabaseAnonKey);
+// Client pour les opérations côté client (respecte RLS, utilise la clé anon)
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-module.exports = { supabase };
+// Client pour les opérations côté serveur (contourne RLS, utilise la clé de service)
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
+
+module.exports = { supabase, supabaseAdmin };
