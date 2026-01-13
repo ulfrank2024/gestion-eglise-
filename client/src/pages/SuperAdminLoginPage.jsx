@@ -43,24 +43,28 @@ const SuperAdminLoginPage = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <div className="flex w-full max-w-4xl mx-auto overflow-hidden bg-white rounded-lg shadow-lg">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      <div className="flex w-full max-w-4xl mx-auto overflow-hidden bg-gray-800 rounded-lg shadow-2xl border border-gray-700">
         {/* Colonne de gauche pour le logo */}
-        <div className="flex items-center justify-center w-1/2 bg-blue-700">
-          <img src={logo} alt="Logo" className="w-32 h-32 rounded-full" />
+        <div className="flex items-center justify-center w-1/2 bg-gradient-to-br from-indigo-600 to-purple-700">
+          <div className="text-center">
+            <img src={logo} alt="Logo" className="w-32 h-32 rounded-full mx-auto border-4 border-white shadow-xl" />
+            <p className="mt-4 text-white text-xl font-semibold">Eden Eve</p>
+            <p className="text-indigo-200 text-sm">Super Admin Portal</p>
+          </div>
         </div>
 
         {/* Colonne de droite pour le formulaire */}
-        <div className="w-1/2 p-8">
-          <h2 className="text-2xl font-bold text-center text-gray-900">
+        <div className="w-1/2 p-8 bg-gray-800">
+          <h2 className="text-2xl font-bold text-center text-white mb-2">
             {t('super_admin_login.title')}
           </h2>
-          <p className="text-center text-gray-600 mb-6">
+          <p className="text-center text-gray-400 mb-6">
             {t('super_admin_login.subtitle')}
           </p>
           <form className="space-y-6" onSubmit={handleLogin}>
             <div>
-              <label htmlFor="email" className="text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="text-sm font-medium text-gray-300">
                 {t('login.email')}
               </label>
               <input
@@ -71,11 +75,11 @@ const SuperAdminLoginPage = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="block w-full px-3 py-2 mt-1 text-gray-900 placeholder-gray-500 border border-gray-300 rounded-md shadow-sm appearance-none focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="block w-full px-3 py-2 mt-1 text-white bg-gray-700 placeholder-gray-400 border border-gray-600 rounded-md shadow-sm appearance-none focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               />
             </div>
             <div>
-              <label htmlFor="password" className="text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="text-sm font-medium text-gray-300">
                 {t('login.password')}
               </label>
               <input
@@ -86,15 +90,15 @@ const SuperAdminLoginPage = () => {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="block w-full px-3 py-2 mt-1 text-gray-900 placeholder-gray-500 border border-gray-300 rounded-md shadow-sm appearance-none focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="block w-full px-3 py-2 mt-1 text-white bg-gray-700 placeholder-gray-400 border border-gray-600 rounded-md shadow-sm appearance-none focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               />
             </div>
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <p className="text-sm text-red-400 bg-red-900/30 border border-red-800 rounded p-2">{error}</p>}
             <div>
               <button
                 type="submit"
                 disabled={loading}
-                className="flex justify-center w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-400"
+                className="flex justify-center w-full px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 border border-transparent rounded-md shadow-sm hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               >
                 {loading ? t('loading') : t('login.sign_in')}
               </button>

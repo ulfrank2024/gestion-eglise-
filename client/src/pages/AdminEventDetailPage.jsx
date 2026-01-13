@@ -52,8 +52,7 @@ function AdminEventDetailPage() {
   useEffect(() => {
     const fetchEventData = async () => {
       try {
-        const eventResponse = await apiClient.get(`/admin/events/${id}`);
-        const fetchedEvent = eventResponse.data;
+        const fetchedEvent = await api.admin.getEventDetails(id);
         setEvent(fetchedEvent);
         setEventNameFr(fetchedEvent.name_fr);
         setEventNameEn(fetchedEvent.name_en);
@@ -64,8 +63,8 @@ function AdminEventDetailPage() {
         setIsCompleted(fetchedEvent.is_archived);
 
         try {
-          const qrCodeResponse = await apiClient.get(`/admin/events/${id}/qrcode-checkin`);
-          setCheckinQrCodeUrl(qrCodeResponse.data.qrCodeDataUrl);
+          const qrCodeResponse = await api.admin.getCheckinQRCode(id);
+          setCheckinQrCodeUrl(qrCodeResponse.qrCodeDataUrl);
         } catch (qrError) {
           console.error('Failed to fetch check-in QR code:', qrError);
           setError(prevError => `${prevError} | Failed to load QR Code.`);
@@ -84,9 +83,9 @@ function AdminEventDetailPage() {
     const fetchAttendees = async () => {
       if (!id) return;
       try {
-        const response = await apiClient.get(`/admin/events/${id}/attendees`);
-        setAttendees(response.data.attendees);
-        setAttendeeCount(response.data.count);
+        const response = await api.admin.listAttendees(id);
+        setAttendees(response.attendees);
+        setAttendeeCount(response.count);
       } catch (err) {
         console.error('Error fetching attendees:', err);
       }
@@ -122,7 +121,7 @@ function AdminEventDetailPage() {
 
       const eventDateUTC = eventStartDate ? new Date(eventStartDate).toISOString() : null;
 
-      const response = await apiClient.put(`/admin/events/${id}`, {
+      const response = await api.admin.updateEvent(id, {
         name_fr: eventNameFr,
         name_en: eventNameEn,
         description_fr: descriptionFr,
@@ -132,7 +131,7 @@ function AdminEventDetailPage() {
         is_archived: isCompleted,
       });
 
-      setEvent(response.data);
+      setEvent(response);
       setIsEditing(false);
       setSuccess('Event updated successfully!');
       setTimeout(() => setSuccess(''), 3000);
@@ -159,14 +158,14 @@ function AdminEventDetailPage() {
     setLoading(true);
     try {
       if (modalAction === 'delete') {
-        await apiClient.delete(`/admin/events/${id}`);
+        await api.admin.deleteEvent(id);
         navigate('/admin/dashboard');
       } else if (modalAction === 'mark_as_completed') {
-        const response = await apiClient.put(`/admin/events/${id}`, {
+        const response = await api.admin.updateEvent(id, {
           ...event, // Keep existing event data
           is_archived: true
         });
-        setEvent(response.data);
+        setEvent(response);
         setIsCompleted(true);
         setSuccess('Event marked as completed successfully!');
         setTimeout(() => setSuccess(''), 3000);
@@ -190,7 +189,7 @@ function AdminEventDetailPage() {
     setEmailSendError('');
     setEmailSendSuccess('');
     try {
-      await apiClient.post(`/admin/events/${id}/send-thanks`, { subject: emailSubject, message: emailMessage });
+      await api.admin.sendThankYouEmails(id, { subject: emailSubject, message: emailMessage });
       setEmailSendSuccess('Emails sent successfully!');
       setTimeout(() => setEmailSendSuccess(''), 5000);
     } catch (err) {

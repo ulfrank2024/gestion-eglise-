@@ -1,21 +1,18 @@
 const express = require('express');
 const { supabase } = require('../db/supabase');
 const { transporter } = require('../services/mailer');
-const { protect, isAdminChurch } = require('../middleware/auth'); // Importez les middlewares nécessaires
+const { protect, isAdminChurch, isSuperAdminOrChurchAdmin } = require('../middleware/auth');
 const router = express.Router();
-const qrcode = require('qrcode'); // Importation de la bibliothèque qrcode
-
-// Appliquez protect et isAdminChurch à toutes les routes de ce routeur
-router.use(protect, isAdminChurch);
+const qrcode = require('qrcode');
 
 // --- Endpoints CRUD pour les événements (protégés Admin) ---
 
-// POST /api/admin/events - Créer un nouvel événement
-router.post('/events', async (req, res) => {
+// POST /api/admin/events_v2 - Créer un nouvel événement
+router.post('/events_v2', async (req, res) => {
   const { name_fr, name_en, description_fr, description_en, background_image_url, is_archived, event_start_date, event_end_date } = req.body;
   try {
     const { data, error } = await supabase
-      .from('events')
+      .from('events_v2')
       .insert([{ name_fr, name_en, description_fr, description_en, background_image_url, is_archived, event_start_date, event_end_date, church_id: req.user.church_id }])
       .select();
     if (error) throw error;
@@ -26,15 +23,14 @@ router.post('/events', async (req, res) => {
   }
 });
 
-// GET /api/admin/events - Lister tous les événements avec le nombre de participants et filtrage par is_archived
-router.get('/events', async (req, res) => {
+// GET /api/admin/events_v2 - Lister tous les événements
+router.get('/events_v2', async (req, res) => {
   try {
-    let query = supabase.from('events').select(`
+    let query = supabase.from('events_v2').select(`
         *,
-        attendees(count),
+        attendees_v2(count),
         is_archived
-      `)
-      .eq('church_id', req.user.church_id);
+      `);
     
     if (req.query.is_archived !== undefined) {
       const isArchived = req.query.is_archived === 'true'; 
@@ -47,7 +43,7 @@ router.get('/events', async (req, res) => {
 
     const eventsWithAttendeeCount = events.map(event => ({
       ...event,
-      attendeeCount: event.attendees[0]?.count || 0
+      attendeeCount: event.attendees_v2[0]?.count || 0
     }));
     
     res.status(200).json(eventsWithAttendeeCount);
@@ -56,17 +52,24 @@ router.get('/events', async (req, res) => {
   }
 });
 
-// GET /api/admin/events/:id - Obtenir les détails d'un événement spécifique
-router.get('/events/:id', async (req, res) => {
+// GET /api/admin/events_v2/:id - Obtenir les détails d'un événement spécifique
+router.get('/events_v2/:id', async (req, res) => {
   const { id } = req.params;
+
   try {
     const { data, error } = await supabase
-      .from('events')
+      .from('events_v2')
       .select('*, is_archived')
       .eq('id', id)
-      .eq('church_id', req.user.church_id)
       .single();
-    if (error) throw error;
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return res.status(404).json({ error: 'Event not found or not authorized' });
+      }
+      throw error;
+    }
+    
     if (!data) return res.status(404).json({ error: 'Event not found' });
     res.status(200).json(data);
   } catch (error) {
@@ -74,18 +77,24 @@ router.get('/events/:id', async (req, res) => {
   }
 });
 
-// PUT /api/admin/events/:id - Mettre à jour un événement
-router.put('/events/:id', async (req, res) => {
+// PUT /api/admin/events_v2/:id - Mettre à jour un événement
+router.put('/events_v2/:id', async (req, res) => {
   const { id } = req.params;
   const { name_fr, name_en, description_fr, description_en, background_image_url, is_archived, event_start_date, event_end_date } = req.body;
+  
   try {
     const { data, error } = await supabase
-      .from('events')
+      .from('events_v2')
       .update({ name_fr, name_en, description_fr, description_en, background_image_url, is_archived, event_start_date, event_end_date })
       .eq('id', id)
-      .eq('church_id', req.user.church_id)
       .select();
-    if (error) throw error;
+
+    if (error) {
+        if (error.code === 'PGRST116') {
+            return res.status(404).json({ error: 'Event not found or not authorized' });
+        }
+        throw error;
+    }
     if (!data || data.length === 0) return res.status(404).json({ error: 'Event not found or not authorized' });
     res.status(200).json(data[0]);
   } catch (error) {
@@ -93,17 +102,22 @@ router.put('/events/:id', async (req, res) => {
   }
 });
 
-// DELETE /api/admin/events/:id - Supprimer un événement
-router.delete('/events/:id', async (req, res) => {
+// DELETE /api/admin/events_v2/:id - Supprimer un événement
+router.delete('/events_v2/:id', async (req, res) => {
   const { id } = req.params;
   try {
     const { error } = await supabase
-      .from('events')
+      .from('events_v2')
       .delete()
-      .eq('id', id)
-      .eq('church_id', req.user.church_id);
-    if (error) throw error;
-    res.status(204).send(); // No Content
+      .eq('id', id);
+
+    if (error) {
+        if (error.code === 'PGRST116') {
+            return res.status(404).json({ error: 'Event not found or not authorized' });
+        }
+        throw error;
+    }
+    res.status(204).send();
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -112,19 +126,18 @@ router.delete('/events/:id', async (req, res) => {
 
 // --- Endpoints de gestion des participants (protégés Admin) ---
 
-// GET /api/admin/attendees - Lister tous les participants de tous les événements
-router.get('/attendees', async (req, res) => {
+// GET /api/admin/attendees_v2 - Lister tous les participants de tous les événements
+router.get('/attendees_v2', async (req, res) => {
   try {
     const { data, error } = await supabase
-      .from('attendees')
+      .from('attendees_v2')
       .select(`
         *,
-        events (
+        events_v2 (
           name_fr,
           name_en
         )
       `)
-      .eq('church_id', req.user.church_id)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -135,18 +148,23 @@ router.get('/attendees', async (req, res) => {
   }
 });
 
-// GET /api/admin/events/:eventId/attendees - Lister les participants d'un événement
-router.get('/events/:eventId/attendees', async (req, res) => {
+// GET /api/admin/events_v2/:eventId/attendees - Lister les participants d'un événement
+router.get('/events_v2/:eventId/attendees', async (req, res) => {
   const { eventId } = req.params;
+
   try {
     const { data: attendees, count, error } = await supabase
-      .from('attendees')
+      .from('attendees_v2')
       .select('*', { count: 'exact' })
       .eq('event_id', eventId)
-      .eq('church_id', req.user.church_id)
       .order('created_at', { ascending: true });
 
-    if (error) throw error;
+    if (error) {
+        if (error.code === 'PGRST116') {
+            return res.status(404).json({ error: 'Attendees not found or not authorized for this event' });
+        }
+        throw error;
+    }
     res.status(200).json({ attendees, count });
   } catch (error) {
     console.error('Fetch attendees error:', error.message);
@@ -154,29 +172,37 @@ router.get('/events/:eventId/attendees', async (req, res) => {
   }
 });
 
-// POST /api/admin/events/:eventId/send-thanks - Envoyer un e-mail de remerciement
-router.post('/events/:eventId/send-thanks', async (req, res) => {
+// POST /api/admin/events_v2/:eventId/send-thanks - Envoyer un e-mail de remerciement
+router.post('/events_v2/:eventId/send-thanks', async (req, res) => {
   const { eventId } = req.params;
   const { subject, message } = req.body;
 
   try {
     const { data: eventData, error: eventError } = await supabase
-      .from('events')
+      .from('events_v2')
       .select('name_fr, name_en')
       .eq('id', eventId)
-      .eq('church_id', req.user.church_id)
       .single();
 
-    if (eventError) throw eventError;
+    if (eventError) {
+        if (eventError.code === 'PGRST116') {
+            return res.status(404).json({ error: 'Event not found or not authorized' });
+        }
+        throw eventError;
+    }
     if (!eventData) return res.status(404).json({ error: 'Event not found or not authorized' });
 
     const { data: attendees, error: attendeesError } = await supabase
-      .from('attendees')
+      .from('attendees_v2')
       .select('email, full_name')
-      .eq('event_id', eventId)
-      .eq('church_id', req.user.church_id);
+      .eq('event_id', eventId);
 
-    if (attendeesError) throw attendeesError;
+    if (attendeesError) {
+        if (attendeesError.code === 'PGRST116') {
+            return res.status(404).json({ error: 'Attendees not found or not authorized for this event' });
+        }
+        throw attendeesError;
+    }
 
     if (attendees.length === 0) {
       return res.status(404).json({ message: 'No attendees found for this event to send emails.' });
@@ -212,25 +238,33 @@ router.post('/checkin-event/:eventId', async (req, res) => {
   const { eventId } = req.params;
   try {
     const { data: event, error: fetchError } = await supabase
-      .from('events')
+      .from('events_v2')
       .select('checkin_count')
       .eq('id', eventId)
-      .eq('church_id', req.user.church_id)
       .single();
 
-    if (fetchError) throw fetchError;
+    if (fetchError) {
+        if (fetchError.code === 'PGRST116') {
+            return res.status(404).json({ error: 'Event not found or not authorized' });
+        }
+        throw fetchError;
+    }
     if (!event) return res.status(404).json({ error: 'Event not found or not authorized' });
 
     const newCheckinCount = (event.checkin_count || 0) + 1;
 
     const { data, error } = await supabase
-      .from('events')
+      .from('events_v2')
       .update({ checkin_count: newCheckinCount })
       .eq('id', eventId)
-      .eq('church_id', req.user.church_id)
       .select();
 
-    if (error) throw error;
+    if (error) {
+        if (error.code === 'PGRST116') {
+            return res.status(404).json({ error: 'Event not found or not authorized' });
+        }
+        throw error;
+    }
     res.status(200).json({ message: 'Check-in count updated successfully', checkin_count: newCheckinCount });
   } catch (error) {
     console.error('Error updating check-in count:', error.message);
@@ -243,21 +277,29 @@ router.get('/events/:eventId/statistics', async (req, res) => {
   const { eventId } = req.params;
   try {
     const { count: attendeeCount, error: attendeesError } = await supabase
-      .from('attendees')
+      .from('attendees_v2')
       .select('*', { count: 'exact' })
-      .eq('event_id', eventId)
-      .eq('church_id', req.user.church_id);
+      .eq('event_id', eventId);
 
-    if (attendeesError) throw attendeesError;
+    if (attendeesError) {
+        if (attendeesError.code === 'PGRST116') {
+            return res.status(404).json({ error: 'Attendees not found or not authorized for this event' });
+        }
+        throw attendeesError;
+    }
 
     const { data: event, error: eventError } = await supabase
-      .from('events')
+      .from('events_v2')
       .select('checkin_count')
       .eq('id', eventId)
-      .eq('church_id', req.user.church_id)
       .single();
 
-    if (eventError) throw eventError;
+    if (eventError) {
+        if (eventError.code === 'PGRST116') {
+            return res.status(404).json({ error: 'Event not found or not authorized' });
+        }
+        throw eventError;
+    }
     if (!event) return res.status(404).json({ error: 'Event not found or not authorized' });
 
     res.status(200).json({
@@ -265,7 +307,6 @@ router.get('/events/:eventId/statistics', async (req, res) => {
       checked_in_attendees: event.checkin_count || 0,
     });
   } catch (error) {
-    console.error('Error fetching event statistics:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -276,13 +317,17 @@ router.get('/events/:eventId/qrcode-checkin', async (req, res) => {
   const { eventId } = req.params;
   try {
     const { data: event, error: eventError } = await supabase
-      .from('events')
+      .from('events_v2')
       .select('id')
       .eq('id', eventId)
-      .eq('church_id', req.user.church_id)
       .single();
 
-    if (eventError) throw eventError;
+    if (eventError) {
+        if (eventError.code === 'PGRST116') {
+            return res.status(404).json({ error: 'Event not found or not authorized' });
+        }
+        throw eventError;
+    }
     if (!event) return res.status(404).json({ error: 'Event not found or not authorized' });
 
     const backendBaseUrl = process.env.BACKEND_BASE_URL || 'http://localhost:5001';
@@ -304,13 +349,17 @@ router.get('/events/:eventId/form-fields', async (req, res) => {
   const { eventId } = req.params;
   try {
     const { data, error } = await supabase
-      .from('form_fields')
+      .from('form_fields_v2')
       .select('*')
       .eq('event_id', eventId)
-      .eq('church_id', req.user.church_id)
       .order('order', { ascending: true });
 
-    if (error) throw error;
+    if (error) {
+        if (error.code === 'PGRST116') {
+            return res.status(404).json({ error: 'Form fields not found or not authorized for this event' });
+        }
+        throw error;
+    }
     res.status(200).json(data);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -324,7 +373,7 @@ router.post('/events/:eventId/form-fields', async (req, res) => {
 
   try {
     const { data, error } = await supabase
-      .from('form_fields')
+      .from('form_fields_v2')
       .insert([{ event_id: eventId, label_fr, label_en, field_type, is_required, order, church_id: req.user.church_id }])
       .select();
 
@@ -342,12 +391,16 @@ router.put('/form-fields/:fieldId', async (req, res) => {
 
   try {
     const { data, error } = await supabase
-      .from('form_fields')
+      .from('form_fields_v2')
       .update({ label_fr, label_en, field_type, is_required, order })
       .eq('id', fieldId)
-      .eq('church_id', req.user.church_id)
       .select();
-    if (error) throw error;
+    if (error) {
+        if (error.code === 'PGRST116') {
+            return res.status(404).json({ error: 'Form field not found or not authorized' });
+        }
+        throw error;
+    }
     if (!data || data.length === 0) return res.status(404).json({ error: 'Form field not found or not authorized' });
     res.status(200).json(data[0]);
   } catch (error) {
@@ -361,12 +414,16 @@ router.delete('/form-fields/:fieldId', async (req, res) => {
 
   try {
     const { error } = await supabase
-      .from('form_fields')
+      .from('form_fields_v2')
       .delete()
-      .eq('id', fieldId)
-      .eq('church_id', req.user.church_id);
+      .eq('id', fieldId);
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return res.status(404).json({ error: 'Form field not found or not authorized' });
+      }
+      throw error;
+    }
     res.status(204).send();
   } catch (error) {
     res.status(500).json({ error: error.message });

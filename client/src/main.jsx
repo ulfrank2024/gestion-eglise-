@@ -27,6 +27,9 @@ import AdminChurchUsersPage from './pages/AdminChurchUsersPage'; // Nouvelle pag
 import SuperAdminLayout from './layouts/SuperAdminLayout';
 import SuperAdminLoginPage from './pages/SuperAdminLoginPage';
 import SuperAdminDashboardPage from './pages/SuperAdminDashboardPage';
+import SuperAdminEventsPage from './pages/SuperAdminEventsPage';
+import SuperAdminEventsByChurchPage from './pages/SuperAdminEventsByChurchPage'; // Sera créé à l'étape suivante
+import ChurchRegistrationPage from './pages/ChurchRegistrationPage';
 
 // Public Pages
 import EventPage from './pages/EventPage';
@@ -64,6 +67,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           {/* Super Admin Login - No Layout */}
           <Route path="/super-admin/login" element={<SuperAdminLoginPage />} />
 
+          {/* Church Registration - No Layout */}
+          <Route path="/church-register/:token" element={<ChurchRegistrationPage />} />
+
           {/* Admin Routes with Layout */}
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboardPage />} /> {/* Le nouveau Dashboard sera la page par défaut */}
@@ -83,6 +89,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Route path="/super-admin" element={<SuperAdminLayout />}>
             <Route index element={<SuperAdminDashboardPage />} />
             <Route path="dashboard" element={<SuperAdminDashboardPage />} />
+            <Route path="events" element={<SuperAdminEventsPage />} />
+            <Route path="events/:churchId" element={<SuperAdminEventsByChurchPage />} />
+            <Route path="events/:churchId/details/:id" element={<AdminEventDetailPage />} />
             {/* Ajouter d'autres routes Super Admin ici */}
           </Route>
         </Routes>

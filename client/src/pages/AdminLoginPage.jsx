@@ -72,7 +72,7 @@ function AdminLoginPage() {
             className="inputStyle"
           />
           <button type="submit" disabled={loading} className="buttonStyle">
-            {loading ? 'Logging in...' : t('login')}
+            {loading ? t('login.logging_in') : t('login')}
           </button>
         </form>
       </div>

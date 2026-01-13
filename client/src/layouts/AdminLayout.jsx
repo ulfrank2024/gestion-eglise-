@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import defaultLogo from '../assets/logo_eden.jpg';
-import { MdEvent, MdLeaderboard, MdExpandMore, MdExpandLess, MdSettings, MdGroupAdd, MdHistory } from 'react-icons/md';
+import { MdEvent, MdLeaderboard, MdExpandMore, MdExpandLess, MdSettings, MdGroupAdd, MdHistory, MdLogout } from 'react-icons/md';
 import { api } from '../api/api';
 import { supabase } from '../supabaseClient';
 
@@ -23,27 +23,18 @@ function AdminLayout() {
   useEffect(() => {
     const fetchAuthInfoAndChurchDetails = async () => {
       try {
+        // Vérifier qu'il y a une session Supabase
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
         if (sessionError || !session) {
           throw new Error('No active session.');
         }
 
-        const { user } = session;
-        
-        // Simulating the user_metadata or directly getting from localstorage
-        const storedToken = localStorage.getItem('supabase.auth.token');
-        let parsedUser = null;
-        if (storedToken) {
-            try {
-                parsedUser = JSON.parse(storedToken).user;
-            } catch (e) {
-                console.error("Error parsing user token:", e);
-            }
-        }
-        
-        const currentUserRole = parsedUser?.user_metadata?.church_role;
-        const currentChurchId = parsedUser?.user_metadata?.church_id;
+        // Récupérer les informations de l'utilisateur via l'API
+        const userInfo = await api.auth.me();
+
+        const currentUserRole = userInfo.church_role;
+        const currentChurchId = userInfo.church_id;
 
         if (!currentUserRole || !currentChurchId) {
             setError(t('error_loading_user_data'));
@@ -56,7 +47,7 @@ function AdminLayout() {
 
         const details = await api.admin.getChurchDetails(currentChurchId);
         setChurchDetails(details);
-        
+
       } catch (err) {
         console.error('Error loading auth info or church details:', err);
         setError(t('error_loading_user_data'));
@@ -74,6 +65,20 @@ function AdminLayout() {
 
   const toggleSection = (section) => {
     setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  const handleLogout = async () => {
+    try {
+      await api.auth.logout();
+      await supabase.auth.signOut();
+      localStorage.removeItem('supabase.auth.token');
+      navigate('/admin/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Même en cas d'erreur, on déconnecte l'utilisateur localement
+      localStorage.removeItem('supabase.auth.token');
+      navigate('/admin/login');
+    }
   };
 
   const [hoveredItem, setHoveredItem] = useState(null);
@@ -130,12 +135,10 @@ function AdminLayout() {
     return <div className="text-red-500">{error}</div>;
   }
 
-  if (userRole === 'super_admin') {
-    navigate('/super-admin/dashboard');
-    return null;
-  }
-
-  if (userRole !== 'church_admin') {
+  // Les Super Admins sont autorisés à utiliser les routes Admin.
+  // Les Church Admins sont autorisés.
+  // Tout autre rôle est interdit.
+  if (userRole !== 'super_admin' && userRole !== 'church_admin') {
       return <div className="text-red-500">{t('forbidden_access')}</div>;
   }
 
@@ -264,8 +267,33 @@ function AdminLayout() {
           </ul>
         </div>
         
-        <div style={{ marginTop: 'auto', paddingTop: '20px', borderTop: '1px solid #ddd', marginBottom: '15px' }}>
-          <p style={{ marginBottom: '10px' }}>{t('language_switcher')}:</p>
+        <div style={{ marginTop: 'auto', paddingTop: '20px', borderTop: '1px solid #ddd' }}>
+          <button
+            onClick={handleLogout}
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              cursor: 'pointer',
+              backgroundColor: '#dc3545',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '15px',
+              fontSize: '14px',
+              fontWeight: '500',
+              transition: 'background-color 0.2s'
+            }}
+            onMouseEnter={(e) => e.target.style.backgroundColor = '#c82333'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = '#dc3545'}
+          >
+            <MdLogout style={{ marginRight: '8px', fontSize: '18px' }} />
+            {t('logout') || 'Déconnexion'}
+          </button>
+
+          <p style={{ marginBottom: '10px', fontSize: '14px' }}>{t('language_switcher')}:</p>
           <button onClick={() => handleLanguageChange('fr')} style={{ marginRight: '5px', padding: '8px 12px', cursor: 'pointer', fontWeight: i18n.language === 'fr' ? 'bold' : 'normal' }}>FR</button>
           <button onClick={() => handleLanguageChange('en')} style={{ padding: '8px 12px', cursor: 'pointer', fontWeight: i18n.language === 'en' ? 'bold' : 'normal' }}>EN</button>
         </div>

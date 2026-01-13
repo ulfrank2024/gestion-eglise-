@@ -1,5 +1,5 @@
 const express = require('express');
-const { supabase } = require('../db/supabase');
+const { supabase, supabaseAdmin } = require('../db/supabase');
 const router = express.Router();
 const { transporter } = require('../services/mailer'); // Importer le transporter
 
@@ -8,7 +8,7 @@ router.get('/:churchId/events', async (req, res) => {
   const { churchId } = req.params;
   try {
     const { data, error } = await supabase
-      .from('events')
+      .from('events_v2')
       .select('id, name_fr, name_en, background_image_url') // Sélectionner les champs publics nécessaires
       .eq('church_id', churchId) // Filtrer par churchId
       .eq('is_archived', false) // Exclure les événements archivés
@@ -26,7 +26,7 @@ router.get('/:churchId/events/:id', async (req, res) => {
   const { churchId, id } = req.params;
   try {
     const { data, error } = await supabase
-      .from('events')
+      .from('events_v2')
       .select('id, name_fr, name_en, description_fr, description_en, background_image_url, event_start_date') // Sélectionner aussi les dates
       .eq('id', id)
       .eq('church_id', churchId) // Filtrer par churchId
@@ -46,7 +46,7 @@ router.get('/:churchId/events/:eventId/form-fields', async (req, res) => {
     const { churchId, eventId } = req.params;
     try {
       const { data, error } = await supabase
-        .from('form_fields')
+        .from('form_fields_v2')
         .select('*')
         .eq('event_id', eventId)
         .eq('church_id', churchId) // Filtrer par churchId
@@ -70,7 +70,7 @@ router.post('/:churchId/events/:eventId/register', async (req, res) => {
 
   try {
     const { data: eventCheck, error: eventCheckError } = await supabase
-      .from('events')
+      .from('events_v2')
       .select('id')
       .eq('id', eventId)
       .eq('church_id', churchId)
@@ -81,7 +81,7 @@ router.post('/:churchId/events/:eventId/register', async (req, res) => {
     if (!eventCheck) return res.status(404).json({ error: 'Event not found or is no longer active for this church' });
 
     const { data: existingAttendee, error: checkError } = await supabase
-      .from('attendees')
+      .from('attendees_v2')
       .select('id')
       .eq('event_id', eventId)
       .eq('church_id', churchId)
@@ -96,7 +96,7 @@ router.post('/:churchId/events/:eventId/register', async (req, res) => {
     }
 
     const { data, error } = await supabase
-      .from('attendees')
+      .from('attendees_v2')
       .insert([{ 
         event_id: eventId, 
         full_name: fullName, 
@@ -109,7 +109,7 @@ router.post('/:churchId/events/:eventId/register', async (req, res) => {
     if (error) throw error;
 
     const { data: eventDetails, error: eventError } = await supabase
-        .from('events')
+        .from('events_v2')
         .select('name_fr, name_en, description_fr, description_en, event_start_date')
         .eq('id', eventId)
         .eq('church_id', churchId)
@@ -158,7 +158,7 @@ router.get('/:churchId/checkin/:eventId', async (req, res) => {
   const { churchId, eventId } = req.params;
   try {
     const { data: event, error: fetchError } = await supabase
-      .from('events')
+      .from('events_v2')
       .select('checkin_count')
       .eq('id', eventId)
       .eq('church_id', churchId)
@@ -170,7 +170,7 @@ router.get('/:churchId/checkin/:eventId', async (req, res) => {
     const newCheckinCount = (event.checkin_count || 0) + 1;
 
     const { error } = await supabase
-      .from('events')
+      .from('events_v2')
       .update({ checkin_count: newCheckinCount })
       .eq('id', eventId)
       .eq('church_id', churchId);
@@ -184,6 +184,85 @@ router.get('/:churchId/checkin/:eventId', async (req, res) => {
     console.error('Error during check-in:', error.message);
     res.status(500).send('An error occurred during check-in.');
   }
+});
+
+router.post('/churches/register', async (req, res) => {
+    const { token, churchName, subdomain, location, email, phone, adminName, password, logoFile } = req.body;
+
+    if (!token || !churchName || !subdomain || !email || !password) {
+        return res.status(400).json({ error: 'Missing required fields.' });
+    }
+
+    try {
+        // 1. Valider le token
+        const { data: invitation, error: tokenError } = await supabaseAdmin
+            .from('church_invitations')
+            .select('*')
+            .eq('token', token)
+            .single();
+
+        if (tokenError || !invitation) {
+            return res.status(404).json({ error: 'Invitation not found.' });
+        }
+
+        if (new Date(invitation.expires_at) < new Date()) {
+            return res.status(400).json({ error: 'Invitation has expired.' });
+        }
+
+        // 2. Créer l'utilisateur
+        const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
+            email: invitation.email, // Utiliser l'email de l'invitation
+            password,
+            user_metadata: { full_name: adminName },
+            email_confirm: true, // L'utilisateur est invité, on peut considérer l'email comme vérifié
+        });
+
+        if (userError) throw userError;
+
+        const userId = userData.user.id;
+
+        // 3. Créer l'église
+        const { data: churchData, error: churchError } = await supabaseAdmin
+            .from('churches_v2')
+            .insert({
+                name: churchName,
+                subdomain,
+                location,
+                email,
+                phone,
+                logo_url: null, // Le logo sera géré séparément si uploadé
+                created_by_user_id: userId,
+            })
+            .select()
+            .single();
+
+        if (churchError) throw churchError;
+
+        const churchId = churchData.id;
+
+        // 4. Lier l'utilisateur à l'église avec le rôle 'church_admin'
+        const { error: roleError } = await supabaseAdmin
+            .from('church_users_v2')
+            .insert({
+                user_id: userId,
+                church_id: churchId,
+                role: 'church_admin',
+            });
+
+        if (roleError) throw roleError;
+        
+        // 5. Supprimer le token d'invitation
+        await supabaseAdmin
+            .from('church_invitations')
+            .delete()
+            .eq('id', invitation.id);
+
+        res.status(201).json({ message: 'Church and admin account created successfully.' });
+
+    } catch (error) {
+        console.error('Church registration error:', error);
+        res.status(500).json({ error: error.message });
+    }
 });
 
 module.exports = router;

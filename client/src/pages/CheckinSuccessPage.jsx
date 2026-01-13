@@ -12,11 +12,6 @@ function CheckinSuccessPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const biblicalQuote = {
-    fr: "Car là où deux ou trois sont assemblés en mon nom, je suis au milieu d'eux. - Matthieu 18:20",
-    en: "For where two or three gather in my name, there am I with them. - Matthew 18:20",
-  };
-
   useEffect(() => {
     const fetchEventName = async () => {
       const queryParams = new URLSearchParams(location.search);
@@ -50,7 +45,7 @@ function CheckinSuccessPage() {
       <div className="checkin-success-card">
         <FaCheckCircle className="success-icon" />
         <h1>{t('welcome_to_event', { eventName: eventName })}</h1>
-        <p className="biblical-quote">{biblicalQuote[i18n.language]}</p>
+        <p className="biblical-quote">{t('bible_verse_checkin')}</p>
         {error && <p className="error-message">{error}</p>}
       </div>
     </div>

@@ -58,28 +58,42 @@ export const api = {
       const { data } = await apiClient.post('/auth/logout');
       return data;
     },
+    me: async () => {
+      const { data } = await apiClient.get('/auth/me');
+      return data;
+    },
   },
   
   superAdmin: {
     // --- Churches ---
     listChurches: async () => {
-      const { data } = await apiClient.get('/super-admin/churches');
+      const { data } = await apiClient.get('/super-admin/churches_v2'); // Utilise la table churches_v2
       return data;
     },
     createChurch: async (churchData) => {
-      const { data } = await apiClient.post('/super-admin/churches', churchData);
+      const { data } = await apiClient.post('/super-admin/churches_v2', churchData);
       return data;
     },
-    getChurch: async (id) => {
-      const { data } = await apiClient.get(`/super-admin/churches/${id}`);
+    getChurch: async (churchId) => { 
+      const { data } = await apiClient.get(`/super-admin/churches_v2/${churchId}`);
       return data;
     },
-    updateChurch: async (id, churchData) => {
-      const { data } = await apiClient.put(`/super-admin/churches/${id}`, churchData);
+    updateChurch: async (churchId, churchData) => { 
+      const { data } = await apiClient.put(`/super-admin/churches_v2/${churchId}`, churchData);
       return data;
     },
-    deleteChurch: async (id) => {
-      await apiClient.delete(`/super-admin/churches/${id}`);
+    deleteChurch: async (churchId) => { 
+      await apiClient.delete(`/super-admin/churches_v2/${churchId}`);
+    },
+    // --- Events ---
+    listEventsByChurch: async (churchId) => {
+      const { data } = await apiClient.get(`/super-admin/churches_v2/${churchId}/events`);
+      return data;
+    },
+    // --- Invitations ---
+    inviteChurch: async (email) => {
+      const { data } = await apiClient.post('/super-admin/churches_v2/invite', { email });
+      return data;
     },
   },
 
@@ -87,79 +101,77 @@ export const api = {
     // --- Events ---
     listEvents: async (isArchived) => {
         const params = isArchived !== undefined ? { is_archived: isArchived } : {};
-        const { data } = await apiClient.get('/admin/events', { params });
+        const { data } = await apiClient.get('/admin/events_v2', { params });
         return data;
     },
     createEvent: async (eventData) => {
-        const { data } = await apiClient.post('/admin/events', eventData);
+        const { data } = await apiClient.post('/admin/events_v2', eventData);
         return data;
     },
     getEventDetails: async (id) => {
-        const { data } = await apiClient.get(`/admin/events/${id}`);
+        const { data } = await apiClient.get(`/admin/events_v2/${id}`);
         return data;
     },
     updateEvent: async (id, eventData) => {
-        const { data } = await apiClient.put(`/admin/events/${id}`, eventData);
+        const { data } = await apiClient.put(`/admin/events_v2/${id}`, eventData);
         return data;
     },
     deleteEvent: async (id) => {
-        await apiClient.delete(`/admin/events/${id}`);
+        await apiClient.delete(`/admin/events_v2/${id}`);
     },
     getCheckinQRCode: async (id) => {
-        const { data } = await apiClient.get(`/admin/events/${id}/qrcode-checkin`);
+        const { data } = await apiClient.get(`/admin/events_v2/${id}/qrcode-checkin`);
         return data;
     },
     listAttendees: async (eventId) => {
-        const { data } = await apiClient.get(`/admin/events/${eventId}/attendees`);
+        const { data } = await apiClient.get(`/admin/events_v2/${eventId}/attendees`);
         return data;
     },
     sendThankYouEmails: async (eventId, emailData) => {
-        await apiClient.post(`/admin/events/${eventId}/send-thanks`, emailData);
+        await apiClient.post(`/admin/events_v2/${eventId}/send-thanks`, emailData);
     },
     // --- Form Fields ---
     getEventFormFields: async (eventId) => {
-        const { data } = await apiClient.get(`/admin/events/${eventId}/form-fields`);
+        const { data } = await apiClient.get(`/admin/events_v2/${eventId}/form-fields`);
         return data;
     },
     createFormField: async (eventId, fieldData) => {
-        const { data } = await apiClient.post(`/admin/events/${eventId}/form-fields`, fieldData);
+        const { data } = await apiClient.post(`/admin/events_v2/${eventId}/form-fields`, fieldData);
         return data;
     },
     updateFormField: async (fieldId, fieldData) => {
-        const { data } = await apiClient.put(`/admin/form-fields/${fieldId}`, fieldData);
+        const { data } = await apiClient.put(`/admin/form-fields_v2/${fieldId}`, fieldData);
         return data;
     },
     deleteFormField: async (fieldId) => {
-        await apiClient.delete(`/admin/form-fields/${fieldId}`);
+        await apiClient.delete(`/admin/form-fields_v2/${fieldId}`);
     },
     getEventStatistics: async (id) => {
-        const { data } = await apiClient.get(`/admin/events/${id}/statistics`);
+        const { data } = await apiClient.get(`/admin/events_v2/${id}/statistics`);
         return data;
     },
-    // ... autres fonctions pour les admins
     getChurchDetails: async (churchId) => {
-      const { data } = await apiClient.get(`/church-admin/${churchId}/settings`);
+      const { data } = await apiClient.get(`/church-admin/churches_v2/${churchId}/settings`);
       return data;
     },
     updateChurchSettings: async (churchId, churchData) => {
-      const { data } = await apiClient.put(`/church-admin/${churchId}/settings`, churchData);
+      const { data } = await apiClient.put(`/church-admin/churches_v2/${churchId}/settings`, churchData);
       return data;
     },
-    // --- Church Users ---
     listChurchUsers: async (churchId) => {
-      const { data } = await apiClient.get(`/church-admin/${churchId}/users`);
+      const { data } = await apiClient.get(`/church-admin/churches_v2/${churchId}/users`);
       return data;
     },
     inviteChurchUser: async (churchId, userData) => {
-      const { data } = await apiClient.post(`/church-admin/${churchId}/users`, userData);
+      const { data } = await apiClient.post(`/church-admin/churches_v2/${churchId}/users`, userData);
       return data;
     },
     updateChurchUserRole: async (churchId, userId, newRole) => {
-      const { data } = await apiClient.put(`/church-admin/${churchId}/users/${userId}`, { role: newRole });
+      const { data } = await apiClient.put(`/church-admin/churches_v2/${churchId}/users/${userId}`, { role: newRole });
       return data;
     },
     removeChurchUser: async (churchId, userId) => {
-      await apiClient.delete(`/church-admin/${churchId}/users/${userId}`);
+      await apiClient.delete(`/church-admin/churches_v2/${churchId}/users/${userId}`);
     },
   },
 
@@ -180,7 +192,9 @@ export const api = {
       const { data } = await apiClient.post(`/public/${churchId}/events/${eventId}/register`, payload);
       return data;
     },
-    // ... autres fonctions publiques
+    registerChurch: async (registrationData) => {
+      const { data } = await apiClient.post('/public/churches/register', registrationData);
+      return data;
+    },
   },
 };
-

@@ -20,7 +20,7 @@ app.use((req, res, next) => {
 });
 
 // Importer le middleware de protection et isSuperAdmin
-const { protect, isSuperAdmin } = require('./middleware/auth');
+const { protect, isSuperAdmin, isSuperAdminOrChurchAdmin } = require('./middleware/auth');
 
 // Importer les routeurs
 const authRoutes = require('./routes/auth');
@@ -35,7 +35,8 @@ const allowedOrigins = [
   'https://estion-evenemts-cite-eden-frontend.vercel.app',
   'https://estion-evenemts-cite-eden-frontend-phmoutzr6.vercel.app',
   'http://localhost:3000', // Ajoutez d'autres origines de développement si nécessaire
-  'http://localhost:5173' // Exemple pour un projet Vite en développement
+  'http://localhost:5173', // Exemple pour un projet Vite en développement
+  'http://localhost:5174' // Ajout pour le développement local du frontend
 ];
 
 app.use(cors({
@@ -55,7 +56,7 @@ app.use(express.json());
 // Utilisation des routes
 app.use('/api/auth', authRoutes);       // Routes pour le login/logout
 app.use('/api/public', publicRoutes);   // Routes publiques (détails d'événement, inscription)
-app.use('/api/admin', protect, adminRoutes); // Routes d'administration (CRUD événements, gestion participants)
+app.use('/api/admin', protect, isSuperAdminOrChurchAdmin, adminRoutes); // Routes d'administration (CRUD événements, gestion participants)
 app.use('/api/super-admin', protect, isSuperAdmin, superAdminRoutes); // Routes Super-Admin
 app.use('/api/church-admin', protect, churchAdminRoutes); // Routes Admin d'Église
 
