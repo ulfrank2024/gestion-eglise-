@@ -30,14 +30,24 @@ const superAdminRoutes = require('./routes/superAdminRoutes');
 const churchAdminRoutes = require('./routes/churchAdminRoutes'); // Nouvelle importation
 
 // Middleware
-// NOTE: Utilisation d'une configuration CORS permissive pour le débogage.
 const allowedOrigins = [
-  'https://estion-evenemts-cite-eden-frontend.vercel.app',
-  'https://estion-evenemts-cite-eden-frontend-phmoutzr6.vercel.app',
-  'http://localhost:3000', // Ajoutez d'autres origines de développement si nécessaire
-  'http://localhost:5173', // Exemple pour un projet Vite en développement
-  'http://localhost:5174' // Ajout pour le développement local du frontend
-];
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  process.env.FRONTEND_BASE_URL // L'URL de production du frontend
+].filter(Boolean); // Retire les entrées vides si une variable n'est pas définie
+
+// whitelist Vercel preview domains
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && origin.includes('vercel.app')) {
+    if (!allowedOrigins.includes(origin)) {
+      allowedOrigins.push(origin);
+    }
+  }
+  next();
+});
+
 
 app.use(cors({
   origin: function (origin, callback) {
