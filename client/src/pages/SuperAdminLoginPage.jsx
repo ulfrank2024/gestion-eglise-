@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../supabaseClient';
-import logo from '../assets/logo_eden.jpg'; // Importer le logo
+import logo from '../assets/logo_eden.png'; // Importer le logo
 
 const SuperAdminLoginPage = () => {
   const { t } = useTranslation();
@@ -49,7 +49,7 @@ const SuperAdminLoginPage = () => {
         <div className="flex items-center justify-center w-1/2 bg-gradient-to-br from-indigo-600 to-purple-700">
           <div className="text-center">
             <img src={logo} alt="Logo" className="w-32 h-32 rounded-full mx-auto border-4 border-white shadow-xl" />
-            <p className="mt-4 text-white text-xl font-semibold">Eden Eve</p>
+            <p className="mt-4 text-white text-xl font-semibold">MY EDEN X</p>
             <p className="text-indigo-200 text-sm">Super Admin Portal</p>
           </div>
         </div>
