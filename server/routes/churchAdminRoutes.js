@@ -1,5 +1,5 @@
 const express = require('express');
-const { supabase } = require('../db/supabase');
+const { supabaseAdmin } = require('../db/supabase');
 const { protect, isAdminChurch } = require('../middleware/auth');
 
 const router = express.Router();
@@ -16,7 +16,7 @@ router.post('/churches_v2/:churchId/users', protect, isAdminChurch, async (req, 
   }
 
   try {
-    const { data: userData, error: userError } = await supabase.auth.admin.getUserByEmail(email);
+    const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserByEmail(email);
 
     let userId;
     if (userError && userError.message === 'User not found') {
@@ -26,7 +26,7 @@ router.post('/churches_v2/:churchId/users', protect, isAdminChurch, async (req, 
     }
     userId = userData.user.id;
 
-    const { data: existingChurchUser, error: existingChurchUserError } = await supabase
+    const { data: existingChurchUser, error: existingChurchUserError } = await supabaseAdmin
       .from('church_users_v2')
       .select('id')
       .eq('church_id', churchId)
@@ -40,7 +40,7 @@ router.post('/churches_v2/:churchId/users', protect, isAdminChurch, async (req, 
       return res.status(409).json({ error: 'User is already associated with this church.' });
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('church_users_v2')
       .insert([{ church_id: churchId, user_id: userId, role: role || 'member' }])
       .select();
@@ -63,7 +63,7 @@ router.get('/churches_v2/:churchId/users', protect, isAdminChurch, async (req, r
   }
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('church_users_v2')
       .select('*')
       .eq('church_id', churchId)
@@ -87,7 +87,7 @@ router.put('/churches_v2/:churchId/users/:userId', protect, isAdminChurch, async
   }
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('church_users_v2')
       .update({ role, updated_at: new Date() })
       .eq('church_id', churchId)
@@ -114,7 +114,7 @@ router.delete('/churches_v2/:churchId/users/:userId', protect, isAdminChurch, as
   }
 
   try {
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('church_users_v2')
       .delete()
       .eq('church_id', churchId)
@@ -138,7 +138,7 @@ router.put('/churches_v2/:churchId/settings', protect, isAdminChurch, async (req
   }
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('churches_v2')
       .update({ name, subdomain, logo_url, location, email, phone, updated_at: new Date() })
       .eq('id', churchId)
@@ -164,7 +164,7 @@ router.get('/churches_v2/:churchId/settings', protect, isAdminChurch, async (req
   }
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('churches_v2')
       .select('*')
       .eq('id', churchId)
