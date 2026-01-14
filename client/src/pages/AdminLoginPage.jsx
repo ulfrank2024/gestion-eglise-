@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../supabaseClient';
-import logo from '../assets/logo_eden.jpg';
+import logo from '../assets/logo_eden.png';
 import './AdminLoginPage.css'; // Importer le fichier CSS
 
 function AdminLoginPage() {

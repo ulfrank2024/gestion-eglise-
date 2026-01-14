@@ -231,6 +231,7 @@
     "sending_invitation": "Sending invitation...",
     "send_invitation": "Send Invitation",
     "church_registration.title": "Register Your Church",
+    "church_registration.subtitle": "Complete the information below",
     "church_registration.church_info": "Church Information",
     "church_registration.church_name": "Church Name",
     "church_registration.subdomain": "Subdomain (e.g., my-church.example.com)",
@@ -247,6 +248,38 @@
     "submit_registration": "Submit Registration",
     "events_for_church": "Events for {{churchName}}",
     "back_to_churches_list": "Back to Churches List",
-    "no_events_for_church": "No events for this church."
+    "no_events_for_church": "No events for this church.",
+    "super_admin_statistics": {
+      "title": "Platform Statistics",
+      "subtitle": "Overview of MY EDEN X performance",
+      "total_churches": "Total Churches",
+      "total_events": "Total Events",
+      "total_attendees": "Total Attendees",
+      "total_checkins": "Total Check-ins",
+      "top_churches": "Top Churches",
+      "recent_events": "Recent Events",
+      "events": "events",
+      "no_churches_yet": "No churches registered yet.",
+      "no_events_yet": "No events created yet.",
+      "error_loading": "Error loading statistics."
+    },
+    "church_detail": {
+      "error_loading": "Error loading church details.",
+      "error_deleting": "Error deleting church.",
+      "not_found": "Church not found.",
+      "location": "Location",
+      "email": "Email",
+      "phone": "Phone",
+      "created_at": "Created on",
+      "total_events": "Events",
+      "total_attendees": "Attendees",
+      "total_checkins": "Check-ins",
+      "church_admins": "Administrators",
+      "recent_events": "Recent Events",
+      "no_admins": "No administrators found.",
+      "no_events": "No events for this church."
+    },
+    "view_all": "View all",
+    "view_details": "View details"
   }
 }

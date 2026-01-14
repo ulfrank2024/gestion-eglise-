@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom'; // Importation de useNavigate
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api'; // Utilisation de notre objet api
-import logo from '../assets/logo_eden.jpg';
+import logo from '../assets/logo_eden.png';
 import './WelcomeCheckinPage.css';
 
 function WelcomeCheckinPage() {

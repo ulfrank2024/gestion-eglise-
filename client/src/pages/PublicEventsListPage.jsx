@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/api';
-import logo from '../assets/logo_eden.jpg';
+import logo from '../assets/logo_eden.png';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCalendarAlt, faInfoCircle, faUserShield } from '@fortawesome/free-solid-svg-icons';
 

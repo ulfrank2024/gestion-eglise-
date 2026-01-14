@@ -174,4 +174,174 @@ router.post('/churches_v2/invite', protect, isSuperAdmin, async (req, res) => {
   }
 });
 
+// GET /api/super-admin/churches_v2/:churchId/statistics - Statistiques d'une église spécifique
+router.get('/churches_v2/:churchId/statistics', protect, isSuperAdmin, async (req, res) => {
+  const { churchId } = req.params;
+  try {
+    // Nombre total d'événements de l'église
+    const { count: totalEvents, error: eventError } = await supabaseAdmin
+      .from('events_v2')
+      .select('*', { count: 'exact', head: true })
+      .eq('church_id', churchId);
+    if (eventError) throw eventError;
+
+    // Nombre total de participants de l'église
+    const { count: totalAttendees, error: attendeeError } = await supabaseAdmin
+      .from('attendees_v2')
+      .select('*', { count: 'exact', head: true })
+      .eq('church_id', churchId);
+    if (attendeeError) throw attendeeError;
+
+    // Total des check-ins de l'église
+    const { data: checkinData, error: checkinError } = await supabaseAdmin
+      .from('events_v2')
+      .select('checkin_count')
+      .eq('church_id', churchId);
+    if (checkinError) throw checkinError;
+    const totalCheckins = checkinData.reduce((sum, event) => sum + (event.checkin_count || 0), 0);
+
+    res.status(200).json({
+      total_events: totalEvents || 0,
+      total_attendees: totalAttendees || 0,
+      total_checkins: totalCheckins
+    });
+
+  } catch (error) {
+    console.error('Error fetching church statistics:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/super-admin/churches_v2/:churchId/users - Utilisateurs d'une église spécifique
+router.get('/churches_v2/:churchId/users', protect, isSuperAdmin, async (req, res) => {
+  const { churchId } = req.params;
+  try {
+    // Récupérer les utilisateurs associés à cette église
+    const { data: churchUsers, error: usersError } = await supabaseAdmin
+      .from('church_users')
+      .select('user_id, role')
+      .eq('church_id', churchId);
+
+    if (usersError) throw usersError;
+
+    if (!churchUsers || churchUsers.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    // Récupérer les détails des utilisateurs depuis auth.users via Supabase Admin
+    const userIds = churchUsers.map(cu => cu.user_id);
+    const { data: { users }, error: authError } = await supabaseAdmin.auth.admin.listUsers();
+
+    if (authError) throw authError;
+
+    // Filtrer et combiner les données
+    const usersWithRoles = churchUsers.map(cu => {
+      const authUser = users.find(u => u.id === cu.user_id);
+      return {
+        id: cu.user_id,
+        email: authUser?.email || 'N/A',
+        role: cu.role,
+        created_at: authUser?.created_at
+      };
+    });
+
+    res.status(200).json(usersWithRoles);
+
+  } catch (error) {
+    console.error('Error fetching church users:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/super-admin/statistics - Obtenir les statistiques globales de la plateforme
+router.get('/statistics', protect, isSuperAdmin, async (req, res) => {
+  try {
+    // Nombre total d'églises
+    const { count: totalChurches, error: churchError } = await supabaseAdmin
+      .from('churches_v2')
+      .select('*', { count: 'exact', head: true });
+    if (churchError) throw churchError;
+
+    // Nombre total d'événements
+    const { count: totalEvents, error: eventError } = await supabaseAdmin
+      .from('events_v2')
+      .select('*', { count: 'exact', head: true });
+    if (eventError) throw eventError;
+
+    // Nombre total de participants
+    const { count: totalAttendees, error: attendeeError } = await supabaseAdmin
+      .from('attendees_v2')
+      .select('*', { count: 'exact', head: true });
+    if (attendeeError) throw attendeeError;
+
+    // Total des check-ins (somme de checkin_count)
+    const { data: checkinData, error: checkinError } = await supabaseAdmin
+      .from('events_v2')
+      .select('checkin_count');
+    if (checkinError) throw checkinError;
+    const totalCheckins = checkinData.reduce((sum, event) => sum + (event.checkin_count || 0), 0);
+
+    // Top 5 églises avec le plus d'événements
+    const { data: churchesWithEvents, error: topChurchError } = await supabaseAdmin
+      .from('churches_v2')
+      .select(`
+        id,
+        name,
+        subdomain,
+        events_v2(count)
+      `)
+      .order('created_at', { ascending: false })
+      .limit(10);
+    if (topChurchError) throw topChurchError;
+
+    const topChurches = churchesWithEvents
+      .map(church => ({
+        id: church.id,
+        name: church.name,
+        subdomain: church.subdomain,
+        event_count: church.events_v2[0]?.count || 0
+      }))
+      .sort((a, b) => b.event_count - a.event_count)
+      .slice(0, 5);
+
+    // 5 événements les plus récents avec leur église
+    const { data: recentEvents, error: recentError } = await supabaseAdmin
+      .from('events_v2')
+      .select(`
+        id,
+        name_fr,
+        name_en,
+        created_at,
+        church_id,
+        churches_v2(name),
+        attendees_v2(count)
+      `)
+      .order('created_at', { ascending: false })
+      .limit(5);
+    if (recentError) throw recentError;
+
+    const formattedRecentEvents = recentEvents.map(event => ({
+      id: event.id,
+      name_fr: event.name_fr,
+      name_en: event.name_en,
+      created_at: event.created_at,
+      church_name: event.churches_v2?.name || 'N/A',
+      attendee_count: event.attendees_v2[0]?.count || 0
+    }));
+
+    res.status(200).json({
+      total_churches: totalChurches || 0,
+      total_events: totalEvents || 0,
+      total_attendees: totalAttendees || 0,
+      total_checkins: totalCheckins,
+      top_churches: topChurches,
+      recent_events: formattedRecentEvents
+    });
+
+  } catch (error) {
+    console.error('Error fetching platform statistics:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

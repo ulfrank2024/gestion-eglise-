@@ -231,6 +231,7 @@
     "sending_invitation": "Envoi de l'invitation...",
     "send_invitation": "Envoyer l'invitation",
     "church_registration.title": "Inscription de votre église",
+    "church_registration.subtitle": "Complétez les informations ci-dessous",
     "church_registration.church_info": "Informations sur l'Église",
     "church_registration.church_name": "Nom de l'Église",
     "church_registration.subdomain": "Sous-domaine (ex: mon-eglise.example.com)",
@@ -247,6 +248,38 @@
     "submit_registration": "Soumettre l'inscription",
     "events_for_church": "Événements pour l'église {{churchName}}",
     "back_to_churches_list": "Retour à la liste des églises",
-    "no_events_for_church": "Aucun événement pour cette église."
+    "no_events_for_church": "Aucun événement pour cette église.",
+    "super_admin_statistics": {
+      "title": "Statistiques de la Plateforme",
+      "subtitle": "Vue d'ensemble des performances de MY EDEN X",
+      "total_churches": "Total Églises",
+      "total_events": "Total Événements",
+      "total_attendees": "Total Participants",
+      "total_checkins": "Total Check-ins",
+      "top_churches": "Top Églises",
+      "recent_events": "Événements Récents",
+      "events": "événements",
+      "no_churches_yet": "Aucune église enregistrée pour le moment.",
+      "no_events_yet": "Aucun événement créé pour le moment.",
+      "error_loading": "Erreur lors du chargement des statistiques."
+    },
+    "church_detail": {
+      "error_loading": "Erreur lors du chargement des détails de l'église.",
+      "error_deleting": "Erreur lors de la suppression de l'église.",
+      "not_found": "Église non trouvée.",
+      "location": "Localisation",
+      "email": "Email",
+      "phone": "Téléphone",
+      "created_at": "Créée le",
+      "total_events": "Événements",
+      "total_attendees": "Participants",
+      "total_checkins": "Check-ins",
+      "church_admins": "Administrateurs",
+      "recent_events": "Événements Récents",
+      "no_admins": "Aucun administrateur trouvé.",
+      "no_events": "Aucun événement pour cette église."
+    },
+    "view_all": "Voir tout",
+    "view_details": "Voir les détails"
   }
 }

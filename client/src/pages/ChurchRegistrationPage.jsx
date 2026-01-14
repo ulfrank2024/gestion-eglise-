@@ -3,10 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
 import { MdChurch, MdPerson, MdEmail, MdPhone, MdLocationOn, MdLock, MdImage, MdSubdirectoryArrowRight } from 'react-icons/md';
-import logo from '../assets/logo_eden.jpg';
+import logo from '../assets/logo_eden.png';
 
 const ChurchRegistrationPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+
+  const handleLanguageChange = (lang) => {
+    i18n.changeLanguage(lang);
+  };
   const { token } = useParams();
   const navigate = useNavigate();
 
@@ -103,11 +107,40 @@ const ChurchRegistrationPage = () => {
       <div className="max-w-4xl w-full bg-gray-800 rounded-lg shadow-2xl border border-gray-700 overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-indigo-600 to-purple-700 px-8 py-6">
-          <div className="flex items-center justify-center space-x-4">
-            <img src={logo} alt="Logo" className="w-16 h-16 rounded-full border-4 border-white shadow-xl" />
-            <div>
-              <h2 className="text-3xl font-bold text-white">{t('church_registration.title')}</h2>
-              <p className="text-indigo-100 text-sm mt-1">{t('church_registration.subtitle') || 'Complétez les informations ci-dessous'}</p>
+          <div className="flex items-center justify-between">
+            {/* Logo et Titre */}
+            <div className="flex items-center space-x-4">
+              <img src={logo} alt="Logo" className="w-16 h-16 rounded-full border-4 border-white shadow-xl" />
+              <div>
+                <h2 className="text-3xl font-bold text-white">{t('church_registration.title')}</h2>
+                <p className="text-indigo-100 text-sm mt-1">{t('church_registration.subtitle') || 'Complétez les informations ci-dessous'}</p>
+              </div>
+            </div>
+
+            {/* Sélecteur de langue */}
+            <div className="flex items-center space-x-2">
+              <button
+                type="button"
+                onClick={() => handleLanguageChange('fr')}
+                className={`px-3 py-1.5 rounded-lg font-medium text-sm transition-all ${
+                  i18n.language === 'fr'
+                    ? 'bg-white text-indigo-600 shadow-lg'
+                    : 'bg-white/20 text-white hover:bg-white/30'
+                }`}
+              >
+                FR
+              </button>
+              <button
+                type="button"
+                onClick={() => handleLanguageChange('en')}
+                className={`px-3 py-1.5 rounded-lg font-medium text-sm transition-all ${
+                  i18n.language === 'en'
+                    ? 'bg-white text-indigo-600 shadow-lg'
+                    : 'bg-white/20 text-white hover:bg-white/30'
+                }`}
+              >
+                EN
+              </button>
             </div>
           </div>
         </div>

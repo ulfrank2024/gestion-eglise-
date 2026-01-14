@@ -95,6 +95,20 @@ export const api = {
       const { data } = await apiClient.post('/super-admin/churches_v2/invite', { email });
       return data;
     },
+    // --- Statistics ---
+    getPlatformStatistics: async () => {
+      const { data } = await apiClient.get('/super-admin/statistics');
+      return data;
+    },
+    getChurchStatistics: async (churchId) => {
+      const { data } = await apiClient.get(`/super-admin/churches_v2/${churchId}/statistics`);
+      return data;
+    },
+    // --- Church Users ---
+    getChurchUsers: async (churchId) => {
+      const { data } = await apiClient.get(`/super-admin/churches_v2/${churchId}/users`);
+      return data;
+    },
   },
 
   admin: {

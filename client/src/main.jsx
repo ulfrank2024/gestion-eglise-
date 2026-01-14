@@ -28,7 +28,9 @@ import SuperAdminLayout from './layouts/SuperAdminLayout';
 import SuperAdminLoginPage from './pages/SuperAdminLoginPage';
 import SuperAdminDashboardPage from './pages/SuperAdminDashboardPage';
 import SuperAdminEventsPage from './pages/SuperAdminEventsPage';
-import SuperAdminEventsByChurchPage from './pages/SuperAdminEventsByChurchPage'; // Sera créé à l'étape suivante
+import SuperAdminEventsByChurchPage from './pages/SuperAdminEventsByChurchPage';
+import SuperAdminStatisticsPage from './pages/SuperAdminStatisticsPage';
+import SuperAdminChurchDetailPage from './pages/SuperAdminChurchDetailPage';
 import ChurchRegistrationPage from './pages/ChurchRegistrationPage';
 
 // Public Pages
@@ -92,7 +94,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="events" element={<SuperAdminEventsPage />} />
             <Route path="events/:churchId" element={<SuperAdminEventsByChurchPage />} />
             <Route path="events/:churchId/details/:id" element={<AdminEventDetailPage />} />
-            {/* Ajouter d'autres routes Super Admin ici */}
+            <Route path="statistics" element={<SuperAdminStatisticsPage />} />
+            <Route path="churches/:churchId" element={<SuperAdminChurchDetailPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

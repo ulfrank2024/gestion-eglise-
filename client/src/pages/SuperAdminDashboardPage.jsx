@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../api/api';
 import { useTranslation } from 'react-i18next';
+import { MdVisibility } from 'react-icons/md';
 import InviteChurchModal from '../components/InviteChurchModal';
 import EditChurchModal from '../components/EditChurchModal';
 import DeleteChurchModal from '../components/DeleteChurchModal';
@@ -167,6 +169,13 @@ const SuperAdminDashboardPage = () => {
                   {new Date(church.created_at).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right border-b border-gray-700 text-sm font-medium">
+                  <Link
+                    to={`/super-admin/churches/${church.id}`}
+                    className="text-emerald-400 hover:text-emerald-300 mr-4 inline-flex items-center"
+                  >
+                    <MdVisibility className="mr-1" />
+                    {t('view_details')}
+                  </Link>
                   <button
                     onClick={() => openEditModal(church)}
                     className="text-indigo-400 hover:text-indigo-300 mr-4"

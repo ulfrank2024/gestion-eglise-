@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import defaultLogo from '../assets/logo_eden.jpg';
+import defaultLogo from '../assets/logo_eden.png';
 import { MdEvent, MdLeaderboard, MdExpandMore, MdExpandLess, MdSettings, MdGroupAdd, MdHistory, MdLogout } from 'react-icons/md';
 import { api } from '../api/api';
 import { supabase } from '../supabaseClient';

@@ -6,7 +6,56 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Eden Eve is a multi-tenant event management platform for churches. It supports church-specific event creation, attendee registration with dynamic forms, QR code check-in, and email notifications. The platform uses role-based access control with Super Admins managing the platform and Church Admins managing their respective churches.
+**MY EDEN X** est une plateforme complète de gestion d'église multi-tenant. L'objectif est de fournir au pasteur (Admin Principal de l'église) tous les outils nécessaires pour gérer efficacement son église à travers une interface modulaire.
+
+### Vision du Projet
+
+Le pasteur se connecte et accède à un **dashboard avec des modules fonctionnels** :
+- 📅 **Événements** (✅ Développé) - Création d'événements, inscriptions, QR code check-in, emails
+- 👥 **Fidèles/Membres** (🔜 À développer) - Liste des membres, profils, historique
+- 💰 **Comptabilité** (🔜 À développer) - Dîmes, offrandes, dépenses, rapports financiers
+- 🙏 **Ministères** (🔜 À développer) - Groupes de service, équipes, assignation de rôles
+- 📊 **Statistiques** (🔜 À développer) - Tableaux de bord, analyses, tendances
+- 📢 **Communication** (🔜 À développer) - Annonces, newsletters, notifications
+- 🎵 **Cultes** (🔜 À développer) - Planning des cultes, ordre du jour, intervenants
+
+### Hiérarchie des Rôles
+
+1. **Super Admin** (Propriétaire de la plateforme)
+   - Gère toutes les églises de la plateforme
+   - Invite et crée de nouvelles églises
+   - Supervise l'ensemble du système
+   - Routes: `/super-admin/*`
+
+2. **Pasteur/Admin Église** (`church_admin`)
+   - Admin principal de son église
+   - Accède à tous les modules de son église
+   - Assigne des rôles aux membres
+   - Routes: `/admin/*`
+
+3. **Responsables de Ministère** (🔜 À développer)
+   - Accès limité aux modules assignés
+   - Ex: Responsable finances → accès comptabilité uniquement
+
+4. **Membres** (`member`)
+   - Accès à leur profil et aux informations publiques
+   - Inscription aux événements
+
+### État Actuel du Développement
+
+| Module | Statut | Description |
+|--------|--------|-------------|
+| Super Admin | 🔧 En cours | Interface de gestion des églises |
+| Authentification | ✅ Fait | Login, JWT, rôles |
+| Événements | ✅ Fait | CRUD, inscriptions, QR code |
+| Invitations Églises | ✅ Fait | Système d'invitation par email |
+| Thème Dark | ✅ Fait | Interface Super Admin en thème sombre |
+| Fidèles/Membres | 🔜 À faire | Gestion des membres de l'église |
+| Comptabilité | 🔜 À faire | Gestion financière |
+| Ministères | 🔜 À faire | Groupes et équipes |
+
+### Priorité Actuelle
+**Finaliser la partie Super Admin** pour s'assurer que les bases sont solides avant de développer les modules Church Admin.
 
 ## Development Commands
 
@@ -735,3 +784,129 @@ const { data } = await supabase
 - ✅ Design responsive et accessible
 - ✅ Formulaire structuré et facile à remplir
 - ✅ Feedback clair à chaque étape du processus
+
+---
+
+### 2026-01-13 - Clarification de la vision du projet et audit Super Admin
+
+**Contexte:**
+- Le projet n'est pas seulement pour les événements
+- C'est une **plateforme complète de gestion d'église**
+- Le pasteur (Admin Principal) peut gérer tous les aspects de son église via des modules
+
+**Vision clarifiée:**
+- Architecture modulaire où chaque fonctionnalité est un module distinct
+- Le pasteur clique sur un module (Événements, Fidèles, Comptabilité, etc.) et accède à cette section
+- Super Admin (propriétaire plateforme) gère l'ensemble des églises
+- Développement des fonctionnalités au fur et à mesure
+
+**Modules prévus:**
+1. 📅 Événements - ✅ Développé
+2. 👥 Fidèles/Membres - 🔜 À développer
+3. 💰 Comptabilité - 🔜 À développer
+4. 🙏 Ministères - 🔜 À développer
+5. 📊 Statistiques - 🔜 À développer
+6. 📢 Communication - 🔜 À développer
+7. 🎵 Cultes - 🔜 À développer
+
+**Priorité actuelle:**
+- Finaliser et solidifier la partie Super Admin
+- S'assurer que toutes les bases sont bien posées pour l'ajout de nouvelles fonctionnalités
+
+**Audit Super Admin effectué - Résultats:**
+
+| Composant | Statut |
+|-----------|--------|
+| Login Super Admin | ✅ OK |
+| Dashboard (Liste églises) | ✅ OK |
+| Modal Invitation | ✅ OK |
+| Modal Édition | ✅ OK |
+| Modal Suppression | ✅ OK |
+| Page Événements | ✅ OK |
+| Événements par Église | ✅ OK |
+| Déconnexion | ✅ OK |
+
+**Problèmes identifiés et corrigés:**
+- [x] **CRITIQUE**: Page `/super-admin/statistics` manquante - **CORRIGÉ**
+- [x] Pas de vue détaillée pour une église spécifique - **CORRIGÉ**
+- [ ] Pas de gestion des invitations en attente
+
+---
+
+### 2026-01-13 - Correction du problème critique: Page Statistics manquante
+
+**Problème:** Le lien `/super-admin/statistics` existait dans le menu mais la page n'était pas créée.
+
+**Corrections effectuées:**
+
+1. **Création de la page SuperAdminStatisticsPage.jsx** (`/client/src/pages/SuperAdminStatisticsPage.jsx`)
+   - Dashboard avec 4 cartes de statistiques:
+     - Total Églises
+     - Total Événements
+     - Total Participants
+     - Total Check-ins
+   - Section "Top Églises" (classées par nombre d'événements)
+   - Section "Événements Récents" (5 derniers événements)
+   - Thème dark cohérent avec l'interface Super Admin
+   - Design moderne avec icônes et dégradés
+
+2. **Ajout de la route dans main.jsx** (ligne 96)
+   - `<Route path="statistics" element={<SuperAdminStatisticsPage />} />`
+
+3. **Ajout de la méthode API** (`/client/src/api/api.js`)
+   - `api.superAdmin.getPlatformStatistics()`
+
+4. **Création de la route backend** (`/server/routes/superAdminRoutes.js`)
+   - `GET /api/super-admin/statistics`
+   - Retourne: total_churches, total_events, total_attendees, total_checkins, top_churches, recent_events
+
+5. **Ajout des traductions** (`/client/src/locales/fr.json` et `en.json`)
+   - Clés `super_admin_statistics.*` pour tous les textes de la page
+
+**Résultat:**
+- ✅ La page `/super-admin/statistics` est maintenant fonctionnelle
+- ✅ Affiche les métriques globales de la plateforme MY EDEN X
+- ✅ Design cohérent avec le thème dark
+
+---
+
+### 2026-01-13 - Ajout de la vue détaillée pour une église
+
+**Problème:** Impossible de voir les détails complets d'une église depuis le dashboard Super Admin.
+
+**Corrections effectuées:**
+
+1. **Création de la page SuperAdminChurchDetailPage.jsx** (`/client/src/pages/SuperAdminChurchDetailPage.jsx`)
+   - Header avec logo, nom et subdomain de l'église
+   - Informations de contact (localisation, email, téléphone, date de création)
+   - 3 cartes de statistiques (événements, participants, check-ins)
+   - Liste des administrateurs de l'église
+   - Liste des 5 derniers événements
+   - Boutons Modifier et Supprimer intégrés
+   - Thème dark cohérent
+
+2. **Ajout de la route dans main.jsx** (ligne 98)
+   - `<Route path="churches/:churchId" element={<SuperAdminChurchDetailPage />} />`
+
+3. **Ajout des méthodes API** (`/client/src/api/api.js`)
+   - `api.superAdmin.getChurchStatistics(churchId)` - Statistiques de l'église
+   - `api.superAdmin.getChurchUsers(churchId)` - Utilisateurs de l'église
+
+4. **Création des routes backend** (`/server/routes/superAdminRoutes.js`)
+   - `GET /api/super-admin/churches_v2/:churchId/statistics` - Stats de l'église
+   - `GET /api/super-admin/churches_v2/:churchId/users` - Admins de l'église
+
+5. **Ajout des traductions** (`/client/src/locales/fr.json` et `en.json`)
+   - Clés `church_detail.*` pour tous les textes de la page
+
+6. **Ajout du lien depuis le dashboard** (`SuperAdminDashboardPage.jsx`)
+   - Bouton "Voir les détails" avec icône dans la colonne Actions
+   - Couleur verte (emerald) pour différencier des autres actions
+
+**Résultat:**
+- ✅ Page `/super-admin/churches/:churchId` fonctionnelle
+- ✅ Vue complète des détails d'une église
+- ✅ Statistiques spécifiques à l'église
+- ✅ Liste des administrateurs
+- ✅ Accès rapide aux événements récents
+- ✅ Actions (modifier/supprimer) intégrées
