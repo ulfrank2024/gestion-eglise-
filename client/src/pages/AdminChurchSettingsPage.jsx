@@ -20,36 +20,24 @@ function AdminChurchSettingsPage() {
     const fetchSettings = async () => {
       try {
         setLoading(true);
-        const storedToken = localStorage.getItem('supabase.auth.token');
-        let parsedUser = null;
-        if (storedToken) {
-            try {
-                parsedUser = JSON.parse(storedToken).user;
-            } catch (e) {
-                console.error("Error parsing user token:", e);
-                setError(t('error_loading_user_data'));
-                setLoading(false);
-                navigate('/admin/login');
-                return;
-            }
-        }
-        
-        const currentChurchId = parsedUser?.user_metadata?.church_id;
+
+        // Récupérer les infos utilisateur via l'API (church_id est dans la DB, pas dans le token JWT)
+        const userInfo = await api.auth.me();
+        const currentChurchId = userInfo.church_id;
+
         if (!currentChurchId) {
-            setError(t('error_loading_user_data'));
-            setLoading(false);
-            navigate('/admin/login');
-            return;
+          setError(t('error_loading_user_data'));
+          setLoading(false);
+          return;
         }
         setChurchId(currentChurchId);
 
         const data = await api.admin.getChurchDetails(currentChurchId);
         setChurchSettings(data);
-        
+
       } catch (err) {
         console.error('Error fetching church settings:', err);
         setError(err.response?.data?.error || err.message || t('error_fetching_church_settings'));
-        navigate('/admin/login'); // Redirect to login on error
       } finally {
         setLoading(false);
       }

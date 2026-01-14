@@ -12,29 +12,21 @@ function AdminAllAttendeesPage() {
   const [churchId, setChurchId] = useState(null);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('supabase.auth.token');
-    let parsedUser = null;
-    if (storedToken) {
-        try {
-            parsedUser = JSON.parse(storedToken).user;
-        } catch (e) {
-            console.error("Error parsing user token:", e);
-        }
-    }
-    
-    const currentChurchId = parsedUser?.user_metadata?.church_id;
-    if (!currentChurchId) {
-        setError(t('error_church_id_missing'));
-        setLoading(false);
-        navigate('/admin/login');
-        return;
-    }
-    setChurchId(currentChurchId);
-
     const fetchAllAttendees = async () => {
       try {
-        const response = await api.admin.listAttendees(); // churchId est géré par le backend via le token
-        setAttendees(response.data);
+        // Récupérer les infos utilisateur via l'API (church_id est dans la DB, pas dans le token JWT)
+        const userInfo = await api.auth.me();
+        const currentChurchId = userInfo.church_id;
+
+        if (!currentChurchId) {
+          setError(t('error_church_id_missing'));
+          setLoading(false);
+          return;
+        }
+        setChurchId(currentChurchId);
+
+        const response = await api.admin.listAttendees();
+        setAttendees(response.data || response);
       } catch (err) {
         console.error('Error fetching all attendees:', err);
         setError(err.response?.data?.error || err.message || t('error_fetching_all_attendees'));
@@ -46,9 +38,7 @@ function AdminAllAttendeesPage() {
       }
     };
 
-    if (currentChurchId) { // Seulement si churchId est disponible
-        fetchAllAttendees();
-    }
+    fetchAllAttendees();
   }, [t, navigate]);
 
   if (loading) return <p>{t('loading')}...</p>;

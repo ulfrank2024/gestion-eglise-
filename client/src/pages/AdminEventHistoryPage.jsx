@@ -17,36 +17,29 @@ function AdminEventHistoryPage() {
   const [churchId, setChurchId] = useState(null);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('supabase.auth.token');
-    let parsedUser = null;
-    if (storedToken) {
-        try {
-            parsedUser = JSON.parse(storedToken).user;
-        } catch (e) {
-            console.error("Error parsing user token:", e);
-        }
-    }
-    
-    const currentChurchId = parsedUser?.user_metadata?.church_id;
-    if (!currentChurchId) {
-        setError(t('error_church_id_missing'));
-        setLoading(false);
-        navigate('/admin/login');
-        return;
-    }
-    setChurchId(currentChurchId);
-
     const fetchEvents = async () => {
       try {
         setLoading(true);
         setError('');
+
+        // Récupérer les infos utilisateur via l'API (church_id est dans la DB, pas dans le token JWT)
+        const userInfo = await api.auth.me();
+        const currentChurchId = userInfo.church_id;
+
+        if (!currentChurchId) {
+          setError(t('error_church_id_missing'));
+          setLoading(false);
+          return;
+        }
+        setChurchId(currentChurchId);
+
         const params = {};
         if (filterStatus === 'completed') {
           params.is_archived = true;
         } else if (filterStatus === 'all') {
           // Aucun filtre is_archived pour 'all'
         }
-        
+
         // L'API côté serveur gère le filtrage par church_id via le token d'authentification
         const data = await api.admin.listEvents(params.is_archived);
         setEvents(data);
@@ -61,9 +54,7 @@ function AdminEventHistoryPage() {
       }
     };
 
-    if (currentChurchId) { // Seulement si churchId est disponible
-        fetchEvents();
-    }
+    fetchEvents();
   }, [filterStatus, t, navigate]);
 
   const handleManageEvent = (id) => {

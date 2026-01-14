@@ -1011,3 +1011,70 @@ const { data } = await supabase
 - ✅ Logs de debug pour identifier facilement les problèmes d'authentification
 - ✅ Pas de réponses cachées vides grâce aux headers no-cache
 - ✅ Routes réservées protégées dans PublicLayout
+
+---
+
+### 2026-01-14 - Correction critique: Pages admin lisaient church_id depuis le token JWT
+
+**Problème identifié:**
+- Même après les corrections de routes, l'utilisateur était redirigé vers login
+- Les logs montraient "=== AdminLayout: Authentication successful ===" mais la redirection persistait
+- Cause: les pages enfants (AdminDashboardPage, etc.) lisaient `church_id` depuis `user_metadata` dans le token JWT
+- Le `church_id` n'est PAS dans le token JWT - il est dans la table `church_users_v2`
+
+**Code problématique (présent dans 8 pages):**
+```javascript
+const storedToken = localStorage.getItem('supabase.auth.token');
+const parsedUser = JSON.parse(storedToken).user;
+const currentChurchId = parsedUser?.user_metadata?.church_id; // TOUJOURS undefined!
+if (!currentChurchId) {
+    navigate('/admin/login'); // Redirection intempestive!
+}
+```
+
+**Solution:**
+- Utiliser l'API `/api/auth/me` pour récupérer le `church_id` depuis la base de données
+- Supprimer la lecture du token JWT pour le `church_id`
+
+**Pages corrigées (8 fichiers):**
+
+1. **AdminDashboardPage.jsx** - Utilise maintenant `api.auth.me()`
+2. **AdminEventHistoryPage.jsx** - Utilise maintenant `api.auth.me()`
+3. **AdminStatisticsPage.jsx** - Utilise maintenant `api.auth.me()`
+4. **AdminAllAttendeesPage.jsx** - Utilise maintenant `api.auth.me()`
+5. **AdminEventNewPage.jsx** - Utilise maintenant `api.auth.me()`
+6. **AdminEventsListPage.jsx** - Utilise maintenant `api.auth.me()`
+7. **AdminChurchUsersPage.jsx** - Utilise maintenant `api.auth.me()`
+8. **AdminChurchSettingsPage.jsx** - Utilise maintenant `api.auth.me()`
+
+**Nouveau pattern correct:**
+```javascript
+useEffect(() => {
+  const fetchData = async () => {
+    // Récupérer les infos utilisateur via l'API (church_id est dans la DB, pas dans le token JWT)
+    const userInfo = await api.auth.me();
+    const currentChurchId = userInfo.church_id;
+
+    if (!currentChurchId) {
+      setError(t('error_church_id_missing'));
+      return;
+    }
+    setChurchId(currentChurchId);
+    // ... reste du code
+  };
+  fetchData();
+}, []);
+```
+
+**Important - Architecture d'authentification:**
+- Le token JWT Supabase contient UNIQUEMENT les données de Supabase Auth (email, user_metadata de Supabase)
+- Le `church_id` et `church_role` sont dans notre table `church_users_v2`
+- Le middleware `protect` du serveur les récupère et les attache à `req.user`
+- L'endpoint `/api/auth/me` retourne ces données
+- Les pages frontend DOIVENT utiliser `/api/auth/me` pour obtenir le `church_id`
+
+**Résultat:**
+- ✅ Les pages admin ne redirigent plus intempestivement vers login
+- ✅ Le `church_id` est correctement récupéré depuis la base de données
+- ✅ Pattern cohérent sur toutes les pages admin
+- ✅ L'authentification fonctionne correctement de bout en bout

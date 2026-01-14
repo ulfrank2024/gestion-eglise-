@@ -22,31 +22,23 @@ function AdminDashboardPage() {
   const [churchId, setChurchId] = useState(null);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('supabase.auth.token');
-    let parsedUser = null;
-    if (storedToken) {
-        try {
-            parsedUser = JSON.parse(storedToken).user;
-        } catch (e) {
-            console.error("Error parsing user token:", e);
-        }
-    }
-    
-    const currentChurchId = parsedUser?.user_metadata?.church_id;
-    if (!currentChurchId) {
-        setError(t('error_church_id_missing'));
-        setLoading(false);
-        navigate('/admin/login');
-        return;
-    }
-    setChurchId(currentChurchId);
-
-
     const fetchDashboardData = async () => {
       try {
         setError('');
+
+        // Récupérer les infos utilisateur via l'API (church_id est dans la DB, pas dans le token JWT)
+        const userInfo = await api.auth.me();
+        const currentChurchId = userInfo.church_id;
+
+        if (!currentChurchId) {
+          setError(t('error_church_id_missing'));
+          setLoading(false);
+          return;
+        }
+        setChurchId(currentChurchId);
+
         // L'API côté serveur gère le filtrage par church_id via le token d'authentification
-        const events = await api.admin.listEvents(); // Utilisation de api.admin.listEvents
+        const events = await api.admin.listEvents();
         setEventsData(events);
 
         setTotalEvents(events.length);
@@ -66,9 +58,8 @@ function AdminDashboardPage() {
         setLoading(false);
       }
     };
-    if (currentChurchId) {
-        fetchDashboardData();
-    }
+
+    fetchDashboardData();
   }, [t, navigate]);
 
   const pieData = [

@@ -17,14 +17,21 @@ function AdminEventsListPage() {
   const [churchId, setChurchId] = useState(null);
 
   useEffect(() => {
-    const fetchEvents = async (currentChurchId) => {
+    const fetchEvents = async () => {
       try {
         setLoading(true);
         setError('');
 
+        // Récupérer les infos utilisateur via l'API (church_id est dans la DB, pas dans le token JWT)
+        const userInfo = await api.auth.me();
+        const currentChurchId = userInfo.church_id;
+
         if (!currentChurchId) {
-            throw new Error(t('error_church_id_missing'));
+          setError(t('error_church_id_missing'));
+          setLoading(false);
+          return;
         }
+        setChurchId(currentChurchId);
 
         const params = {};
         if (filterStatus === 'active') {
@@ -34,7 +41,7 @@ function AdminEventsListPage() {
         } else if (filterStatus === 'all') {
           // Ne pas ajouter le paramètre is_archived pour afficher tous les événements
         }
-        
+
         // L'API côté serveur gère le filtrage par church_id via le token d'authentification
         const data = await api.admin.listEvents(params.is_archived);
         setEvents(data);
@@ -49,26 +56,7 @@ function AdminEventsListPage() {
       }
     };
 
-    const storedToken = localStorage.getItem('supabase.auth.token');
-    let parsedUser = null;
-    if (storedToken) {
-        try {
-            parsedUser = JSON.parse(storedToken).user;
-        } catch (e) {
-            console.error("Error parsing user token:", e);
-        }
-    }
-    
-    const currentChurchId = parsedUser?.user_metadata?.church_id;
-    if (!currentChurchId) {
-        setError(t('error_church_id_missing'));
-        setLoading(false);
-        navigate('/admin/login');
-        return;
-    }
-    setChurchId(currentChurchId); // Stocker le churchId pour d'autres utilisations si nécessaire
-    fetchEvents(currentChurchId); // Appeler fetchEvents avec le churchId
-
+    fetchEvents();
   }, [filterStatus, t, navigate]);
 
   const handleManageEvent = (id) => {
