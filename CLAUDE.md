@@ -954,3 +954,60 @@ const { data } = await supabase
 - ✅ Nom de l'application "MY EDEN X" visible partout où le logo de l'app est affiché
 - ✅ Cohérence visuelle sur toutes les pages
 - ✅ Branding unifié de la plateforme
+
+---
+
+### 2026-01-14 - Correction du problème de redirection après login Church Admin
+
+**Problème identifié:**
+- L'utilisateur Church Admin pouvait se connecter (API `/auth/me` retournait 200 avec données)
+- Mais restait sur la page de login au lieu d'être redirigé vers le dashboard
+- Erreur dans les logs: "Error fetching public events list: invalid input syntax for type uuid: 'login'"
+
+**Cause racine:**
+1. La route `/:churchId` capturait `/admin` comme si `churchId = "admin"`
+2. Conflit de routes entre routes publiques et routes admin
+3. Réponses 304 (cachées) pour les routes d'API causant des données vides
+
+**Corrections apportées:**
+
+1. **main.jsx** (`/client/src/main.jsx`)
+   - ✅ Réorganisation des routes pour mettre les routes spécifiques AVANT les routes génériques
+   - ✅ Routes admin et super-admin maintenant en premier
+   - ✅ Routes publiques `/:churchId` à la fin pour éviter les conflits
+   - ✅ Commentaires explicatifs ajoutés
+
+2. **PublicLayout.jsx** (`/client/src/layouts/PublicLayout.jsx`)
+   - ✅ Ajout d'une vérification pour les routes réservées
+   - ✅ Si `churchId` est "admin", "super-admin", "login", etc. → redirection 404
+   - ✅ Évite les erreurs "invalid input syntax for type uuid"
+
+3. **churchAdminRoutes.js** (`/server/routes/churchAdminRoutes.js`)
+   - ✅ Ajout de headers no-cache à la route `/churches_v2/:churchId/settings`
+   - ✅ Ajout de logs de debug pour tracer les requêtes
+
+4. **AdminLayout.jsx** (`/client/src/layouts/AdminLayout.jsx`)
+   - ✅ Ajout de logs de debug détaillés dans le useEffect d'authentification
+   - ✅ Correction du lien sidebar: `/admin/event-history` → `/admin/history`
+   - ✅ Meilleure traçabilité des erreurs
+
+**Routes réservées protégées:**
+- `admin`
+- `super-admin`
+- `church-register`
+- `login`
+- `register`
+
+**Ordre des routes dans main.jsx:**
+1. `/admin/login` - Page de login admin (pas de layout)
+2. `/super-admin/login` - Page de login super admin
+3. `/church-register/:token` - Inscription église
+4. `/admin/*` - Routes admin avec AdminLayout
+5. `/super-admin/*` - Routes super admin avec SuperAdminLayout
+6. `/:churchId/*` - Routes publiques (en dernier pour éviter conflits)
+
+**Résultat:**
+- ✅ Plus de conflit entre routes admin et routes publiques
+- ✅ Logs de debug pour identifier facilement les problèmes d'authentification
+- ✅ Pas de réponses cachées vides grâce aux headers no-cache
+- ✅ Routes réservées protégées dans PublicLayout

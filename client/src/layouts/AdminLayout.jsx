@@ -23,18 +23,28 @@ function AdminLayout() {
   useEffect(() => {
     const fetchAuthInfoAndChurchDetails = async () => {
       try {
+        console.log('=== AdminLayout: Checking authentication ===');
+
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        console.log('Supabase session:', session ? 'exists' : 'null');
+        console.log('Session error:', sessionError);
 
         if (sessionError || !session) {
+          console.log('No active Supabase session, redirecting to login');
           throw new Error('No active session.');
         }
 
+        console.log('Calling api.auth.me()...');
         const userInfo = await api.auth.me();
+        console.log('User info received:', JSON.stringify(userInfo, null, 2));
 
         const currentUserRole = userInfo.church_role;
         const currentChurchId = userInfo.church_id;
 
+        console.log('Role:', currentUserRole, 'Church ID:', currentChurchId);
+
         if (!currentUserRole || !currentChurchId) {
+            console.log('Missing role or church_id, redirecting to login');
             setError(t('error_loading_user_data'));
             navigate('/admin/login');
             return;
@@ -43,11 +53,18 @@ function AdminLayout() {
         setUserRole(currentUserRole);
         setChurchId(currentChurchId);
 
+        console.log('Fetching church details for:', currentChurchId);
         const details = await api.admin.getChurchDetails(currentChurchId);
+        console.log('Church details received:', JSON.stringify(details, null, 2));
         setChurchDetails(details);
 
+        console.log('=== AdminLayout: Authentication successful ===');
+
       } catch (err) {
+        console.error('=== AdminLayout: Error ===');
         console.error('Error loading auth info or church details:', err);
+        console.error('Error message:', err.message);
+        console.error('Error response:', err.response?.data);
         setError(t('error_loading_user_data'));
         navigate('/admin/login');
       } finally {
@@ -319,7 +336,7 @@ function AdminLayout() {
                   </li>
                   <li style={{ marginBottom: '5px' }}>
                     <NavLink
-                      to="/admin/event-history"
+                      to="/admin/history"
                       onMouseEnter={() => setHoveredItem('event-history')}
                       onMouseLeave={() => setHoveredItem(null)}
                       style={({ isActive }) => getLinkStyle({ isActive, itemName: 'event-history' })}

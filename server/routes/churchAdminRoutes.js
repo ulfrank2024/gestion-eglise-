@@ -159,6 +159,15 @@ router.put('/churches_v2/:churchId/settings', protect, isAdminChurch, async (req
 router.get('/churches_v2/:churchId/settings', protect, isAdminChurch, async (req, res) => {
   const { churchId } = req.params;
 
+  // Désactiver le cache pour cette route
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+
+  console.log('=== /api/church-admin/churches_v2/:churchId/settings ===');
+  console.log('Requested churchId:', churchId);
+  console.log('User church_id:', req.user.church_id);
+
   if (req.user.church_id !== churchId) {
     return res.status(403).json({ error: 'Forbidden: You can only view settings for your own church.' });
   }
@@ -170,7 +179,11 @@ router.get('/churches_v2/:churchId/settings', protect, isAdminChurch, async (req
       .eq('id', churchId)
       .single();
 
-    if (error) throw error;
+    console.log('Church data:', data);
+    if (error) {
+      console.error('Supabase error:', error);
+      throw error;
+    }
     if (!data) {
       return res.status(404).json({ error: 'Church not found.' });
     }

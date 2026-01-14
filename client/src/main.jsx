@@ -45,25 +45,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <I18nextProvider i18n={i18n}>
       <BrowserRouter>
         <Routes>
-          {/* Public Routes */}
-          <Route path="/:churchId" element={<PublicLayout />}>
-            <Route index element={<PublicEventsListPage />} />
-            <Route path="event/:id" element={<EventPage />} />
-            <Route path="welcome/:id" element={<WelcomeCheckinPage />} />
-            <Route path="checkin-success" element={<CheckinSuccessPage />} />
-            <Route path="*" element={<NotFoundPage />} />
-          </Route>
-
-          {/* Fallback for old root public routes (optional, can be removed after migration) */}
-          <Route path="/" element={<PublicLayout />}>
-            <Route index element={<PublicEventsListPage />} />
-            <Route path="event/:id" element={<EventPage />} />
-            <Route path="welcome/:id" element={<WelcomeCheckinPage />} />
-            <Route path="checkin-success" element={<CheckinSuccessPage />} />
-            <Route path="*" element={<NotFoundPage />} />
-          </Route>
-
-          {/* Admin Login - No Layout */}
+          {/* Admin Login - No Layout (MUST be before /:churchId to avoid conflict) */}
           <Route path="/admin/login" element={<AdminLoginPage />} />
 
           {/* Super Admin Login - No Layout */}
@@ -96,6 +78,24 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="events/:churchId/details/:id" element={<AdminEventDetailPage />} />
             <Route path="statistics" element={<SuperAdminStatisticsPage />} />
             <Route path="churches/:churchId" element={<SuperAdminChurchDetailPage />} />
+          </Route>
+
+          {/* Public Routes - MUST be after admin/super-admin routes to avoid capturing /admin as /:churchId */}
+          <Route path="/:churchId" element={<PublicLayout />}>
+            <Route index element={<PublicEventsListPage />} />
+            <Route path="event/:id" element={<EventPage />} />
+            <Route path="welcome/:id" element={<WelcomeCheckinPage />} />
+            <Route path="checkin-success" element={<CheckinSuccessPage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
+
+          {/* Root fallback */}
+          <Route path="/" element={<PublicLayout />}>
+            <Route index element={<PublicEventsListPage />} />
+            <Route path="event/:id" element={<EventPage />} />
+            <Route path="welcome/:id" element={<WelcomeCheckinPage />} />
+            <Route path="checkin-success" element={<CheckinSuccessPage />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>
       </BrowserRouter>
