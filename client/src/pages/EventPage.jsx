@@ -91,6 +91,7 @@ function EventPage() {
         <div className="imageContainer"></div>
         <div className="textContainer">
           <img src={logo} alt="Logo" className="logoStyle fade-in-up fade-in-up-1" />
+          <p style={{ fontWeight: 'bold', fontSize: '16px', marginTop: '10px', marginBottom: '15px', color: 'inherit' }} className="fade-in-up fade-in-up-1">MY EDEN X</p>
 
           <p className="event-page-intro-text fade-in-up fade-in-up-2">{t('event_intro_phrase')}</p>
           <h1 className="titleStyle fade-in-up fade-in-up-3">{currentEventTitle}</h1>

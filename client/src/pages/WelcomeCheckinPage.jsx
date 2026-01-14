@@ -78,7 +78,8 @@ function WelcomeCheckinPage() {
         <div className="textContainer">
           {/* Logo */}
           <img src={logo} alt="Logo" className="logoStyle" />
-          
+          <p style={{ fontWeight: 'bold', fontSize: '16px', marginTop: '10px', marginBottom: '15px', color: 'inherit' }}>MY EDEN X</p>
+
           <h1 className="welcome-title">{t('welcome_to_cite_eden')}</h1>
           <p className="event-intro">{t('participating_in_event')}</p>
           <h2 className="event-name">{eventName}</h2>

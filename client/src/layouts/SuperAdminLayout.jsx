@@ -124,11 +124,14 @@ function SuperAdminLayout() {
     <div style={{ display: 'flex', minHeight: '100vh', background: '#111827' }}>
       <nav style={{ width: '250px', background: '#1f2937', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderRight: '1px solid #374151' }}>
         <div>
-          <img
-            src={logo}
-            alt="Logo"
-            style={{ maxWidth: '150px', height: 'auto', display: 'block', borderRadius: '100px', objectFit: 'contain' }}
-          />
+          <div style={{ textAlign: 'center' }}>
+            <img
+              src={logo}
+              alt="Logo"
+              style={{ maxWidth: '100px', height: 'auto', display: 'block', borderRadius: '100px', objectFit: 'contain', margin: '0 auto' }}
+            />
+            <p style={{ color: '#f3f4f6', fontWeight: 'bold', fontSize: '14px', marginTop: '10px' }}>MY EDEN X</p>
+          </div>
           <h3 style={{ color: '#f3f4f6', marginTop: '15px', marginBottom: '15px' }}>{t('super_admin_menu')}</h3>
           <ul style={{ listStyle: 'none', padding: 0 }}>
             {/* Section Gestion de la Plateforme */}

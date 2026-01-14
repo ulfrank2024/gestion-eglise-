@@ -910,3 +910,47 @@ const { data } = await supabase
 - ✅ Liste des administrateurs
 - ✅ Accès rapide aux événements récents
 - ✅ Actions (modifier/supprimer) intégrées
+
+---
+
+### 2026-01-14 - Ajout du nom "MY EDEN X" sous le logo de l'application
+
+**Demande utilisateur:**
+- "partout ou il ya le logo_eden.png en bas de ca ajoute le nom de l'application MY EDEN X"
+
+**Modifications effectuées:**
+
+1. **SuperAdminLayout.jsx** (`/client/src/layouts/SuperAdminLayout.jsx`)
+   - ✅ Logo centré avec texte "MY EDEN X" en dessous
+   - Style: blanc (#f3f4f6), bold, 14px
+
+2. **AdminLoginPage.jsx** (`/client/src/pages/AdminLoginPage.jsx`)
+   - ✅ Texte "MY EDEN X" ajouté sous le logo
+   - Style: gris (#333), bold, 16px
+
+3. **PublicEventsListPage.jsx** (`/client/src/pages/PublicEventsListPage.jsx`)
+   - ✅ Logo enveloppé dans un container flex-column
+   - ✅ Texte "MY EDEN X" centré sous le logo
+   - Style: gris (#333), bold, 14px
+
+4. **EventPage.jsx** (`/client/src/pages/EventPage.jsx`)
+   - ✅ Texte "MY EDEN X" ajouté avec animation fade-in-up
+   - Style: inherit color, bold, 16px
+
+5. **WelcomeCheckinPage.jsx** (`/client/src/pages/WelcomeCheckinPage.jsx`)
+   - ✅ Texte "MY EDEN X" ajouté sous le logo
+   - Style: inherit color, bold, 16px
+
+6. **ChurchRegistrationPage.jsx** (`/client/src/pages/ChurchRegistrationPage.jsx`)
+   - ✅ Logo enveloppé dans un div centré
+   - ✅ Texte "MY EDEN X" en blanc sous le logo dans le header
+
+**Note:** SuperAdminLoginPage.jsx avait déjà "MY EDEN X" (ligne 52)
+
+**Pages exclues (logo d'église utilisé):**
+- AdminLayout.jsx - Utilise le logo de l'église connectée
+
+**Résultat:**
+- ✅ Nom de l'application "MY EDEN X" visible partout où le logo de l'app est affiché
+- ✅ Cohérence visuelle sur toutes les pages
+- ✅ Branding unifié de la plateforme

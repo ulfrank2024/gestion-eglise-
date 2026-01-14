@@ -49,7 +49,10 @@ function PublicEventsListPage() {
   return (
     <div style={{ padding: '20px', maxWidth: '900px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-        <img src={logo} alt="Logo" style={{ width: '80px', height: 'auto', borderRadius: '100px' }} />
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <img src={logo} alt="Logo" style={{ width: '80px', height: 'auto', borderRadius: '100px' }} />
+          <p style={{ fontWeight: 'bold', fontSize: '14px', marginTop: '8px', color: '#333' }}>MY EDEN X</p>
+        </div>
         <div style={{ display: 'flex', gap: '10px' }}>
           <button
             onClick={handleAdminLogin}

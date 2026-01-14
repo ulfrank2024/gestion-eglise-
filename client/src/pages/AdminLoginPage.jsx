@@ -44,6 +44,7 @@ function AdminLoginPage() {
       <h1 className="mainTitle">{t('event_management_system')}</h1>
       <div className="formContainerStyle">
         <img src={logo} alt="Logo" className="logoStyle" />
+        <p style={{ fontWeight: 'bold', fontSize: '16px', marginTop: '10px', marginBottom: '15px', color: '#333' }}>MY EDEN X</p>
         <div className="langSelectorContainer">
           <h2 className="adminLoginTitle">{t('admin_login')}</h2>
           <button onClick={() => handleLanguageChange('fr')} className="langButtonStyle" style={{ fontWeight: i18n.language === 'fr' ? 'bold' : 'normal' }}>FR</button>

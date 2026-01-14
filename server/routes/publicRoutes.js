@@ -187,29 +187,44 @@ router.get('/:churchId/checkin/:eventId', async (req, res) => {
 });
 
 router.post('/churches/register', async (req, res) => {
+    console.log('=== CHURCH REGISTRATION START ===');
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+
     const { token, churchName, subdomain, location, email, phone, adminName, password, logoFile } = req.body;
 
     if (!token || !churchName || !subdomain || !email || !password) {
+        console.log('Missing required fields:', { token: !!token, churchName: !!churchName, subdomain: !!subdomain, email: !!email, password: !!password });
         return res.status(400).json({ error: 'Missing required fields.' });
     }
 
     try {
         // 1. Valider le token
+        console.log('Step 1: Validating token...');
         const { data: invitation, error: tokenError } = await supabaseAdmin
             .from('church_invitations')
             .select('*')
             .eq('token', token)
             .single();
 
-        if (tokenError || !invitation) {
+        if (tokenError) {
+            console.error('Token validation error:', tokenError);
+            return res.status(404).json({ error: 'Invitation not found. Token error: ' + tokenError.message });
+        }
+
+        if (!invitation) {
+            console.log('No invitation found for token:', token);
             return res.status(404).json({ error: 'Invitation not found.' });
         }
 
+        console.log('Invitation found:', JSON.stringify(invitation, null, 2));
+
         if (new Date(invitation.expires_at) < new Date()) {
+            console.log('Invitation expired:', invitation.expires_at);
             return res.status(400).json({ error: 'Invitation has expired.' });
         }
 
         // 2. Créer l'utilisateur
+        console.log('Step 2: Creating user with email:', invitation.email);
         const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
             email: invitation.email, // Utiliser l'email de l'invitation
             password,
@@ -217,11 +232,16 @@ router.post('/churches/register', async (req, res) => {
             email_confirm: true, // L'utilisateur est invité, on peut considérer l'email comme vérifié
         });
 
-        if (userError) throw userError;
+        if (userError) {
+            console.error('User creation error:', userError);
+            throw new Error('Failed to create user: ' + userError.message);
+        }
 
         const userId = userData.user.id;
+        console.log('User created with ID:', userId);
 
         // 3. Créer l'église
+        console.log('Step 3: Creating church...');
         const { data: churchData, error: churchError } = await supabaseAdmin
             .from('churches_v2')
             .insert({
@@ -236,11 +256,16 @@ router.post('/churches/register', async (req, res) => {
             .select()
             .single();
 
-        if (churchError) throw churchError;
+        if (churchError) {
+            console.error('Church creation error:', churchError);
+            throw new Error('Failed to create church: ' + churchError.message);
+        }
 
         const churchId = churchData.id;
+        console.log('Church created with ID:', churchId);
 
         // 4. Lier l'utilisateur à l'église avec le rôle 'church_admin'
+        console.log('Step 4: Linking user to church...');
         const { error: roleError } = await supabaseAdmin
             .from('church_users_v2')
             .insert({
@@ -249,19 +274,28 @@ router.post('/churches/register', async (req, res) => {
                 role: 'church_admin',
             });
 
-        if (roleError) throw roleError;
-        
+        if (roleError) {
+            console.error('Role assignment error:', roleError);
+            throw new Error('Failed to assign role: ' + roleError.message);
+        }
+        console.log('User linked to church successfully');
+
         // 5. Supprimer le token d'invitation
+        console.log('Step 5: Deleting invitation token...');
         await supabaseAdmin
             .from('church_invitations')
             .delete()
             .eq('id', invitation.id);
 
+        console.log('=== CHURCH REGISTRATION SUCCESS ===');
         res.status(201).json({ message: 'Church and admin account created successfully.' });
 
     } catch (error) {
-        console.error('Church registration error:', error);
-        res.status(500).json({ error: error.message });
+        console.error('=== CHURCH REGISTRATION ERROR ===');
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        res.status(500).json({ error: error.message || 'An unknown error occurred' });
     }
 });
 

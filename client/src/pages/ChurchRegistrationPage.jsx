@@ -110,7 +110,10 @@ const ChurchRegistrationPage = () => {
           <div className="flex items-center justify-between">
             {/* Logo et Titre */}
             <div className="flex items-center space-x-4">
-              <img src={logo} alt="Logo" className="w-16 h-16 rounded-full border-4 border-white shadow-xl" />
+              <div className="text-center">
+                <img src={logo} alt="Logo" className="w-16 h-16 rounded-full border-4 border-white shadow-xl mx-auto" />
+                <p className="text-white text-sm font-bold mt-2">MY EDEN X</p>
+              </div>
               <div>
                 <h2 className="text-3xl font-bold text-white">{t('church_registration.title')}</h2>
                 <p className="text-indigo-100 text-sm mt-1">{t('church_registration.subtitle') || 'Complétez les informations ci-dessous'}</p>
