@@ -32,12 +32,22 @@ router.post('/logout', protect, async (req, res) => {
 // Route pour récupérer les informations de l'utilisateur connecté
 router.get('/me', protect, async (req, res) => {
   try {
-    res.status(200).json({
+    // Désactiver le cache pour cette route
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
+    const userData = {
       id: req.user.id,
       email: req.user.email,
       church_id: req.user.church_id,
       church_role: req.user.church_role,
-    });
+    };
+
+    console.log('=== /api/auth/me response ===');
+    console.log('User data:', JSON.stringify(userData, null, 2));
+
+    res.status(200).json(userData);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
