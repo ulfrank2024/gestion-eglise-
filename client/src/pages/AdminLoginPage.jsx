@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../supabaseClient';
 import logo from '../assets/logo_eden.png';
-import './AdminLoginPage.css'; // Importer le fichier CSS
 
 function AdminLoginPage() {
   const { t, i18n } = useTranslation();
@@ -40,42 +39,105 @@ function AdminLoginPage() {
   };
 
   return (
-    <div className="pageStyle">
-      <h1 className="mainTitle">{t('event_management_system')}</h1>
-      <div className="formContainerStyle">
-        <img src={logo} alt="Logo" className="logoStyle" />
-        <p style={{ fontWeight: 'bold', fontSize: '16px', marginTop: '10px', marginBottom: '15px', color: '#333' }}>MY EDEN X</p>
-        <div className="langSelectorContainer">
-          <h2 className="adminLoginTitle">{t('admin_login')}</h2>
-          <button onClick={() => handleLanguageChange('fr')} className="langButtonStyle" style={{ fontWeight: i18n.language === 'fr' ? 'bold' : 'normal' }}>FR</button>
-          <button onClick={() => handleLanguageChange('en')} className="langButtonStyle" style={{ fontWeight: i18n.language === 'en' ? 'bold' : 'normal' }}>EN</button>
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      <div className="flex w-full max-w-4xl mx-auto overflow-hidden bg-gray-800 rounded-lg shadow-2xl border border-gray-700">
+        {/* Colonne de gauche pour le logo */}
+        <div className="hidden md:flex items-center justify-center w-1/2 bg-gradient-to-br from-indigo-600 to-purple-700">
+          <div className="text-center">
+            <img src={logo} alt="Logo" className="w-32 h-32 rounded-full mx-auto border-4 border-white shadow-xl" />
+            <p className="mt-4 text-white text-xl font-semibold">MY EDEN X</p>
+            <p className="text-indigo-200 text-sm">{t('church_management_platform')}</p>
+          </div>
         </div>
-        {error && <p style={{ color: 'red', marginBottom: '15px' }}>{error}</p>}
-        <form onSubmit={handleLogin}>
-          <input
-            type="email"
-            id="email"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder={t('email')}
-            required
-            className="inputStyle"
-          />
-          <input
-            type="password"
-            id="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder={t('password')}
-            required
-            className="inputStyle"
-          />
-          <button type="submit" disabled={loading} className="buttonStyle">
-            {loading ? t('login.logging_in') : t('login')}
-          </button>
-        </form>
+
+        {/* Colonne de droite pour le formulaire */}
+        <div className="w-full md:w-1/2 p-8 bg-gray-800">
+          {/* Logo mobile */}
+          <div className="md:hidden text-center mb-6">
+            <img src={logo} alt="Logo" className="w-20 h-20 rounded-full mx-auto border-4 border-indigo-500 shadow-xl" />
+            <p className="mt-2 text-white text-lg font-semibold">MY EDEN X</p>
+          </div>
+
+          {/* Sélecteur de langue */}
+          <div className="flex justify-end mb-4">
+            <button
+              onClick={() => handleLanguageChange('fr')}
+              className={`px-3 py-1.5 rounded-lg font-medium text-sm transition-all mr-2 ${
+                i18n.language === 'fr'
+                  ? 'bg-indigo-600 text-white shadow-lg'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              FR
+            </button>
+            <button
+              onClick={() => handleLanguageChange('en')}
+              className={`px-3 py-1.5 rounded-lg font-medium text-sm transition-all ${
+                i18n.language === 'en'
+                  ? 'bg-indigo-600 text-white shadow-lg'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              EN
+            </button>
+          </div>
+
+          <h2 className="text-2xl font-bold text-center text-white mb-2">
+            {t('admin_login')}
+          </h2>
+          <p className="text-center text-gray-400 mb-6">
+            {t('login.subtitle') || 'Connectez-vous à votre espace église'}
+          </p>
+
+          <form className="space-y-6" onSubmit={handleLogin}>
+            <div>
+              <label htmlFor="email" className="text-sm font-medium text-gray-300">
+                {t('email')}
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="block w-full px-3 py-3 mt-1 text-white bg-gray-700 placeholder-gray-400 border border-gray-600 rounded-md shadow-sm appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm"
+                placeholder={t('email')}
+              />
+            </div>
+            <div>
+              <label htmlFor="password" className="text-sm font-medium text-gray-300">
+                {t('password')}
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="block w-full px-3 py-3 mt-1 text-white bg-gray-700 placeholder-gray-400 border border-gray-600 rounded-md shadow-sm appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm"
+                placeholder={t('password')}
+              />
+            </div>
+            {error && (
+              <p className="text-sm text-red-400 bg-red-900/30 border border-red-800 rounded p-3">
+                {error}
+              </p>
+            )}
+            <div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex justify-center w-full px-4 py-3 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 border border-transparent rounded-md shadow-lg hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              >
+                {loading ? t('login.logging_in') : t('login.sign_in')}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

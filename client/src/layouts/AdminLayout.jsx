@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import defaultLogo from '../assets/logo_eden.png';
-import { MdEvent, MdLeaderboard, MdExpandMore, MdExpandLess, MdSettings, MdGroupAdd, MdHistory, MdLogout } from 'react-icons/md';
+import { MdEvent, MdLeaderboard, MdExpandMore, MdExpandLess, MdSettings, MdGroupAdd, MdHistory, MdLogout, MdDashboard, MdPeople } from 'react-icons/md';
 import { api } from '../api/api';
 import { supabase } from '../supabaseClient';
 
@@ -17,20 +17,18 @@ function AdminLayout() {
 
   const [openSections, setOpenSections] = useState({
     churchManagement: true,
-    reportsAndStats: true,
+    reportsAndStats: false,
   });
 
   useEffect(() => {
     const fetchAuthInfoAndChurchDetails = async () => {
       try {
-        // Vérifier qu'il y a une session Supabase
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
         if (sessionError || !session) {
           throw new Error('No active session.');
         }
 
-        // Récupérer les informations de l'utilisateur via l'API
         const userInfo = await api.auth.me();
 
         const currentUserRole = userInfo.church_role;
@@ -75,7 +73,6 @@ function AdminLayout() {
       navigate('/admin/login');
     } catch (error) {
       console.error('Logout error:', error);
-      // Même en cas d'erreur, on déconnecte l'utilisateur localement
       localStorage.removeItem('supabase.auth.token');
       navigate('/admin/login');
     }
@@ -92,30 +89,31 @@ function AdminLayout() {
       display: 'flex',
       alignItems: 'center',
       transition: 'background-color 0.2s, color 0.2s',
-      color: '#333',
+      color: '#d1d5db',
     };
 
     if (isParent) {
       return {
         ...baseStyle,
-        backgroundColor: '#e0e0e0',
+        backgroundColor: '#374151',
         fontWeight: 'bold',
         marginBottom: '5px',
-        color: '#000',
+        color: '#f3f4f6',
       };
     }
 
     if (isActive) {
       return {
         ...baseStyle,
-        backgroundColor: '#007bff',
+        backgroundColor: '#3b82f6',
         color: '#fff',
       };
     }
     if (isHovered) {
       return {
         ...baseStyle,
-        backgroundColor: '#e9ecef',
+        backgroundColor: '#374151',
+        color: '#fff',
       };
     }
     return {
@@ -125,34 +123,99 @@ function AdminLayout() {
   };
 
   const iconStyle = { marginRight: '10px' };
-  const toggleIconStyle = { marginLeft: 'auto', fontSize: '1.2em', color: '#333' };
+  const toggleIconStyle = { marginLeft: 'auto', fontSize: '1.2em', color: '#f3f4f6' };
 
   if (loading) {
-    return <div>{t('loading')}...</div>;
+    return (
+      <div style={{
+        padding: '20px',
+        color: '#f3f4f6',
+        background: '#111827',
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        {t('loading')}...
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="text-red-500">{error}</div>;
+    return (
+      <div style={{
+        padding: '20px',
+        color: '#ef4444',
+        background: '#111827',
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        {error}
+      </div>
+    );
   }
 
-  // Les Super Admins sont autorisés à utiliser les routes Admin.
-  // Les Church Admins sont autorisés.
-  // Tout autre rôle est interdit.
   if (userRole !== 'super_admin' && userRole !== 'church_admin') {
-      return <div className="text-red-500">{t('forbidden_access')}</div>;
+      return (
+        <div style={{
+          padding: '20px',
+          color: '#ef4444',
+          background: '#111827',
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          {t('forbidden_access')}
+        </div>
+      );
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <nav style={{ width: '250px', background: '#f4f4f4', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#111827' }}>
+      <nav style={{
+        width: '260px',
+        background: '#1f2937',
+        padding: '20px',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        borderRight: '1px solid #374151'
+      }}>
         <div>
-          <img 
-            src={churchDetails?.logo_url || defaultLogo}
-            alt={churchDetails?.name || t('app_name')} 
-            style={{ maxWidth: '150px', height: 'auto', display: 'block', borderRadius: '100px', objectFit: 'contain' }}
-          />
-          <h3>{churchDetails?.name || t('admin_menu')}</h3>
+          {/* Logo et nom de l'église */}
+          <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+            <img
+              src={churchDetails?.logo_url || defaultLogo}
+              alt={churchDetails?.name || 'MY EDEN X'}
+              style={{
+                width: '80px',
+                height: '80px',
+                display: 'block',
+                borderRadius: '50%',
+                objectFit: 'cover',
+                margin: '0 auto',
+                border: '3px solid #4f46e5'
+              }}
+            />
+            <h3 style={{
+              color: '#f3f4f6',
+              marginTop: '12px',
+              marginBottom: '5px',
+              fontSize: '16px',
+              fontWeight: 'bold'
+            }}>
+              {churchDetails?.name || 'MY EDEN X'}
+            </h3>
+            <p style={{ color: '#9ca3af', fontSize: '12px' }}>
+              {t('church_management_platform')}
+            </p>
+          </div>
+
           <ul style={{ listStyle: 'none', padding: 0 }}>
+            {/* Section Gestion de l'Église */}
             <li style={{ marginBottom: '10px' }}>
               <div
                 onClick={() => toggleSection('churchManagement')}
@@ -175,6 +238,7 @@ function AdminLayout() {
                       onMouseLeave={() => setHoveredItem(null)}
                       style={({ isActive }) => getLinkStyle({ isActive, itemName: 'dashboard' })}
                     >
+                      <MdDashboard style={iconStyle} />
                       {t('dashboard')}
                     </NavLink>
                   </li>
@@ -185,6 +249,7 @@ function AdminLayout() {
                       onMouseLeave={() => setHoveredItem(null)}
                       style={({ isActive }) => getLinkStyle({ isActive, itemName: 'events' })}
                     >
+                      <MdEvent style={iconStyle} />
                       {t('events')}
                     </NavLink>
                   </li>
@@ -195,6 +260,7 @@ function AdminLayout() {
                       onMouseLeave={() => setHoveredItem(null)}
                       style={({ isActive }) => getLinkStyle({ isActive, itemName: 'all-attendees' })}
                     >
+                      <MdPeople style={iconStyle} />
                       {t('all_attendees')}
                     </NavLink>
                   </li>
@@ -224,6 +290,7 @@ function AdminLayout() {
               )}
             </li>
 
+            {/* Section Rapports et Statistiques */}
             <li style={{ marginBottom: '10px' }}>
               <div
                 onClick={() => toggleSection('reportsAndStats')}
@@ -266,15 +333,16 @@ function AdminLayout() {
             </li>
           </ul>
         </div>
-        
-        <div style={{ marginTop: 'auto', paddingTop: '20px', borderTop: '1px solid #ddd' }}>
+
+        {/* Footer avec déconnexion et langue */}
+        <div style={{ marginTop: 'auto', paddingTop: '20px', borderTop: '1px solid #374151' }}>
           <button
             onClick={handleLogout}
             style={{
               width: '100%',
               padding: '10px 12px',
               cursor: 'pointer',
-              backgroundColor: '#dc3545',
+              backgroundColor: '#dc2626',
               color: '#fff',
               border: 'none',
               borderRadius: '4px',
@@ -286,19 +354,44 @@ function AdminLayout() {
               fontWeight: '500',
               transition: 'background-color 0.2s'
             }}
-            onMouseEnter={(e) => e.target.style.backgroundColor = '#c82333'}
-            onMouseLeave={(e) => e.target.style.backgroundColor = '#dc3545'}
+            onMouseEnter={(e) => e.target.style.backgroundColor = '#b91c1c'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = '#dc2626'}
           >
             <MdLogout style={{ marginRight: '8px', fontSize: '18px' }} />
-            {t('logout') || 'Déconnexion'}
+            {t('logout')}
           </button>
 
-          <p style={{ marginBottom: '10px', fontSize: '14px' }}>{t('language_switcher')}:</p>
-          <button onClick={() => handleLanguageChange('fr')} style={{ marginRight: '5px', padding: '8px 12px', cursor: 'pointer', fontWeight: i18n.language === 'fr' ? 'bold' : 'normal' }}>FR</button>
-          <button onClick={() => handleLanguageChange('en')} style={{ padding: '8px 12px', cursor: 'pointer', fontWeight: i18n.language === 'en' ? 'bold' : 'normal' }}>EN</button>
+          <p style={{ marginBottom: '10px', fontSize: '14px', color: '#d1d5db' }}>{t('language_switcher')}:</p>
+          <button
+            onClick={() => handleLanguageChange('fr')}
+            style={{
+              marginRight: '5px',
+              padding: '8px 12px',
+              cursor: 'pointer',
+              fontWeight: i18n.language === 'fr' ? 'bold' : 'normal',
+              backgroundColor: i18n.language === 'fr' ? '#3b82f6' : '#374151',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '4px',
+              transition: 'background-color 0.2s'
+            }}
+          >FR</button>
+          <button
+            onClick={() => handleLanguageChange('en')}
+            style={{
+              padding: '8px 12px',
+              cursor: 'pointer',
+              fontWeight: i18n.language === 'en' ? 'bold' : 'normal',
+              backgroundColor: i18n.language === 'en' ? '#3b82f6' : '#374151',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '4px',
+              transition: 'background-color 0.2s'
+            }}
+          >EN</button>
         </div>
       </nav>
-      <main style={{ flex: 1, padding: '20px' }}>
+      <main style={{ flex: 1, padding: '20px', color: '#ffffff' }}>
         <Outlet />
       </main>
     </div>
