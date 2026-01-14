@@ -223,21 +223,45 @@ router.post('/churches/register', async (req, res) => {
             return res.status(400).json({ error: 'Invitation has expired.' });
         }
 
-        // 2. Créer l'utilisateur
+        // 2. Créer l'utilisateur ou récupérer l'existant
         console.log('Step 2: Creating user with email:', invitation.email);
-        const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
-            email: invitation.email, // Utiliser l'email de l'invitation
-            password,
-            user_metadata: { full_name: adminName },
-            email_confirm: true, // L'utilisateur est invité, on peut considérer l'email comme vérifié
-        });
+        let userId;
 
-        if (userError) {
-            console.error('User creation error:', userError);
-            throw new Error('Failed to create user: ' + userError.message);
+        // Vérifier si l'utilisateur existe déjà
+        const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+        const existingUser = existingUsers?.users?.find(u => u.email === invitation.email);
+
+        if (existingUser) {
+            console.log('User already exists, using existing user ID:', existingUser.id);
+            userId = existingUser.id;
+
+            // Mettre à jour le mot de passe et les métadonnées
+            const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+                password,
+                user_metadata: { full_name: adminName },
+            });
+            if (updateError) {
+                console.error('User update error:', updateError);
+                throw new Error('Failed to update existing user: ' + updateError.message);
+            }
+            console.log('Existing user updated successfully');
+        } else {
+            // Créer un nouvel utilisateur
+            const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
+                email: invitation.email,
+                password,
+                user_metadata: { full_name: adminName },
+                email_confirm: true,
+            });
+
+            if (userError) {
+                console.error('User creation error:', userError);
+                throw new Error('Failed to create user: ' + userError.message);
+            }
+
+            userId = userData.user.id;
+            console.log('New user created with ID:', userId);
         }
-
-        const userId = userData.user.id;
         console.log('User created with ID:', userId);
 
         // 3. Créer l'église
@@ -266,17 +290,38 @@ router.post('/churches/register', async (req, res) => {
 
         // 4. Lier l'utilisateur à l'église avec le rôle 'church_admin'
         console.log('Step 4: Linking user to church...');
-        const { error: roleError } = await supabaseAdmin
-            .from('church_users_v2')
-            .insert({
-                user_id: userId,
-                church_id: churchId,
-                role: 'church_admin',
-            });
 
-        if (roleError) {
-            console.error('Role assignment error:', roleError);
-            throw new Error('Failed to assign role: ' + roleError.message);
+        // Vérifier si l'utilisateur est déjà lié à une église
+        const { data: existingLink, error: linkCheckError } = await supabaseAdmin
+            .from('church_users_v2')
+            .select('id')
+            .eq('user_id', userId)
+            .single();
+
+        if (existingLink) {
+            console.log('User already linked to a church, updating...');
+            const { error: updateLinkError } = await supabaseAdmin
+                .from('church_users_v2')
+                .update({ church_id: churchId, role: 'church_admin' })
+                .eq('user_id', userId);
+
+            if (updateLinkError) {
+                console.error('Role update error:', updateLinkError);
+                throw new Error('Failed to update role: ' + updateLinkError.message);
+            }
+        } else {
+            const { error: roleError } = await supabaseAdmin
+                .from('church_users_v2')
+                .insert({
+                    user_id: userId,
+                    church_id: churchId,
+                    role: 'church_admin',
+                });
+
+            if (roleError) {
+                console.error('Role assignment error:', roleError);
+                throw new Error('Failed to assign role: ' + roleError.message);
+            }
         }
         console.log('User linked to church successfully');
 
