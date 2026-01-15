@@ -21,28 +21,25 @@ function AdminLayout() {
   });
 
   useEffect(() => {
+    // Skip if already authenticated
+    if (userRole && churchId) {
+      return;
+    }
+
     const fetchAuthInfoAndChurchDetails = async () => {
       try {
-        console.log('=== AdminLayout: Checking authentication ===');
-
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        console.log('Supabase session:', session ? 'exists' : 'null');
 
         if (sessionError || !session) {
-          console.log('No active Supabase session, redirecting to login');
           navigate('/admin/login');
           return;
         }
 
-        console.log('Calling api.auth.me()...');
         const userInfo = await api.auth.me();
-        console.log('User info received:', userInfo.church_role, userInfo.church_id);
-
         const currentUserRole = userInfo.church_role;
         const currentChurchId = userInfo.church_id;
 
         if (!currentUserRole || !currentChurchId) {
-            console.log('Missing role or church_id, redirecting to login');
             navigate('/admin/login');
             return;
         }
@@ -55,16 +52,10 @@ function AdminLayout() {
           const details = await api.admin.getChurchDetails(currentChurchId);
           setChurchDetails(details);
         } catch (detailsErr) {
-          console.warn('Could not fetch church details:', detailsErr.message);
-          // Ne pas rediriger, utiliser des valeurs par défaut
           setChurchDetails({ name: 'Mon Église', logo_url: null });
         }
 
-        console.log('=== AdminLayout: Authentication successful ===');
-
       } catch (err) {
-        console.error('=== AdminLayout: Auth Error ===', err.message);
-        // Seulement rediriger si c'est une erreur d'authentification (401/403)
         if (err.response?.status === 401 || err.response?.status === 403) {
           navigate('/admin/login');
         } else {
@@ -75,7 +66,7 @@ function AdminLayout() {
       }
     };
     fetchAuthInfoAndChurchDetails();
-  }, [t, navigate]);
+  }, [navigate, userRole, churchId]);
 
   const handleLanguageChange = (lang) => {
     i18n.changeLanguage(lang);
