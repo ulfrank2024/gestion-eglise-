@@ -293,8 +293,8 @@ router.post('/checkin-event/:eventId', async (req, res) => {
   }
 });
 
-// GET /api/admin/events/:eventId/statistics - Obtenir les statistiques d'un événement
-router.get('/events/:eventId/statistics', async (req, res) => {
+// GET /api/admin/events_v2/:eventId/statistics - Obtenir les statistiques d'un événement
+router.get('/events_v2/:eventId/statistics', async (req, res) => {
   const { eventId } = req.params;
   try {
     const { count: attendeeCount, error: attendeesError } = await supabase
@@ -333,8 +333,8 @@ router.get('/events/:eventId/statistics', async (req, res) => {
 });
 
 
-// GET /api/admin/events/:eventId/qrcode-checkin - Générer le QR code de check-in pour un événement
-router.get('/events/:eventId/qrcode-checkin', async (req, res) => {
+// GET /api/admin/events_v2/:eventId/qrcode-checkin - Générer le QR code de check-in pour un événement
+router.get('/events_v2/:eventId/qrcode-checkin', async (req, res) => {
   const { eventId } = req.params;
   try {
     const { data: event, error: eventError } = await supabase
@@ -365,8 +365,8 @@ router.get('/events/:eventId/qrcode-checkin', async (req, res) => {
 
 // --- Endpoints CRUD pour les champs de formulaire (protégés Admin) ---
 
-// GET /api/admin/events/:eventId/form-fields - Récupérer les champs de formulaire pour un événement
-router.get('/events/:eventId/form-fields', async (req, res) => {
+// GET /api/admin/events_v2/:eventId/form-fields - Récupérer les champs de formulaire pour un événement
+router.get('/events_v2/:eventId/form-fields', async (req, res) => {
   const { eventId } = req.params;
   try {
     const { data, error } = await supabase
@@ -387,8 +387,8 @@ router.get('/events/:eventId/form-fields', async (req, res) => {
   }
 });
 
-// POST /api/admin/events/:eventId/form-fields - Créer un champ de formulaire
-router.post('/events/:eventId/form-fields', async (req, res) => {
+// POST /api/admin/events_v2/:eventId/form-fields - Créer un champ de formulaire
+router.post('/events_v2/:eventId/form-fields', async (req, res) => {
   const { eventId } = req.params;
   const { label_fr, label_en, field_type, is_required, order } = req.body;
 
