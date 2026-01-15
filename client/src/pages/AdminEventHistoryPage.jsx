@@ -99,7 +99,7 @@ function AdminEventHistoryPage() {
             <tr>
               <th>{t('event_name_fr')}</th>
               <th>{t('event_name_en')}</th>
-              <th>{t('attendees_count')}</th>
+              <th>{t('participants')}</th>
               <th>{t('status')}</th>
               <th>{t('actions')}</th>
             </tr>

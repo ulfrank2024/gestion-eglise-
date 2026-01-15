@@ -27,25 +27,22 @@ function AdminLayout() {
 
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         console.log('Supabase session:', session ? 'exists' : 'null');
-        console.log('Session error:', sessionError);
 
         if (sessionError || !session) {
           console.log('No active Supabase session, redirecting to login');
-          throw new Error('No active session.');
+          navigate('/admin/login');
+          return;
         }
 
         console.log('Calling api.auth.me()...');
         const userInfo = await api.auth.me();
-        console.log('User info received:', JSON.stringify(userInfo, null, 2));
+        console.log('User info received:', userInfo.church_role, userInfo.church_id);
 
         const currentUserRole = userInfo.church_role;
         const currentChurchId = userInfo.church_id;
 
-        console.log('Role:', currentUserRole, 'Church ID:', currentChurchId);
-
         if (!currentUserRole || !currentChurchId) {
             console.log('Missing role or church_id, redirecting to login');
-            setError(t('error_loading_user_data'));
             navigate('/admin/login');
             return;
         }
@@ -53,20 +50,26 @@ function AdminLayout() {
         setUserRole(currentUserRole);
         setChurchId(currentChurchId);
 
-        console.log('Fetching church details for:', currentChurchId);
-        const details = await api.admin.getChurchDetails(currentChurchId);
-        console.log('Church details received:', JSON.stringify(details, null, 2));
-        setChurchDetails(details);
+        // Récupérer les détails de l'église (non bloquant)
+        try {
+          const details = await api.admin.getChurchDetails(currentChurchId);
+          setChurchDetails(details);
+        } catch (detailsErr) {
+          console.warn('Could not fetch church details:', detailsErr.message);
+          // Ne pas rediriger, utiliser des valeurs par défaut
+          setChurchDetails({ name: 'Mon Église', logo_url: null });
+        }
 
         console.log('=== AdminLayout: Authentication successful ===');
 
       } catch (err) {
-        console.error('=== AdminLayout: Error ===');
-        console.error('Error loading auth info or church details:', err);
-        console.error('Error message:', err.message);
-        console.error('Error response:', err.response?.data);
-        setError(t('error_loading_user_data'));
-        navigate('/admin/login');
+        console.error('=== AdminLayout: Auth Error ===', err.message);
+        // Seulement rediriger si c'est une erreur d'authentification (401/403)
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          navigate('/admin/login');
+        } else {
+          setError(err.message);
+        }
       } finally {
         setLoading(false);
       }

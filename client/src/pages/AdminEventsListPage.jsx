@@ -148,7 +148,7 @@ function AdminEventsListPage() {
                     {t('event_name_en')}
                   </th>
                   <th className="px-6 py-4 text-center text-xs font-semibold text-gray-300 uppercase tracking-wider">
-                    {t('attendees_count')}
+                    {t('participants')}
                   </th>
                   <th className="px-6 py-4 text-center text-xs font-semibold text-gray-300 uppercase tracking-wider">
                     {t('status')}

@@ -160,6 +160,7 @@
     "attendee_details": "Détails du participant",
     "latest_events": "Derniers événements",
     "attendees_count": "Participants : {{count}}",
+    "participants": "Participants",
     "pool_management": "Gestion des Pool",
     "reports_and_stats": "Rapports et Statistiques",
     "platform_management": "Gestion de la Plateforme",

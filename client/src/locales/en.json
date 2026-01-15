@@ -160,6 +160,7 @@
     "attendee_details": "Attendee Details",
     "latest_events": "Latest Events",
     "attendees_count": "Attendees: {{count}}",
+    "participants": "Participants",
     "pool_management": "Pool Management",
     "reports_and_stats": "Reports and Statistics",
     "platform_management": "Platform Management",
