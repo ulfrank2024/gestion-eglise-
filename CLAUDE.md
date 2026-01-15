@@ -1377,3 +1377,41 @@ Les routes dans `/server/routes/adminRoutes.js` ne filtraient pas les données p
 - ✅ Suppression d'événements fonctionne
 - ✅ Gestion des champs de formulaire fonctionne
 - ✅ Check-in fonctionne
+
+---
+
+### 2026-01-15 - Correction contrainte FK et traductions
+
+**Problème 1: Contrainte FK incorrecte**
+- Erreur: `Key (church_id)=(...) is not present in table "churches"`
+- La table `events_v2` avait une FK vers `churches` (v1) au lieu de `churches_v2`
+
+**Solution SQL exécutée dans Supabase:**
+```sql
+ALTER TABLE events_v2 DROP CONSTRAINT IF EXISTS events_v2_church_id_fkey;
+ALTER TABLE events_v2 ADD CONSTRAINT events_v2_church_id_fkey
+  FOREIGN KEY (church_id) REFERENCES churches_v2(id) ON DELETE CASCADE;
+-- Même chose pour form_fields_v2 et attendees_v2
+```
+
+**Problème 2: Traduction `{{count}}` non interpolée**
+- L'en-tête de colonne affichait "Participants : {{count}}" littéralement
+- Cause: `attendees_count` utilisé comme titre de colonne avec interpolation
+
+**Solution:**
+- Ajout de la clé `participants` (sans interpolation) dans fr.json et en.json
+- Modification de `AdminEventsListPage.jsx` et `AdminEventHistoryPage.jsx`
+
+**Problème 3: Redirection intempestive vers login**
+- Cliquer sur un événement ramenait à la page de login
+- Cause: `AdminLayout.jsx` redirigeait si `getChurchDetails` échouait
+
+**Solution dans `AdminLayout.jsx`:**
+- Séparation de l'authentification et du chargement des détails église
+- `getChurchDetails` est maintenant non-bloquant (try/catch séparé)
+- Redirection uniquement sur erreur 401/403
+
+**Résultat:**
+- ✅ Création d'événements fonctionne
+- ✅ Navigation entre les pages admin fonctionne
+- ✅ En-tête "Participants" s'affiche correctement
