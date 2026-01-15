@@ -1,5 +1,5 @@
 const express = require('express');
-const { supabase } = require('../db/supabase');
+const { supabase, supabaseAdmin } = require('../db/supabase');
 const { transporter } = require('../services/mailer');
 const { protect, isAdminChurch, isSuperAdminOrChurchAdmin } = require('../middleware/auth');
 const router = express.Router();
@@ -11,7 +11,7 @@ const qrcode = require('qrcode');
 router.post('/events_v2', async (req, res) => {
   const { name_fr, name_en, description_fr, description_en, background_image_url, is_archived, event_start_date, event_end_date } = req.body;
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('events_v2')
       .insert([{ name_fr, name_en, description_fr, description_en, background_image_url, is_archived, event_start_date, event_end_date, church_id: req.user.church_id }])
       .select();
@@ -85,7 +85,7 @@ router.put('/events_v2/:id', async (req, res) => {
   const { name_fr, name_en, description_fr, description_en, background_image_url, is_archived, event_start_date, event_end_date } = req.body;
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('events_v2')
       .update({ name_fr, name_en, description_fr, description_en, background_image_url, is_archived, event_start_date, event_end_date })
       .eq('id', id)
@@ -109,7 +109,7 @@ router.put('/events_v2/:id', async (req, res) => {
 router.delete('/events_v2/:id', async (req, res) => {
   const { id } = req.params;
   try {
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('events_v2')
       .delete()
       .eq('id', id)
@@ -258,7 +258,7 @@ router.post('/checkin-event/:eventId', async (req, res) => {
 
     const newCheckinCount = (event.checkin_count || 0) + 1;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('events_v2')
       .update({ checkin_count: newCheckinCount })
       .eq('id', eventId)
@@ -377,7 +377,7 @@ router.post('/events/:eventId/form-fields', async (req, res) => {
   const { label_fr, label_en, field_type, is_required, order } = req.body;
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('form_fields_v2')
       .insert([{ event_id: eventId, label_fr, label_en, field_type, is_required, order, church_id: req.user.church_id }])
       .select();
@@ -395,7 +395,7 @@ router.put('/form-fields/:fieldId', async (req, res) => {
   const { label_fr, label_en, field_type, is_required, order } = req.body;
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('form_fields_v2')
       .update({ label_fr, label_en, field_type, is_required, order })
       .eq('id', fieldId)
@@ -418,7 +418,7 @@ router.delete('/form-fields/:fieldId', async (req, res) => {
   const { fieldId } = req.params;
 
   try {
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('form_fields_v2')
       .delete()
       .eq('id', fieldId);

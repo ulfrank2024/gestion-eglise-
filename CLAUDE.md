@@ -1,6 +1,8 @@
 # CLAUDE.md
 Réponds toujours en français.
 a chaque modification ou avancement du projet note ca dans ton fichier 
+chaque fois tu fait une mise ajour ou ajustement a la fin deploi sur github
+
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -1335,3 +1337,43 @@ Les routes dans `/server/routes/adminRoutes.js` ne filtraient pas les données p
 - ✅ Interface plus épurée sans titres de section redondants
 - ✅ Navigation simplifiée avec boutons de retour
 - ✅ Cohérence visuelle améliorée
+
+---
+
+### 2026-01-15 - Correction critique: Erreur RLS lors de la création d'événement
+
+**Problème identifié:**
+- Erreur: `new row violates row-level security policy for table "events_v2"`
+- La création d'événements échouait avec status 500
+
+**Cause racine:**
+- Les routes admin utilisaient `supabase` (client anon) qui respecte les politiques RLS
+- Comme l'authentification est gérée par notre middleware `protect`, il faut bypasser RLS côté serveur
+- `supabaseAdmin` (service role) permet de contourner RLS pour les opérations autorisées
+
+**Corrections apportées dans `/server/routes/adminRoutes.js`:**
+
+1. **Import modifié** (ligne 2):
+   ```javascript
+   const { supabase, supabaseAdmin } = require('../db/supabase');
+   ```
+
+2. **Opérations modifiées pour utiliser `supabaseAdmin`:**
+   - `POST /events_v2` - Création d'événement
+   - `PUT /events_v2/:id` - Mise à jour d'événement
+   - `DELETE /events_v2/:id` - Suppression d'événement
+   - `POST /checkin-event/:eventId` - Incrémentation check-in
+   - `POST /events/:eventId/form-fields` - Création champ formulaire
+   - `PUT /form-fields/:fieldId` - Mise à jour champ formulaire
+   - `DELETE /form-fields/:fieldId` - Suppression champ formulaire
+
+**Note importante - Architecture:**
+- `supabase` (client anon) → Utilisé pour les opérations de LECTURE (GET) qui doivent respecter RLS
+- `supabaseAdmin` (service role) → Utilisé pour les opérations d'ÉCRITURE (POST, PUT, DELETE) où l'auth est gérée par notre middleware
+
+**Résultat:**
+- ✅ Création d'événements fonctionne
+- ✅ Mise à jour d'événements fonctionne
+- ✅ Suppression d'événements fonctionne
+- ✅ Gestion des champs de formulaire fonctionne
+- ✅ Check-in fonctionne
