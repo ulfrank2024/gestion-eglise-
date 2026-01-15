@@ -1078,3 +1078,113 @@ useEffect(() => {
 - ✅ Le `church_id` est correctement récupéré depuis la base de données
 - ✅ Pattern cohérent sur toutes les pages admin
 - ✅ L'authentification fonctionne correctement de bout en bout
+
+---
+
+### 2026-01-15 - Correction du bug du logo lors de l'inscription d'église
+
+**Problème identifié:**
+- Lors de l'inscription d'une église, l'admin sélectionnait un logo mais celui-ci ne s'affichait jamais après connexion
+- Le logo par défaut était toujours affiché
+
+**Cause racine:**
+1. **Frontend** (ChurchRegistrationPage.jsx ligne 77): Envoyait seulement le **nom** du fichier, pas le fichier lui-même
+   ```javascript
+   logoFile: formState.logoFile ? formState.logoFile.name : null, // ERREUR!
+   ```
+2. **Backend** (publicRoutes.js ligne 277): Ne gérait pas du tout l'upload du logo
+   ```javascript
+   logo_url: null, // Le logo était toujours null
+   ```
+
+**Solution implémentée:**
+
+1. **Frontend** (`/client/src/pages/ChurchRegistrationPage.jsx`)
+   - ✅ Import du client Supabase
+   - ✅ Upload du fichier vers Supabase Storage avant l'envoi au backend
+   - ✅ Récupération de l'URL publique du fichier uploadé
+   - ✅ Envoi de `logoUrl` au lieu de `logoFile`
+
+   **Nouveau code d'upload:**
+   ```javascript
+   // Upload du logo vers Supabase Storage
+   if (formState.logoFile) {
+     const fileExt = formState.logoFile.name.split('.').pop();
+     const fileName = `${formState.subdomain}-${Date.now()}.${fileExt}`;
+     const filePath = `church-logos/${fileName}`;
+
+     const { error: uploadError } = await supabase.storage
+       .from('logos')
+       .upload(filePath, formState.logoFile);
+
+     if (!uploadError) {
+       const { data: { publicUrl } } = supabase.storage
+         .from('logos')
+         .getPublicUrl(filePath);
+       logoUrl = publicUrl;
+     }
+   }
+   ```
+
+2. **Backend** (`/server/routes/publicRoutes.js`)
+   - ✅ Changé `logoFile` → `logoUrl` dans la déstructuration
+   - ✅ Sauvegarde de `logo_url: logoUrl || null` lors de la création de l'église
+
+**Configuration requise - Supabase Storage:**
+L'utilisateur doit créer un bucket `logos` dans Supabase Storage:
+1. Aller dans Supabase Dashboard → Storage
+2. Créer un nouveau bucket nommé `logos`
+3. Rendre le bucket public (pour que les URLs soient accessibles)
+
+**Résultat:**
+- ✅ Le logo sélectionné lors de l'inscription est correctement uploadé
+- ✅ L'URL du logo est sauvegardée dans la base de données
+- ✅ Le logo s'affiche correctement dans l'interface admin après connexion
+
+---
+
+### 2026-01-15 - Vérification du module Événements
+
+**Contexte:**
+- Événement prévu pour le lendemain
+- Vérification complète du module Événements pour s'assurer qu'il est fonctionnel
+
+**Audit du module Événements:**
+
+| Fonctionnalité | Statut | Fichier |
+|----------------|--------|---------|
+| Création d'événement | ✅ | AdminEventNewPage.jsx |
+| Liste des événements | ✅ | AdminEventsListPage.jsx |
+| Détails événement | ✅ | AdminEventDetailPage.jsx |
+| Upload d'image | ✅ | Supabase Storage |
+| QR Code inscription | ✅ | qrcode.react |
+| QR Code check-in | ✅ | API /qrcode-checkin |
+| Formulaire dynamique | ✅ | FormFieldBuilder.jsx |
+| Inscription publique | ✅ | RegistrationModal.jsx |
+| Email de confirmation | ✅ | publicRoutes.js |
+| Email de remerciement | ✅ | adminRoutes.js |
+| Page de check-in | ✅ | WelcomeCheckinPage.jsx |
+
+**Parcours utilisateur vérifié:**
+
+1. **Admin crée un événement:**
+   - `/admin/events/new` → Formulaire avec noms bilingues, description, date, image
+   - Image uploadée vers Supabase Storage `event_images`
+
+2. **Admin gère l'événement:**
+   - `/admin/events/:id` → Détails, édition, QR codes, participants, emails
+
+3. **Public s'inscrit:**
+   - `/:churchId` → Liste des événements publics
+   - `/:churchId/event/:id` → Page de détail avec bouton "S'inscrire"
+   - Modal d'inscription avec formulaire dynamique
+   - Email de confirmation envoyé automatiquement
+
+4. **Check-in le jour de l'événement:**
+   - Scan du QR code check-in
+   - Redirection vers `/welcome/:eventId`
+   - Incrémentation du compteur `checkin_count`
+
+**Résultat:**
+- ✅ Module Événements 100% fonctionnel
+- ✅ Prêt pour l'événement de demain

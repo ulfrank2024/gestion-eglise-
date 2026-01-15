@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
+import { supabase } from '../supabaseClient';
 import { MdChurch, MdPerson, MdEmail, MdPhone, MdLocationOn, MdLock, MdImage, MdSubdirectoryArrowRight } from 'react-icons/md';
 import logo from '../assets/logo_eden.png';
 
@@ -64,6 +65,33 @@ const ChurchRegistrationPage = () => {
     setSuccess('');
 
     try {
+      let logoUrl = null;
+
+      // Upload du logo vers Supabase Storage si un fichier est sélectionné
+      if (formState.logoFile) {
+        const fileExt = formState.logoFile.name.split('.').pop();
+        const fileName = `${formState.subdomain}-${Date.now()}.${fileExt}`;
+        const filePath = `church-logos/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('logos')
+          .upload(filePath, formState.logoFile, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (uploadError) {
+          console.error('Logo upload error:', uploadError);
+          // Ne pas bloquer l'inscription si l'upload échoue, juste logger l'erreur
+        } else {
+          // Récupérer l'URL publique du logo
+          const { data: { publicUrl } } = supabase.storage
+            .from('logos')
+            .getPublicUrl(filePath);
+          logoUrl = publicUrl;
+        }
+      }
+
       // Construire l'objet de données à envoyer
       const registrationData = {
         token,
@@ -74,7 +102,7 @@ const ChurchRegistrationPage = () => {
         phone: formState.phone,
         adminName: formState.adminName,
         password: formState.password,
-        logoFile: formState.logoFile ? formState.logoFile.name : null,
+        logoUrl: logoUrl,
       };
 
       await api.public.registerChurch(registrationData);
