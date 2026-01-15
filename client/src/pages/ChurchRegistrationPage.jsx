@@ -68,14 +68,14 @@ const ChurchRegistrationPage = () => {
       let logoUrl = null;
 
       // Upload du logo vers Supabase Storage si un fichier est sélectionné
+      // Utilise le bucket 'event_images' qui existe déjà
       if (formState.logoFile) {
         const fileExt = formState.logoFile.name.split('.').pop();
-        const fileName = `${formState.subdomain}-${Date.now()}.${fileExt}`;
-        const filePath = `church-logos/${fileName}`;
+        const fileName = `church-logos/${formState.subdomain}-${Date.now()}.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage
-          .from('logos')
-          .upload(filePath, formState.logoFile, {
+          .from('event_images')
+          .upload(fileName, formState.logoFile, {
             cacheControl: '3600',
             upsert: false
           });
@@ -86,8 +86,8 @@ const ChurchRegistrationPage = () => {
         } else {
           // Récupérer l'URL publique du logo
           const { data: { publicUrl } } = supabase.storage
-            .from('logos')
-            .getPublicUrl(filePath);
+            .from('event_images')
+            .getPublicUrl(fileName);
           logoUrl = publicUrl;
         }
       }
