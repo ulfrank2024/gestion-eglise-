@@ -6,10 +6,14 @@ import { supabase } from '../supabaseClient';
 import { api } from '../api/api';
 import ConfirmationModal from '../components/ConfirmationModal';
 import FormFieldBuilder from '../components/FormFieldBuilder';
-import './AdminEventDetailPage.css';
+import {
+  MdArrowBack, MdEdit, MdDelete, MdCheckCircle, MdQrCode,
+  MdPeople, MdEmail, MdEvent, MdBarChart, MdSave, MdClose,
+  MdCalendarToday, MdLink
+} from 'react-icons/md';
 
 function AdminEventDetailPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const [event, setEvent] = useState(null);
@@ -39,7 +43,7 @@ function AdminEventDetailPage() {
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [modalAction, setModalAction] = useState(null);
 
-  const publicEventUrl = `${window.location.origin}/event/${id}`;
+  const publicEventUrl = `${window.location.origin}/${event?.church_id}/event/${id}`;
 
   const toLocalISOString = (dateString) => {
     if (!dateString) return '';
@@ -67,7 +71,6 @@ function AdminEventDetailPage() {
           setCheckinQrCodeUrl(qrCodeResponse.qrCodeDataUrl);
         } catch (qrError) {
           console.error('Failed to fetch check-in QR code:', qrError);
-          setError(prevError => `${prevError} | Failed to load QR Code.`);
         }
       } catch (err) {
         setError(err.message || 'Failed to fetch event data');
@@ -90,7 +93,6 @@ function AdminEventDetailPage() {
         console.error('Error fetching attendees:', err);
       }
     };
-
     fetchAttendees();
   }, [id]);
 
@@ -114,7 +116,7 @@ function AdminEventDetailPage() {
 
         const { error: uploadError } = await supabase.storage.from('event_images').upload(filePath, backgroundImageFile);
         if (uploadError) throw new Error(`Error uploading image: ${uploadError.message}`);
-        
+
         const { data: publicUrlData } = supabase.storage.from('event_images').getPublicUrl(filePath);
         finalImageUrl = publicUrlData.publicUrl;
       }
@@ -133,7 +135,7 @@ function AdminEventDetailPage() {
 
       setEvent(response);
       setIsEditing(false);
-      setSuccess('Event updated successfully!');
+      setSuccess(t('event_updated_successfully') || 'Événement mis à jour avec succès !');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       console.error('Error updating event:', err);
@@ -159,15 +161,15 @@ function AdminEventDetailPage() {
     try {
       if (modalAction === 'delete') {
         await api.admin.deleteEvent(id);
-        navigate('/admin/dashboard');
+        navigate('/admin/events');
       } else if (modalAction === 'mark_as_completed') {
         const response = await api.admin.updateEvent(id, {
-          ...event, // Keep existing event data
+          ...event,
           is_archived: true
         });
         setEvent(response);
         setIsCompleted(true);
-        setSuccess('Event marked as completed successfully!');
+        setSuccess(t('event_marked_completed') || 'Événement marqué comme terminé !');
         setTimeout(() => setSuccess(''), 3000);
       }
     } catch (err) {
@@ -190,7 +192,7 @@ function AdminEventDetailPage() {
     setEmailSendSuccess('');
     try {
       await api.admin.sendThankYouEmails(id, { subject: emailSubject, message: emailMessage });
-      setEmailSendSuccess('Emails sent successfully!');
+      setEmailSendSuccess(t('emails_sent_successfully') || 'Emails envoyés avec succès !');
       setTimeout(() => setEmailSendSuccess(''), 5000);
     } catch (err) {
       setEmailSendError(err.message || 'Failed to send emails.');
@@ -199,75 +201,241 @@ function AdminEventDetailPage() {
     }
   };
 
-  if (loading && !event) return <p className="loading-message">{t('loading')}...</p>;
-  if (error) return <p className="error-message">{t('error')}: {error}</p>;
-  if (!event) return <p className="error-message">{t('event_not_found')}</p>;
+  if (loading && !event) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-300 text-lg">{t('loading')}...</div>
+      </div>
+    );
+  }
+
+  if (error && !event) {
+    return (
+      <div className="bg-red-900/30 border border-red-700 rounded-lg p-4 m-4">
+        <p className="text-red-400">{t('error')}: {error}</p>
+      </div>
+    );
+  }
+
+  if (!event) {
+    return (
+      <div className="bg-yellow-900/30 border border-yellow-700 rounded-lg p-4 m-4">
+        <p className="text-yellow-400">{t('event_not_found')}</p>
+      </div>
+    );
+  }
 
   const formHeaders = attendees.reduce((acc, attendee) => {
     if (attendee.form_responses) {
       Object.keys(attendee.form_responses).forEach(key => {
-        if (!acc.includes(key)) {
-          acc.push(key);
-        }
+        if (!acc.includes(key)) acc.push(key);
       });
     }
     return acc;
   }, []);
 
   return (
-    <div className="event-detail-container">
-      <div className="event-detail-header">
-        <h2>{isEditing ? t('edit_event') : t('event_details_admin_view')} - {event.name_fr}</h2>
+    <div className="p-6">
+      {/* Header */}
+      <div className="mb-6">
+        <button
+          onClick={() => navigate('/admin/events')}
+          className="flex items-center text-gray-400 hover:text-gray-200 mb-4 transition-colors"
+        >
+          <MdArrowBack className="mr-2" />
+          {t('back_to_events') || 'Retour aux événements'}
+        </button>
+
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold text-gray-100">{event.name_fr}</h1>
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                event.is_archived ? 'bg-gray-700 text-gray-300' : 'bg-green-900/50 text-green-400'
+              }`}>
+                {event.is_archived ? t('eventStatus.archived') : t('eventStatus.active')}
+              </span>
+            </div>
+            <p className="text-gray-400 mt-1">{event.name_en}</p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setIsEditing(true)}
+              className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              <MdEdit className="mr-2" /> {t('edit')}
+            </button>
+            {!event.is_archived && (
+              <button
+                onClick={handleMarkAsCompletedClick}
+                className="flex items-center px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
+              >
+                <MdCheckCircle className="mr-2" /> {t('mark_as_completed')}
+              </button>
+            )}
+            <button
+              onClick={handleDeleteClick}
+              className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              <MdDelete className="mr-2" /> {t('delete')}
+            </button>
+          </div>
+        </div>
       </div>
 
-      {success && <p className="success-message">{success}</p>}
+      {/* Success/Error Messages */}
+      {success && (
+        <div className="bg-green-900/30 border border-green-700 rounded-lg p-4 mb-6">
+          <p className="text-green-400">{success}</p>
+        </div>
+      )}
+      {error && (
+        <div className="bg-red-900/30 border border-red-700 rounded-lg p-4 mb-6">
+          <p className="text-red-400">{error}</p>
+        </div>
+      )}
 
       {isEditing ? (
-        <form onSubmit={handleUpdateEvent} className="event-form">
-          <div className="form-group"><label htmlFor="eventNameFr">{t('event_name_fr')}:</label><input type="text" id="eventNameFr" value={eventNameFr} onChange={(e) => setEventNameFr(e.target.value)} required /></div>
-          <div className="form-group"><label htmlFor="eventNameEn">{t('event_name_en')}:</label><input type="text" id="eventNameEn" value={eventNameEn} onChange={(e) => setEventNameEn(e.target.value)} required /></div>
-          <div className="form-group"><label htmlFor="descriptionFr">{t('description_fr')}:</label><textarea id="descriptionFr" value={descriptionFr} onChange={(e) => setDescriptionFr(e.target.value)} required rows="4"></textarea></div>
-          <div className="form-group"><label htmlFor="descriptionEn">{t('description_en')}:</label><textarea id="descriptionEn" value={descriptionEn} onChange={(e) => setDescriptionEn(e.target.value)} required rows="4"></textarea></div>
-          <div className="form-group"><label htmlFor="eventStartDate">{t('event_date')}:</label><input type="datetime-local" id="eventStartDate" value={eventStartDate} onChange={(e) => setEventStartDate(e.target.value)} /></div>
-          <div className="form-group"><label htmlFor="backgroundImage">{t('background_image_url')}:</label><input type="file" id="backgroundImage" accept="image/*" onChange={handleFileChange} /></div>
-          <div className="form-group"><label htmlFor="imageUrl">{t('or_image_url_direct')}:</label><input type="text" id="imageUrl" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://example.com/image.jpg" disabled={!!backgroundImageFile} /></div>
-          <div className="form-group checkbox-group"><input type="checkbox" id="isCompleted" checked={isCompleted} onChange={(e) => setIsCompleted(e.target.checked)} /><label htmlFor="isCompleted">{t('is_completed')}</label></div>
-          <div className="form-actions"><button type="submit" disabled={loading} className="btn btn-warning">{t('update_event')}</button><button type="button" onClick={() => setIsEditing(false)} className="btn btn-secondary">{t('cancel')}</button></div>
-        </form>
-      ) : (
-        <div className="event-display-grid">
-          <div className="event-main-content">
-            <div className="detail-card">
-              <div className="detail-item"><strong>{t('event_name_fr')}:</strong> <span>{event.name_fr}</span></div>
-              <div className="detail-item"><strong>{t('event_name_en')}:</strong> <span>{event.name_en}</span></div>
-              <div className="detail-item"><strong>{t('description_fr')}:</strong> <span>{event.description_fr}</span></div>
-              <div className="detail-item"><strong>{t('description_en')}:</strong> <span>{event.description_en}</span></div>
-              <div className="detail-item"><strong>{t('event_date')}:</strong> <span>{event.event_start_date ? new Date(event.event_start_date).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : t('not_set')}</span></div>
-              <div className="detail-item"><strong>{t('is_completed')}:</strong> <span>{event.is_archived ? t('yes') : t('no')}</span></div>
-              {event.background_image_url && <img src={event.background_image_url} alt="Background" className="event-image" />}
-              <div className="action-buttons"><button onClick={() => navigate(`/admin/statistics?eventId=${id}`)} className="btn btn-info">{t('statistics')}</button><button onClick={() => setIsEditing(true)} className="btn btn-warning">{t('edit')}</button>{!event.is_archived && <button onClick={handleMarkAsCompletedClick} disabled={loading} className="btn btn-secondary">{t('mark_as_completed')}</button>}<button onClick={handleDeleteClick} disabled={loading} className="btn btn-danger">{t('delete')}</button></div>
+        /* Edit Form */
+        <div className="bg-gray-800 rounded-xl border border-gray-700 p-6">
+          <h2 className="text-xl font-semibold text-gray-100 mb-6">{t('edit_event')}</h2>
+          <form onSubmit={handleUpdateEvent} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-gray-300 text-sm font-medium mb-2">{t('event_name_fr')}</label>
+                <input type="text" value={eventNameFr} onChange={(e) => setEventNameFr(e.target.value)} required
+                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:ring-2 focus:ring-indigo-500" />
+              </div>
+              <div>
+                <label className="block text-gray-300 text-sm font-medium mb-2">{t('event_name_en')}</label>
+                <input type="text" value={eventNameEn} onChange={(e) => setEventNameEn(e.target.value)} required
+                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:ring-2 focus:ring-indigo-500" />
+              </div>
             </div>
-            <div className="form-builder-card"><FormFieldBuilder eventId={id} /></div>
-            <div className="attendees-card">
-              <h3>{t('attendee_list_count', { count: attendeeCount })}</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-gray-300 text-sm font-medium mb-2">{t('description_fr')}</label>
+                <textarea value={descriptionFr} onChange={(e) => setDescriptionFr(e.target.value)} required rows="4"
+                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:ring-2 focus:ring-indigo-500 resize-none" />
+              </div>
+              <div>
+                <label className="block text-gray-300 text-sm font-medium mb-2">{t('description_en')}</label>
+                <textarea value={descriptionEn} onChange={(e) => setDescriptionEn(e.target.value)} required rows="4"
+                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:ring-2 focus:ring-indigo-500 resize-none" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-gray-300 text-sm font-medium mb-2">{t('event_date')}</label>
+              <input type="datetime-local" value={eventStartDate} onChange={(e) => setEventStartDate(e.target.value)}
+                className="w-full md:w-1/2 px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:ring-2 focus:ring-indigo-500" />
+            </div>
+            <div>
+              <label className="block text-gray-300 text-sm font-medium mb-2">{t('background_image_url')}</label>
+              <input type="file" accept="image/*" onChange={handleFileChange}
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-indigo-600 file:text-white" />
+            </div>
+            <div>
+              <label className="block text-gray-300 text-sm font-medium mb-2">{t('or_image_url_direct')}</label>
+              <input type="text" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} disabled={!!backgroundImageFile}
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 disabled:opacity-50" />
+            </div>
+            <div className="flex items-center">
+              <input type="checkbox" id="isCompleted" checked={isCompleted} onChange={(e) => setIsCompleted(e.target.checked)}
+                className="w-5 h-5 rounded bg-gray-700 border-gray-600 text-indigo-600" />
+              <label htmlFor="isCompleted" className="ml-3 text-gray-300">{t('is_completed')}</label>
+            </div>
+            <div className="flex justify-end gap-4 pt-4 border-t border-gray-700">
+              <button type="button" onClick={() => setIsEditing(false)}
+                className="flex items-center px-6 py-3 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600">
+                <MdClose className="mr-2" /> {t('cancel')}
+              </button>
+              <button type="submit" disabled={loading}
+                className="flex items-center px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+                <MdSave className="mr-2" /> {t('update_event')}
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : (
+        /* View Mode */
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Event Details Card */}
+            <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+              {event.background_image_url && (
+                <div className="h-48 overflow-hidden">
+                  <img src={event.background_image_url} alt={event.name_fr} className="w-full h-full object-cover" />
+                </div>
+              )}
+              <div className="p-6">
+                <h2 className="text-xl font-semibold text-gray-100 mb-4">{t('event_details_admin_view')}</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-gray-400 text-sm">{t('event_name_fr')}</p>
+                    <p className="text-gray-100">{event.name_fr}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-400 text-sm">{t('event_name_en')}</p>
+                    <p className="text-gray-100">{event.name_en}</p>
+                  </div>
+                  <div className="md:col-span-2">
+                    <p className="text-gray-400 text-sm">{t('description_fr')}</p>
+                    <p className="text-gray-100">{event.description_fr}</p>
+                  </div>
+                  <div className="md:col-span-2">
+                    <p className="text-gray-400 text-sm">{t('description_en')}</p>
+                    <p className="text-gray-100">{event.description_en}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-400 text-sm">{t('event_date')}</p>
+                    <p className="text-gray-100 flex items-center">
+                      <MdCalendarToday className="mr-2 text-indigo-400" />
+                      {event.event_start_date
+                        ? new Date(event.event_start_date).toLocaleString(i18n.language === 'fr' ? 'fr-FR' : 'en-US')
+                        : t('not_set')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Form Builder */}
+            <div className="bg-gray-800 rounded-xl border border-gray-700 p-6">
+              <FormFieldBuilder eventId={id} />
+            </div>
+
+            {/* Attendees Table */}
+            <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-700 flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-100 flex items-center">
+                  <MdPeople className="mr-2 text-green-400" />
+                  {t('attendee_list_count', { count: attendeeCount })}
+                </h3>
+              </div>
               {attendees.length === 0 ? (
-                <p>{t('no_attendees_yet')}</p>
+                <div className="p-6 text-center text-gray-400">
+                  {t('no_attendees_yet')}
+                </div>
               ) : (
-                <div className="table-responsive">
-                  <table className="attendees-table">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
                     <thead>
-                      <tr>
+                      <tr className="bg-gray-700/50">
                         {formHeaders.map(header => (
-                          <th key={header}>{header}</th>
+                          <th key={header} className="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase">
+                            {header}
+                          </th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-gray-700">
                       {attendees.map(attendee => (
-                        <tr key={attendee.id}>
+                        <tr key={attendee.id} className="hover:bg-gray-700/30">
                           {formHeaders.map(header => (
-                            <td key={`${attendee.id}-${header}`}>
-                              {attendee.form_responses?.[header] ? attendee.form_responses[header].toString() : ''}
+                            <td key={`${attendee.id}-${header}`} className="px-4 py-3 text-gray-300">
+                              {attendee.form_responses?.[header]?.toString() || ''}
                             </td>
                           ))}
                         </tr>
@@ -278,55 +446,85 @@ function AdminEventDetailPage() {
               )}
             </div>
           </div>
-          <div className="event-sidebar">
-            <div className="qr-code-card">
-              <h3>{t('qr_code_public')}</h3>
-              <div className="qr-code-container">
-                <QRCodeSVG value={publicEventUrl} size={128} level="H" />
-                <p><a href={publicEventUrl} target="_blank" rel="noopener noreferrer">{publicEventUrl}</a></p>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* QR Code Public */}
+            <div className="bg-gray-800 rounded-xl border border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-gray-100 mb-4 flex items-center">
+                <MdQrCode className="mr-2 text-indigo-400" />
+                {t('qr_code_public')}
+              </h3>
+              <div className="flex flex-col items-center">
+                <div className="bg-white p-4 rounded-lg">
+                  <QRCodeSVG value={publicEventUrl} size={150} level="H" />
+                </div>
+                <a href={publicEventUrl} target="_blank" rel="noopener noreferrer"
+                  className="mt-4 text-indigo-400 hover:text-indigo-300 text-sm flex items-center">
+                  <MdLink className="mr-1" /> {t('open_public_page') || 'Ouvrir la page publique'}
+                </a>
               </div>
             </div>
-            <div className="qr-code-card">
-              <h3>{t('check_in_qr_code')}</h3>
-              {checkinQrCodeUrl ? (
-                <div className="qr-code-container">
-                  <img src={checkinQrCodeUrl} alt={t('check_in_qr_code_alt')} />
-                  <p>{t('scan_for_check_in')}</p>
-                </div>
-              ) : (
-                <p>{t('loading_qr_code')}</p>
-              )}
+
+            {/* QR Code Check-in */}
+            <div className="bg-gray-800 rounded-xl border border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-gray-100 mb-4 flex items-center">
+                <MdQrCode className="mr-2 text-green-400" />
+                {t('check_in_qr_code')}
+              </h3>
+              <div className="flex flex-col items-center">
+                {checkinQrCodeUrl ? (
+                  <>
+                    <img src={checkinQrCodeUrl} alt={t('check_in_qr_code_alt')} className="rounded-lg" />
+                    <p className="mt-4 text-gray-400 text-sm text-center">{t('scan_for_check_in')}</p>
+                  </>
+                ) : (
+                  <p className="text-gray-400">{t('loading_qr_code')}</p>
+                )}
+              </div>
             </div>
-            <div className="email-card">
-              <h3>{t('send_thank_you_emails')}</h3>
-              <form onSubmit={handleSendEmails}>
-                <div className="form-group">
-                  <label htmlFor="emailSubject">{t('subject')}:</label>
-                  <input type="text" id="emailSubject" value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} required />
+
+            {/* Send Emails */}
+            <div className="bg-gray-800 rounded-xl border border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-gray-100 mb-4 flex items-center">
+                <MdEmail className="mr-2 text-purple-400" />
+                {t('send_thank_you_emails')}
+              </h3>
+              <form onSubmit={handleSendEmails} className="space-y-4">
+                <div>
+                  <label className="block text-gray-300 text-sm mb-2">{t('subject')}</label>
+                  <input type="text" value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} required
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:ring-2 focus:ring-purple-500" />
                 </div>
-                <div className="form-group">
-                  <label htmlFor="emailMessage">{t('message')}:</label>
-                  <textarea id="emailMessage" value={emailMessage} onChange={(e) => setEmailMessage(e.target.value)} required rows="5"></textarea>
+                <div>
+                  <label className="block text-gray-300 text-sm mb-2">{t('message')}</label>
+                  <textarea value={emailMessage} onChange={(e) => setEmailMessage(e.target.value)} required rows="4"
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:ring-2 focus:ring-purple-500 resize-none" />
                 </div>
-                <button type="submit" disabled={sendingEmails} className="btn btn-primary">{sendingEmails ? 'Envoi...' : t('send_emails')}</button>
-                {emailSendSuccess && <p className="success-message">{emailSendSuccess}</p>}
-                {emailSendError && <p className="error-message">{emailSendError}</p>}
+                <button type="submit" disabled={sendingEmails}
+                  className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50">
+                  {sendingEmails ? t('sending') || 'Envoi...' : t('send_emails')}
+                </button>
+                {emailSendSuccess && <p className="text-green-400 text-sm">{emailSendSuccess}</p>}
+                {emailSendError && <p className="text-red-400 text-sm">{emailSendError}</p>}
               </form>
             </div>
           </div>
         </div>
       )}
-              {showConfirmationModal && (
-                <ConfirmationModal
-                  show={showConfirmationModal}
-                  title={modalAction === 'delete' ? t('confirm_delete_event_title') : t('confirm_mark_completed_title')}
-                  message={modalAction === 'delete' ? t('confirm_delete_event_message') : t('confirm_mark_completed_message')}
-                  onConfirm={handleConfirmAction}
-                  onCancel={handleCancelAction}
-                  confirmText={modalAction === 'delete' ? t('delete') : t('confirm')}
-                  cancelText={t('cancel')}
-                />
-              )}    </div>
+
+      {showConfirmationModal && (
+        <ConfirmationModal
+          show={showConfirmationModal}
+          title={modalAction === 'delete' ? t('confirm_delete_event_title') : t('confirm_mark_completed_title')}
+          message={modalAction === 'delete' ? t('confirm_delete_event_message') : t('confirm_mark_completed_message')}
+          onConfirm={handleConfirmAction}
+          onCancel={handleCancelAction}
+          confirmText={modalAction === 'delete' ? t('delete') : t('confirm')}
+          cancelText={t('cancel')}
+        />
+      )}
+    </div>
   );
 }
 

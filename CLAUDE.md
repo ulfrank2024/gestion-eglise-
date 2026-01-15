@@ -1188,3 +1188,114 @@ L'utilisateur doit créer un bucket `logos` dans Supabase Storage:
 **Résultat:**
 - ✅ Module Événements 100% fonctionnel
 - ✅ Prêt pour l'événement de demain
+
+---
+
+### 2026-01-15 - Correction bug critique: Filtrage par church_id manquant
+
+**Problème identifié:**
+- Un événement "Nuit de la traversée 2025/2026" apparaissait pour une église nouvellement inscrite
+- Les routes backend ne filtraient pas par `church_id`
+- TOUTES les églises voyaient TOUS les événements de la plateforme
+
+**Cause racine:**
+Les routes dans `/server/routes/adminRoutes.js` ne filtraient pas les données par `req.user.church_id`.
+
+**Corrections apportées:**
+
+1. `GET /api/admin/events_v2` (ligne 34)
+   ```javascript
+   .eq('church_id', req.user.church_id)
+   ```
+
+2. `GET /api/admin/events_v2/:id` (ligne 65)
+   ```javascript
+   .eq('church_id', req.user.church_id)
+   ```
+
+3. `PUT /api/admin/events_v2/:id` (ligne 92)
+   ```javascript
+   .eq('church_id', req.user.church_id)
+   ```
+
+4. `DELETE /api/admin/events_v2/:id` (ligne 116)
+   ```javascript
+   .eq('church_id', req.user.church_id)
+   ```
+
+5. `GET /api/admin/attendees_v2` (ligne 145)
+   ```javascript
+   .eq('church_id', req.user.church_id)
+   ```
+
+**Résultat:**
+- ✅ Chaque église ne voit que SES propres événements
+- ✅ Isolation des données entre églises respectée
+- ✅ Sécurité multi-tenant renforcée
+
+---
+
+### 2026-01-15 - Refonte complète du design des pages Admin (Thème Dark)
+
+**Contexte:**
+- Les pages admin avaient un design clair/blanc incohérent avec le reste de l'interface
+- Demande de modernisation avec le thème dark
+
+**Pages redesignées:**
+
+1. **AdminDashboardPage.jsx**
+   - 4 cartes de statistiques avec gradients colorés (indigo, vert, ambre, violet)
+   - Icônes Material Design (MdEvent, MdPeople, MdTrendingUp, MdCalendarToday)
+   - Graphiques Recharts avec thème dark (Pie Chart, Bar Chart)
+   - Liste des derniers événements avec badges de statut
+   - Responsive design avec grid system
+
+2. **AdminEventsListPage.jsx**
+   - Header avec titre et compteur d'événements
+   - Filtre par statut (actif/archivé/tous) avec icône
+   - Bouton "Créer un événement" avec gradient
+   - Tableau responsive avec colonnes adaptatives
+   - Actions avec icônes (voir, participants)
+   - État vide avec illustration et CTA
+
+3. **AdminEventNewPage.jsx**
+   - Header avec bouton retour
+   - Formulaire en card avec header gradient
+   - Champs groupés en grilles 2 colonnes
+   - Upload d'image avec preview
+   - Messages d'erreur/succès stylisés
+   - Boutons d'action alignés
+
+4. **AdminEventDetailPage.jsx**
+   - Layout 3 colonnes (2/3 contenu + 1/3 sidebar)
+   - Image de couverture intégrée
+   - Détails de l'événement en grille
+   - QR Codes (public + check-in) dans la sidebar
+   - Formulaire d'envoi d'emails
+   - Table des participants responsive
+   - Mode édition inline
+   - Actions avec icônes et couleurs sémantiques
+
+**Palette de couleurs utilisée:**
+- Background principal: `bg-gray-800` (#1f2937)
+- Bordures: `border-gray-700` (#374151)
+- Texte principal: `text-gray-100` (#f3f4f6)
+- Texte secondaire: `text-gray-400` (#9ca3af)
+- Accent indigo: `indigo-600` (#4f46e5)
+- Accent vert: `green-500` (#22c55e)
+- Accent ambre: `amber-600` (#d97706)
+- Accent violet: `purple-600` (#9333ea)
+- Erreur: `red-400` (#f87171)
+
+**Classes Tailwind communes:**
+- Cards: `bg-gray-800 rounded-xl border border-gray-700`
+- Inputs: `bg-gray-700 border-gray-600 text-gray-100 focus:ring-indigo-500`
+- Boutons primaires: `bg-gradient-to-r from-indigo-600 to-purple-600`
+- Boutons secondaires: `bg-gray-700 text-gray-300`
+
+**Résultat:**
+- ✅ Interface admin 100% dark theme
+- ✅ Cohérence visuelle avec l'interface Super Admin
+- ✅ Design moderne et professionnel
+- ✅ Responsive sur tous les écrans
+- ✅ Meilleure lisibilité et UX

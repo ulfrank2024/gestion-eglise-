@@ -23,17 +23,18 @@ router.post('/events_v2', async (req, res) => {
   }
 });
 
-// GET /api/admin/events_v2 - Lister tous les événements
+// GET /api/admin/events_v2 - Lister tous les événements de l'église connectée
 router.get('/events_v2', async (req, res) => {
   try {
     let query = supabase.from('events_v2').select(`
         *,
         attendees_v2(count),
         is_archived
-      `);
-    
+      `)
+      .eq('church_id', req.user.church_id); // IMPORTANT: Filtrer par église
+
     if (req.query.is_archived !== undefined) {
-      const isArchived = req.query.is_archived === 'true'; 
+      const isArchived = req.query.is_archived === 'true';
       query = query.eq('is_archived', isArchived);
     }
 
@@ -61,6 +62,7 @@ router.get('/events_v2/:id', async (req, res) => {
       .from('events_v2')
       .select('*, is_archived')
       .eq('id', id)
+      .eq('church_id', req.user.church_id) // Filtrer par église
       .single();
 
     if (error) {
@@ -81,12 +83,13 @@ router.get('/events_v2/:id', async (req, res) => {
 router.put('/events_v2/:id', async (req, res) => {
   const { id } = req.params;
   const { name_fr, name_en, description_fr, description_en, background_image_url, is_archived, event_start_date, event_end_date } = req.body;
-  
+
   try {
     const { data, error } = await supabase
       .from('events_v2')
       .update({ name_fr, name_en, description_fr, description_en, background_image_url, is_archived, event_start_date, event_end_date })
       .eq('id', id)
+      .eq('church_id', req.user.church_id) // Filtrer par église
       .select();
 
     if (error) {
@@ -109,7 +112,8 @@ router.delete('/events_v2/:id', async (req, res) => {
     const { error } = await supabase
       .from('events_v2')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('church_id', req.user.church_id); // Filtrer par église
 
     if (error) {
         if (error.code === 'PGRST116') {
@@ -126,7 +130,7 @@ router.delete('/events_v2/:id', async (req, res) => {
 
 // --- Endpoints de gestion des participants (protégés Admin) ---
 
-// GET /api/admin/attendees_v2 - Lister tous les participants de tous les événements
+// GET /api/admin/attendees_v2 - Lister tous les participants de l'église connectée
 router.get('/attendees_v2', async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -138,6 +142,7 @@ router.get('/attendees_v2', async (req, res) => {
           name_en
         )
       `)
+      .eq('church_id', req.user.church_id) // Filtrer par église
       .order('created_at', { ascending: false });
 
     if (error) throw error;

@@ -5,10 +5,10 @@ import {
   PieChart, Pie, Cell,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
-import { api } from '../api/api'; // Utilisation de notre objet api
-import './AdminEventsListPage.css';
+import { api } from '../api/api';
+import { MdEvent, MdPeople, MdTrendingUp, MdCalendarToday } from 'react-icons/md';
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444'];
 
 function AdminDashboardPage() {
   const { t } = useTranslation();
@@ -72,28 +72,95 @@ function AdminDashboardPage() {
     participants: event.attendeeCount || 0,
   })).sort((a, b) => a.name.localeCompare(b.name));
 
-  if (loading) return <p>{t('loading')}...</p>;
-  if (error) return <p style={{ color: 'red' }}>{t('error')}: {error}</p>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-300 text-lg">{t('loading')}...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-900/30 border border-red-700 rounded-lg p-4 m-4">
+        <p className="text-red-400">{t('error')}: {error}</p>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h2>{t('admin_dashboard')}</h2>
+    <div className="p-6">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-100 mb-2">{t('admin_dashboard')}</h1>
+        <p className="text-gray-400">{t('dashboard_subtitle') || 'Vue d\'ensemble de votre église'}</p>
+      </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', marginBottom: '40px' }}>
-        <div style={{ flex: '1', minWidth: '250px', margin: '10px', padding: '20px', backgroundColor: '#e9ecef', borderRadius: '8px', textAlign: 'center' }}>
-          <h3>{t('total_events')}</h3>
-          <p style={{ fontSize: '2em', fontWeight: 'bold' }}>{totalEvents}</p>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Total Events */}
+        <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-xl p-6 shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-indigo-200 text-sm font-medium">{t('total_events')}</p>
+              <p className="text-4xl font-bold text-white mt-2">{totalEvents}</p>
+            </div>
+            <div className="bg-indigo-500/30 p-3 rounded-lg">
+              <MdEvent className="text-3xl text-white" />
+            </div>
+          </div>
         </div>
-        <div style={{ flex: '1', minWidth: '250px', margin: '10px', padding: '20px', backgroundColor: '#e9ecef', borderRadius: '8px', textAlign: 'center' }}>
-          <h3>{t('total_attendees')}</h3>
-          <p style={{ fontSize: '2em', fontWeight: 'bold' }}>{totalAttendees}</p>
+
+        {/* Total Attendees */}
+        <div className="bg-gradient-to-br from-green-600 to-green-800 rounded-xl p-6 shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-green-200 text-sm font-medium">{t('total_attendees')}</p>
+              <p className="text-4xl font-bold text-white mt-2">{totalAttendees}</p>
+            </div>
+            <div className="bg-green-500/30 p-3 rounded-lg">
+              <MdPeople className="text-3xl text-white" />
+            </div>
+          </div>
+        </div>
+
+        {/* Active Events */}
+        <div className="bg-gradient-to-br from-amber-600 to-amber-800 rounded-xl p-6 shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-amber-200 text-sm font-medium">{t('active_events') || 'Événements actifs'}</p>
+              <p className="text-4xl font-bold text-white mt-2">
+                {eventsData.filter(e => !e.is_archived).length}
+              </p>
+            </div>
+            <div className="bg-amber-500/30 p-3 rounded-lg">
+              <MdTrendingUp className="text-3xl text-white" />
+            </div>
+          </div>
+        </div>
+
+        {/* Upcoming Events */}
+        <div className="bg-gradient-to-br from-purple-600 to-purple-800 rounded-xl p-6 shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-purple-200 text-sm font-medium">{t('upcoming_events') || 'À venir'}</p>
+              <p className="text-4xl font-bold text-white mt-2">
+                {eventsData.filter(e => !e.is_archived && new Date(e.event_start_date) > new Date()).length}
+              </p>
+            </div>
+            <div className="bg-purple-500/30 p-3 rounded-lg">
+              <MdCalendarToday className="text-3xl text-white" />
+            </div>
+          </div>
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-around', marginTop: '20px' }}>
-        <div style={{ width: '45%', minWidth: '300px', marginBottom: '40px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', borderRadius: '8px', padding: '15px' }}>
-          <h3>{t('events_and_attendees_overview')}</h3>
-          <ResponsiveContainer width="100%" height={200}>
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Pie Chart */}
+        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-100 mb-4">{t('events_and_attendees_overview')}</h3>
+          <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie
                 data={pieData}
@@ -103,57 +170,90 @@ function AdminDashboardPage() {
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey="value"
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
               >
                 {pieData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip />
-              <Legend />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }}
+                labelStyle={{ color: '#f3f4f6' }}
+              />
+              <Legend wrapperStyle={{ color: '#d1d5db' }} />
             </PieChart>
           </ResponsiveContainer>
         </div>
 
-        <div style={{ width: '45%', minWidth: '300px', marginBottom: '40px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', borderRadius: '8px', padding: '15px' }}>
-          <h3>{t('top_events_by_participants')}</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart
-              data={barData}
-              margin={{
-                top: 5, right: 30, left: 20, bottom: 5,
-              }}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="participants" fill="#8884d8" name={t('number_of_participants')} />
+        {/* Bar Chart */}
+        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-100 mb-4">{t('top_events_by_participants')}</h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={barData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis dataKey="name" tick={{ fill: '#9ca3af' }} axisLine={{ stroke: '#374151' }} />
+              <YAxis tick={{ fill: '#9ca3af' }} axisLine={{ stroke: '#374151' }} />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }}
+                labelStyle={{ color: '#f3f4f6' }}
+              />
+              <Legend wrapperStyle={{ color: '#d1d5db' }} />
+              <Bar dataKey="participants" fill="#6366f1" name={t('number_of_participants')} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      <div style={{ marginTop: '20px' }}>
-        <h3>{t('latest_events')}</h3>
+      {/* Latest Events */}
+      <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-100">{t('latest_events')}</h3>
+        </div>
         {latestEvents.length === 0 ? (
-          <p>{t('no_events_yet')}</p>
+          <div className="p-6 text-center">
+            <MdEvent className="text-5xl text-gray-600 mx-auto mb-3" />
+            <p className="text-gray-400">{t('no_events_yet')}</p>
+            <Link
+              to="/admin/events/new"
+              className="inline-block mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              {t('create_first_event') || 'Créer votre premier événement'}
+            </Link>
+          </div>
         ) : (
-          <ul style={{ listStyle: 'none', padding: 0 }}>
+          <div className="divide-y divide-gray-700">
             {latestEvents.map((event) => (
-              <li key={event.id} style={{ padding: '10px', borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center' }}>
-                <span className={`status-circle ${event.is_archived ? 'status-archived-circle' : 'status-active-circle'}`}></span>
-                <Link to={`/admin/events/${event.id}`} style={{ textDecoration: 'none', color: '#007bff', fontWeight: 'bold', marginRight: '10px' }}>
-                  {event.name_fr} ({event.name_en})
-                </Link>
-                <span className={event.is_archived ? 'status-archived-text' : 'status-active-text'}>
-                  ({event.is_archived ? t('eventStatus.archived') : t('eventStatus.active')})
-                </span>
-                 - {t('attendees_count', { count: event.attendeeCount || 0 })}
-              </li>
+              <div key={event.id} className="px-6 py-4 hover:bg-gray-700/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className={`w-3 h-3 rounded-full ${event.is_archived ? 'bg-gray-500' : 'bg-green-500'}`}></div>
+                    <div>
+                      <Link
+                        to={`/admin/events/${event.id}`}
+                        className="text-gray-100 font-medium hover:text-indigo-400 transition-colors"
+                      >
+                        {event.name_fr}
+                      </Link>
+                      <p className="text-sm text-gray-400">{event.name_en}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      event.is_archived
+                        ? 'bg-gray-700 text-gray-300'
+                        : 'bg-green-900/50 text-green-400'
+                    }`}>
+                      {event.is_archived ? t('eventStatus.archived') : t('eventStatus.active')}
+                    </span>
+                    <div className="flex items-center text-gray-400">
+                      <MdPeople className="mr-1" />
+                      <span>{event.attendeeCount || 0}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
       </div>
     </div>
