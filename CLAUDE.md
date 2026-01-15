@@ -1299,3 +1299,39 @@ Les routes dans `/server/routes/adminRoutes.js` ne filtraient pas les données p
 - ✅ Design moderne et professionnel
 - ✅ Responsive sur tous les écrans
 - ✅ Meilleure lisibilité et UX
+
+---
+
+### 2026-01-15 - Ajout des traductions manquantes et suppression des titres redondants
+
+**Problèmes identifiés:**
+- Certaines clés de traduction n'étaient pas définies: `dashboard_subtitle`, `create_first_event`, `events_total`, `create_first_event_hint`
+- Titres de page redondants affichés en haut des sections admin
+
+**Corrections apportées:**
+
+1. **Fichiers de traduction** (`/client/src/locales/fr.json` et `en.json`)
+   - ✅ Ajout de `dashboard_subtitle` - FR: "Vue d'ensemble de votre église" / EN: "Overview of your church"
+   - ✅ Ajout de `create_first_event` - FR: "Créer votre premier événement" / EN: "Create your first event"
+   - ✅ Ajout de `events_total` - FR: "événement(s)" / EN: "event(s)"
+   - ✅ Ajout de `create_first_event_hint` - FR: "Commencez par créer votre premier événement" / EN: "Start by creating your first event"
+   - ✅ Ajout de `active_events` - FR: "Événements actifs" / EN: "Active events"
+   - ✅ Ajout de `upcoming_events` - FR: "À venir" / EN: "Upcoming"
+   - ✅ Ajout de `back_to_events` - FR: "Retour aux événements" / EN: "Back to events"
+   - ✅ Ajout de `create_event_subtitle` - FR: "Remplissez les informations de votre nouvel événement" / EN: "Fill in your new event information"
+   - ✅ Ajout de `event_information` - FR: "Informations de l'événement" / EN: "Event information"
+   - ✅ Ajout de `open_public_page` - FR: "Ouvrir la page publique" / EN: "Open public page"
+
+2. **Pages admin avec titres supprimés:**
+   - ✅ `AdminDashboardPage.jsx` - Suppression du titre "Tableau de bord Admin"
+   - ✅ `AdminEventsListPage.jsx` - Suppression du titre, conservation du compteur d'événements
+   - ✅ `AdminEventNewPage.jsx` - Suppression du titre "Créer un nouvel événement" et sous-titre, conservation du bouton retour
+
+3. **Page AdminEventDetailPage.jsx:**
+   - ✅ Header conservé car il affiche le nom de l'événement spécifique (contextuel et utile)
+
+**Résultat:**
+- ✅ Toutes les clés de traduction sont maintenant définies
+- ✅ Interface plus épurée sans titres de section redondants
+- ✅ Navigation simplifiée avec boutons de retour
+- ✅ Cohérence visuelle améliorée

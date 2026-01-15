@@ -121,16 +121,14 @@ function AdminEventNewPage() {
   return (
     <div className="p-6 max-w-4xl mx-auto">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-6">
         <button
           onClick={() => navigate('/admin/events')}
-          className="flex items-center text-gray-400 hover:text-gray-200 mb-4 transition-colors"
+          className="flex items-center text-gray-400 hover:text-gray-200 transition-colors"
         >
           <MdArrowBack className="mr-2" />
           {t('back_to_events') || 'Retour aux événements'}
         </button>
-        <h1 className="text-3xl font-bold text-gray-100 mb-2">{t('create_new_event')}</h1>
-        <p className="text-gray-400">{t('create_event_subtitle') || 'Remplissez les informations de votre nouvel événement'}</p>
       </div>
 
       {/* Form Card */}

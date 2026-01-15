@@ -92,11 +92,8 @@ function AdminEventsListPage() {
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-100 mb-2">{t('events_management')}</h1>
-          <p className="text-gray-400">{events.length} {t('events_total') || 'événement(s)'}</p>
-        </div>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+        <p className="text-gray-400">{events.length} {t('events_total')}</p>
 
         <div className="flex flex-col sm:flex-row gap-4">
           {/* Filter */}
