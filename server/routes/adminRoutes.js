@@ -10,12 +10,28 @@ const qrcode = require('qrcode');
 // POST /api/admin/events_v2 - Créer un nouvel événement
 router.post('/events_v2', async (req, res) => {
   const { name_fr, name_en, description_fr, description_en, background_image_url, is_archived, event_start_date, event_end_date } = req.body;
+
+  console.log('=== CREATE EVENT DEBUG ===');
+  console.log('User:', req.user?.id, 'Church ID:', req.user?.church_id, 'Role:', req.user?.church_role);
+  console.log('Body:', { name_fr, name_en });
+
+  if (!req.user?.church_id) {
+    console.error('ERROR: church_id is missing from req.user');
+    return res.status(400).json({ error: 'Church ID is missing. User not properly associated with a church.' });
+  }
+
   try {
     const { data, error } = await supabaseAdmin
       .from('events_v2')
       .insert([{ name_fr, name_en, description_fr, description_en, background_image_url, is_archived, event_start_date, event_end_date, church_id: req.user.church_id }])
       .select();
-    if (error) throw error;
+
+    if (error) {
+      console.error('Supabase insert error:', error);
+      throw error;
+    }
+
+    console.log('Event created successfully:', data[0]?.id);
     res.status(201).json(data[0]);
   } catch (error) {
     console.error('Database insertion error:', error);
