@@ -1415,3 +1415,73 @@ ALTER TABLE events_v2 ADD CONSTRAINT events_v2_church_id_fkey
 - ✅ Création d'événements fonctionne
 - ✅ Navigation entre les pages admin fonctionne
 - ✅ En-tête "Participants" s'affiche correctement
+
+---
+
+### 2026-01-15 - Correction finale: Suppression de supabase.auth.getSession()
+
+**Problème persistant:**
+- Malgré toutes les corrections précédentes, l'utilisateur était toujours redirigé vers login
+- Les logs serveur montraient que TOUTES les requêtes API retournaient 200 OK
+- Le problème était 100% côté client
+
+**Cause racine identifiée:**
+Dans `AdminLayout.jsx`, le code vérifiait `supabase.auth.getSession()` AVANT d'appeler `/api/auth/me`:
+
+```javascript
+const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+if (sessionError || !session) {
+  navigate('/admin/login'); // REDIRECTION INTEMPESTIVE!
+  return;
+}
+```
+
+Le problème: la session Supabase Auth peut expirer ou ne pas être synchronisée avec le token JWT stocké dans localStorage. Cette vérification causait une redirection même si le token JWT était valide.
+
+**Solution appliquée dans `/client/src/layouts/AdminLayout.jsx`:**
+
+1. **Suppression de la vérification de session Supabase:**
+   - Retrait de `supabase.auth.getSession()`
+   - Le code se fie maintenant uniquement à `/api/auth/me`
+
+2. **Simplification du flux d'authentification:**
+   ```javascript
+   useEffect(() => {
+     if (userRole && churchId) {
+       setLoading(false);
+       return;
+     }
+
+     const fetchAuthInfoAndChurchDetails = async () => {
+       try {
+         // Vérifier l'authentification via l'API backend (plus fiable)
+         const userInfo = await api.auth.me();
+         // ... reste du code
+       } catch (err) {
+         if (err.response?.status === 401 || err.response?.status === 403) {
+           localStorage.removeItem('supabase.auth.token');
+           navigate('/admin/login');
+         }
+       }
+     };
+     fetchAuthInfoAndChurchDetails();
+   }, [navigate, userRole, churchId]);
+   ```
+
+3. **Ajout de logs de debug:**
+   - `console.log('=== AdminLayout: api.auth.me() response ===', userInfo);`
+   - `console.log('=== AdminLayout: Authentication successful ===', {...});`
+   - `console.error('=== AdminLayout: Authentication error ===', err);`
+
+**Architecture d'authentification clarifiée:**
+1. Le token JWT est stocké dans `localStorage['supabase.auth.token']`
+2. L'intercepteur Axios l'envoie automatiquement avec chaque requête
+3. Le backend vérifie le token et retourne les infos utilisateur via `/api/auth/me`
+4. Si le token est invalide → 401 → Redirection vers login
+5. Si le token est valide → Affichage de l'interface admin
+
+**Résultat:**
+- ✅ Plus de redirection intempestive vers login
+- ✅ L'authentification fonctionne correctement de bout en bout
+- ✅ Navigation fluide entre toutes les pages admin
+- ✅ Logs de debug pour faciliter le diagnostic futur

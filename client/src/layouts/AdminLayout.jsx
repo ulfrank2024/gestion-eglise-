@@ -23,27 +23,27 @@ function AdminLayout() {
   useEffect(() => {
     // Skip if already authenticated
     if (userRole && churchId) {
+      setLoading(false);
       return;
     }
 
     const fetchAuthInfoAndChurchDetails = async () => {
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-        if (sessionError || !session) {
-          navigate('/admin/login');
-          return;
-        }
-
+        // Vérifier l'authentification via l'API backend (plus fiable que supabase.auth.getSession)
+        // Le backend vérifie le token JWT et récupère church_id/role depuis la DB
         const userInfo = await api.auth.me();
+        console.log('=== AdminLayout: api.auth.me() response ===', userInfo);
+
         const currentUserRole = userInfo.church_role;
         const currentChurchId = userInfo.church_id;
 
         if (!currentUserRole || !currentChurchId) {
-            navigate('/admin/login');
-            return;
+          console.log('=== AdminLayout: Missing role or church_id, redirecting to login ===');
+          navigate('/admin/login');
+          return;
         }
 
+        console.log('=== AdminLayout: Authentication successful ===', { currentUserRole, currentChurchId });
         setUserRole(currentUserRole);
         setChurchId(currentChurchId);
 
@@ -52,11 +52,15 @@ function AdminLayout() {
           const details = await api.admin.getChurchDetails(currentChurchId);
           setChurchDetails(details);
         } catch (detailsErr) {
+          console.log('=== AdminLayout: Failed to fetch church details, using default ===');
           setChurchDetails({ name: 'Mon Église', logo_url: null });
         }
 
       } catch (err) {
+        console.error('=== AdminLayout: Authentication error ===', err);
         if (err.response?.status === 401 || err.response?.status === 403) {
+          // Token invalide ou expiré
+          localStorage.removeItem('supabase.auth.token');
           navigate('/admin/login');
         } else {
           setError(err.message);
