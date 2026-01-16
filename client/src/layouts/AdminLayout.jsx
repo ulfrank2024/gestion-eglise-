@@ -23,22 +23,34 @@ function AdminLayout() {
   useEffect(() => {
     // Skip if already authenticated
     if (userRole && churchId) {
+      console.log('=== AdminLayout: Already authenticated, skipping fetch ===', { userRole, churchId });
       setLoading(false);
       return;
     }
 
+    // Éviter les appels multiples pendant le chargement
+    let isCancelled = false;
+
     const fetchAuthInfoAndChurchDetails = async () => {
+      console.log('=== AdminLayout: Starting authentication check ===');
+
       try {
         // Vérifier l'authentification via l'API backend (plus fiable que supabase.auth.getSession)
         // Le backend vérifie le token JWT et récupère church_id/role depuis la DB
         const userInfo = await api.auth.me();
+
+        if (isCancelled) {
+          console.log('=== AdminLayout: Request cancelled, ignoring response ===');
+          return;
+        }
+
         console.log('=== AdminLayout: api.auth.me() response ===', userInfo);
 
         const currentUserRole = userInfo.church_role;
         const currentChurchId = userInfo.church_id;
 
         if (!currentUserRole || !currentChurchId) {
-          console.log('=== AdminLayout: Missing role or church_id, redirecting to login ===');
+          console.log('=== AdminLayout: Missing role or church_id, redirecting to login ===', { currentUserRole, currentChurchId });
           navigate('/admin/login');
           return;
         }
@@ -50,26 +62,50 @@ function AdminLayout() {
         // Récupérer les détails de l'église (non bloquant)
         try {
           const details = await api.admin.getChurchDetails(currentChurchId);
-          setChurchDetails(details);
+          if (!isCancelled) {
+            setChurchDetails(details);
+          }
         } catch (detailsErr) {
-          console.log('=== AdminLayout: Failed to fetch church details, using default ===');
-          setChurchDetails({ name: 'Mon Église', logo_url: null });
+          console.log('=== AdminLayout: Failed to fetch church details, using default ===', detailsErr);
+          if (!isCancelled) {
+            setChurchDetails({ name: 'Mon Église', logo_url: null });
+          }
         }
 
       } catch (err) {
+        if (isCancelled) {
+          console.log('=== AdminLayout: Request cancelled, ignoring error ===');
+          return;
+        }
+
         console.error('=== AdminLayout: Authentication error ===', err);
+        console.error('=== AdminLayout: Error details ===', {
+          status: err.response?.status,
+          data: err.response?.data,
+          message: err.message
+        });
+
         if (err.response?.status === 401 || err.response?.status === 403) {
           // Token invalide ou expiré
+          console.log('=== AdminLayout: 401/403 error, clearing token and redirecting ===');
           localStorage.removeItem('supabase.auth.token');
           navigate('/admin/login');
         } else {
-          setError(err.message);
+          setError(err.message || 'Erreur d\'authentification');
         }
       } finally {
-        setLoading(false);
+        if (!isCancelled) {
+          setLoading(false);
+        }
       }
     };
+
     fetchAuthInfoAndChurchDetails();
+
+    // Cleanup function pour éviter les mises à jour d'état sur un composant démonté
+    return () => {
+      isCancelled = true;
+    };
   }, [navigate, userRole, churchId]);
 
   const handleLanguageChange = (lang) => {

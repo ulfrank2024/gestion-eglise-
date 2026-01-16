@@ -1485,3 +1485,57 @@ Le problème: la session Supabase Auth peut expirer ou ne pas être synchronisé
 - ✅ L'authentification fonctionne correctement de bout en bout
 - ✅ Navigation fluide entre toutes les pages admin
 - ✅ Logs de debug pour faciliter le diagnostic futur
+
+---
+
+### 2026-01-15 - Investigation et correction du problème de redirection persistant
+
+**Problème identifié:**
+- Malgré les corrections précédentes, l'utilisateur est toujours redirigé vers login après avoir cliqué sur un événement
+- Les requêtes API retournent 304 (cache) ce qui suggère un problème de cache navigateur
+- Les logs côté client montrent "Authentication successful" mais la redirection se produit quand même
+
+**Cause probable:**
+- Les réponses HTTP 304 (Not Modified) utilisent le cache navigateur
+- Le cache peut contenir des données vides ou corrompues
+- Condition de course possible entre le montage du composant et les appels API
+
+**Corrections apportées:**
+
+1. **Headers no-cache ajoutés dans l'intercepteur Axios** (`/client/src/api/api.js`)
+   - ✅ Ajout de `Cache-Control: no-cache` à toutes les requêtes
+   - ✅ Ajout de `Pragma: no-cache` pour compatibilité
+   - ✅ Évite les problèmes de réponses 304 avec cache vide
+
+2. **Amélioration du useEffect dans AdminLayout** (`/client/src/layouts/AdminLayout.jsx`)
+   - ✅ Ajout d'un flag `isCancelled` pour gérer les démontages de composant
+   - ✅ Logs détaillés à chaque étape:
+     - `Starting authentication check`
+     - `Already authenticated, skipping fetch`
+     - `Request cancelled, ignoring response`
+     - `Error details` avec status, data, message
+   - ✅ Cleanup function pour éviter les mises à jour d'état sur composant démonté
+
+3. **Logs améliorés dans l'intercepteur de réponse** (`/client/src/api/api.js`)
+   - ✅ Log de chaque erreur interceptée avec URL, status et data
+   - ✅ Log explicite avant chaque redirection vers login
+   - ✅ Facilite le diagnostic des problèmes en production
+
+**Pour diagnostiquer en production:**
+1. Ouvrir la console développeur (F12 → Console)
+2. Observer les logs commençant par `===`
+3. Identifier quel log apparaît juste avant la redirection:
+   - Si "Missing role or church_id" → L'API retourne des données incomplètes
+   - Si "401/403 error" → Le token est invalide ou expiré
+   - Si "API Interceptor: 401" → L'intercepteur a détecté une erreur 401
+
+**Commandes pour vérifier les logs serveur:**
+```bash
+# Sur Render
+Logs → Chercher "401" ou "Unauthorized"
+```
+
+**Résultat attendu:**
+- ✅ Pas de réponses 304 problématiques grâce aux headers no-cache
+- ✅ Meilleur diagnostic grâce aux logs détaillés
+- ✅ Pas de mises à jour d'état sur composants démontés

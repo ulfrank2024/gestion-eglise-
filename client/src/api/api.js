@@ -5,7 +5,7 @@ const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api', // URL de base pour toutes les requêtes
 });
 
-// Intercepteur de requêtes pour ajouter le token d'authentification
+// Intercepteur de requêtes pour ajouter le token d'authentification et éviter le cache
 apiClient.interceptors.request.use(
   (config) => {
     const tokenString = localStorage.getItem('supabase.auth.token');
@@ -18,6 +18,9 @@ apiClient.interceptors.request.use(
         localStorage.removeItem('supabase.auth.token');
       }
     }
+    // Ajouter les headers no-cache pour éviter les problèmes de réponses 304 vides
+    config.headers['Cache-Control'] = 'no-cache';
+    config.headers['Pragma'] = 'no-cache';
     return config;
   },
   (error) => {
@@ -31,15 +34,21 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
+    console.log('=== API Interceptor: Error caught ===', {
+      url: error.config?.url,
+      status: error.response?.status,
+      data: error.response?.data
+    });
+
     if (error.response && error.response.status === 401) {
-      console.log('Session expired or unauthorized. Logging out.');
+      console.log('=== API Interceptor: 401 Unauthorized, redirecting to login ===');
       localStorage.removeItem('supabase.auth.token');
       // Rediriger vers la page de connexion appropriée.
       // On vérifie si on est dans le contexte super-admin ou admin.
       if (window.location.pathname.startsWith('/super-admin')) {
-        window.location.href = '/super-admin/login'; 
+        window.location.href = '/super-admin/login';
       } else {
-        window.location.href = '/admin/login'; 
+        window.location.href = '/admin/login';
       }
     }
     return Promise.reject(error);
