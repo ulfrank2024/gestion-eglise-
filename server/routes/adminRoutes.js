@@ -8,7 +8,7 @@ const qrcode = require('qrcode');
 // --- Endpoints CRUD pour les événements (protégés Admin) ---
 
 // POST /api/admin/events_v2 - Créer un nouvel événement
-router.post('/events_v2', async (req, res) => {
+router.post('/events_v2', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
   const { name_fr, name_en, description_fr, description_en, background_image_url, is_archived, event_start_date, event_end_date } = req.body;
 
   console.log('=== CREATE EVENT DEBUG ===');

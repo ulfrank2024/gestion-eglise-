@@ -55,7 +55,12 @@ const protect = async (req, res, next) => {
     
     next();
   } catch (error) {
-    console.error('Authentication error:', error.message);
+    console.error('=== DETAILED AUTHENTICATION ERROR in protect middleware ===');
+    console.error('Timestamp:', new Date().toISOString());
+    console.error('Route:', `${req.method} ${req.originalUrl}`);
+    console.error('Supabase error object:', JSON.stringify(error, null, 2));
+    console.error('Error message:', error.message);
+    console.error('=========================================================');
     return res.status(401).json({ error: 'Unauthorized', details: error.message });
   }
 };
