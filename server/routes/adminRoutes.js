@@ -40,7 +40,7 @@ router.post('/events_v2', protect, isSuperAdminOrChurchAdmin, async (req, res) =
 });
 
 // GET /api/admin/events_v2 - Lister tous les événements de l'église connectée
-router.get('/events_v2', async (req, res) => {
+router.get('/events_v2', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
   try {
     let query = supabase.from('events_v2').select(`
         *,
@@ -70,7 +70,7 @@ router.get('/events_v2', async (req, res) => {
 });
 
 // GET /api/admin/events_v2/:id - Obtenir les détails d'un événement spécifique
-router.get('/events_v2/:id', async (req, res) => {
+router.get('/events_v2/:id', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -96,7 +96,7 @@ router.get('/events_v2/:id', async (req, res) => {
 });
 
 // PUT /api/admin/events_v2/:id - Mettre à jour un événement
-router.put('/events_v2/:id', async (req, res) => {
+router.put('/events_v2/:id', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
   const { id } = req.params;
   const { name_fr, name_en, description_fr, description_en, background_image_url, is_archived, event_start_date, event_end_date } = req.body;
 
@@ -122,7 +122,7 @@ router.put('/events_v2/:id', async (req, res) => {
 });
 
 // DELETE /api/admin/events_v2/:id - Supprimer un événement
-router.delete('/events_v2/:id', async (req, res) => {
+router.delete('/events_v2/:id', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
   const { id } = req.params;
   try {
     const { error } = await supabaseAdmin
@@ -147,7 +147,7 @@ router.delete('/events_v2/:id', async (req, res) => {
 // --- Endpoints de gestion des participants (protégés Admin) ---
 
 // GET /api/admin/attendees_v2 - Lister tous les participants de l'église connectée
-router.get('/attendees_v2', async (req, res) => {
+router.get('/attendees_v2', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('attendees_v2')
@@ -170,7 +170,7 @@ router.get('/attendees_v2', async (req, res) => {
 });
 
 // GET /api/admin/events_v2/:eventId/attendees - Lister les participants d'un événement
-router.get('/events_v2/:eventId/attendees', async (req, res) => {
+router.get('/events_v2/:eventId/attendees', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
   const { eventId } = req.params;
 
   try {
@@ -194,7 +194,7 @@ router.get('/events_v2/:eventId/attendees', async (req, res) => {
 });
 
 // POST /api/admin/events_v2/:eventId/send-thanks - Envoyer un e-mail de remerciement
-router.post('/events_v2/:eventId/send-thanks', async (req, res) => {
+router.post('/events_v2/:eventId/send-thanks', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
   const { eventId } = req.params;
   const { subject, message } = req.body;
 
@@ -255,7 +255,7 @@ router.post('/events_v2/:eventId/send-thanks', async (req, res) => {
 
 
 // POST /api/admin/checkin-event/:eventId - Incrémenter le compteur de check-in pour un événement
-router.post('/checkin-event/:eventId', async (req, res) => {
+router.post('/checkin-event/:eventId', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
   const { eventId } = req.params;
   try {
     const { data: event, error: fetchError } = await supabase

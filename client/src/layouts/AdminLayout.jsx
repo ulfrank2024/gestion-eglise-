@@ -21,13 +21,6 @@ function AdminLayout() {
   });
 
   useEffect(() => {
-    // Skip if already authenticated
-    if (userRole && churchId) {
-      console.log('=== AdminLayout: Already authenticated, skipping fetch ===', { userRole, churchId });
-      setLoading(false);
-      return;
-    }
-
     // Éviter les appels multiples pendant le chargement
     let isCancelled = false;
 
