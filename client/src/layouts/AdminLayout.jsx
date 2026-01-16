@@ -20,7 +20,7 @@ function AdminLayout() {
     reportsAndStats: false,
   });
 
-  useEffect(() => {
+useEffect(() => {
     // Éviter les appels multiples pendant le chargement
     let isCancelled = false;
 
@@ -99,7 +99,7 @@ function AdminLayout() {
     return () => {
       isCancelled = true;
     };
-  }, [navigate, userRole, churchId]);
+  }, [navigate]);
 
   const handleLanguageChange = (lang) => {
     i18n.changeLanguage(lang);
