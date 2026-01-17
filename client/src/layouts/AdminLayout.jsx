@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import defaultLogo from '../assets/logo_eden.png';
@@ -14,18 +14,22 @@ function AdminLayout() {
   const [churchDetails, setChurchDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const hasRun = useRef(false);
 
   const [openSections, setOpenSections] = useState({
     churchManagement: true,
     reportsAndStats: false,
   });
 
-useEffect(() => {
+  useEffect(() => {
+    if (hasRun.current) return;
+    hasRun.current = true;
+
     // Éviter les appels multiples pendant le chargement
     let isCancelled = false;
 
     const fetchAuthInfoAndChurchDetails = async () => {
-      console.log('=== AdminLayout: Starting authentication check ===');
+      console.log('=== AdminLayout: Starting authentication check (once) ===');
 
       try {
         // Vérifier l'authentification via l'API backend (plus fiable que supabase.auth.getSession)
