@@ -334,13 +334,14 @@ router.get('/events_v2/:eventId/statistics', async (req, res) => {
 
 
 // GET /api/admin/events_v2/:eventId/qrcode-checkin - Générer le QR code de check-in pour un événement
-router.get('/events_v2/:eventId/qrcode-checkin', async (req, res) => {
+router.get('/events_v2/:eventId/qrcode-checkin', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
   const { eventId } = req.params;
   try {
     const { data: event, error: eventError } = await supabase
       .from('events_v2')
       .select('id')
       .eq('id', eventId)
+      .eq('church_id', req.user.church_id) // Sécurité : on vérifie que l'événement appartient bien à l'église de l'admin
       .single();
 
     if (eventError) {
