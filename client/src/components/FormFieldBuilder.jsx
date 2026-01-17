@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api'; // Utiliser notre objet api
-import { supabase } from '../supabaseClient'; // Pour récupérer le churchId
 import { useNavigate } from 'react-router-dom'; // Pour la redirection
 import ConfirmationModal from './ConfirmationModal';
 import './FormFieldBuilder.css';
 
-function FormFieldBuilder({ eventId }) {
+function FormFieldBuilder({ eventId, churchId }) { // Accepter churchId comme prop
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [fields, setFields] = useState([]);
@@ -22,46 +21,32 @@ function FormFieldBuilder({ eventId }) {
   // États pour la modale de confirmation
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [fieldToDelete, setFieldToDelete] = useState(null);
-  const [churchId, setChurchId] = useState(null); // Ajout de churchId
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('supabase.auth.token');
-    let parsedUser = null;
-    if (storedToken) {
-        try {
-            parsedUser = JSON.parse(storedToken).user;
-        } catch (e) {
-            console.error("Error parsing user token:", e);
-        }
+    // Si eventId ou churchId ne sont pas fournis, on ne fait rien.
+    if (!eventId || !churchId) {
+      setLoading(false);
+      return;
     }
-    
-    const currentChurchId = parsedUser?.user_metadata?.church_id;
-    if (!currentChurchId) {
-        setError(t('error_church_id_missing'));
-        setLoading(false);
-        navigate('/admin/login');
-        return;
-    }
-    setChurchId(currentChurchId);
 
     const fetchFields = async () => {
       try {
+        setLoading(true);
         const data = await api.admin.getEventFormFields(eventId);
         setFields(data);
       } catch (err) {
         console.error('Error fetching form fields:', err);
         setError(err.response?.data?.error || err.message || t('error_fetching_fields'));
-        if (err.response?.status === 401 || err.response?.status === 403) {
-            navigate('/admin/login');
-        }
+        // La redirection globale est gérée par l'intercepteur dans api.js
+        // On n'a plus besoin de la logique de redirection ici.
       } finally {
         setLoading(false);
       }
     };
-    if (currentChurchId) { // Only fetch if churchId is available
-        fetchFields();
-    }
-  }, [eventId, t, navigate]);
+    
+    fetchFields();
+    
+  }, [eventId, churchId, t]); // Dépendre de eventId et churchId
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -78,23 +63,17 @@ function FormFieldBuilder({ eventId }) {
       return;
     }
     setError('');
-    if (!churchId) {
-        setError(t('error_church_id_missing'));
-        return;
-    }
     try {
+      // Le church_id est maintenant géré côté backend via le middleware `protect`
       const response = await api.admin.createFormField(eventId, {
         ...newField,
         order: fields.length + 1,
       });
-      setFields(prev => [...prev, response]); // L'API retourne directement l'objet créé
+      setFields(prev => [...prev, response]);
       setNewField({ label_fr: '', label_en: '', field_type: 'text', is_required: true });
     } catch (err) {
       console.error('Error adding form field:', err);
       setError(err.response?.data?.error || err.message || t('error_adding_field'));
-      if (err.response?.status === 401 || err.response?.status === 403) {
-            navigate('/admin/login');
-      }
     }
   };
 
@@ -106,21 +85,12 @@ function FormFieldBuilder({ eventId }) {
   const handleConfirmDelete = async () => {
     if (!fieldToDelete) return;
     setError('');
-    if (!churchId) {
-        setError(t('error_church_id_missing'));
-        setIsModalOpen(false);
-        setFieldToDelete(null);
-        return;
-    }
     try {
       await api.admin.deleteFormField(fieldToDelete);
       setFields(prev => prev.filter(field => field.id !== fieldToDelete));
     } catch (err) {
       console.error('Error deleting form field:', err);
       setError(err.response?.data?.error || err.message || t('error_deleting_field'));
-      if (err.response?.status === 401 || err.response?.status === 403) {
-            navigate('/admin/login');
-      }
     } finally {
       setIsModalOpen(false);
       setFieldToDelete(null);

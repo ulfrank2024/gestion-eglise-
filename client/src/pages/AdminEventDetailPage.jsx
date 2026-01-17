@@ -403,7 +403,7 @@ function AdminEventDetailPage() {
 
             {/* Form Builder */}
             <div className="bg-gray-800 rounded-xl border border-gray-700 p-6">
-              <FormFieldBuilder eventId={id} />
+              {event && <FormFieldBuilder eventId={id} churchId={event.church_id} />}
             </div>
 
             {/* Attendees Table */}
