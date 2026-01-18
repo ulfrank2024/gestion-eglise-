@@ -80,7 +80,7 @@ router.post('/:churchId/events/:eventId/register', async (req, res) => {
     if (eventCheckError) throw eventCheckError;
     if (!eventCheck) return res.status(404).json({ error: 'Event not found or is no longer active for this church' });
 
-    const { data: existingAttendee, error: checkError } = await supabase
+    const { data: existingAttendee, error: checkError } = await supabaseAdmin
       .from('attendees_v2')
       .select('id')
       .eq('event_id', eventId)
