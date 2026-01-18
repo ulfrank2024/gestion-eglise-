@@ -42,30 +42,51 @@ router.post('/events_v2', protect, isSuperAdminOrChurchAdmin, async (req, res) =
 // GET /api/admin/events_v2 - Lister tous les événements de l'église connectée
 router.get('/events_v2', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
   try {
-    let query = supabase.from('events_v2').select(`
-        *,
-        attendees_v2(count),
-        is_archived
-      `)
-      .eq('church_id', req.user.church_id); // IMPORTANT: Filtrer par église
+    // 1. Récupérer les événements de base
+    let eventQuery = supabase
+      .from('events_v2')
+      .select('id, name_fr, name_en, description_fr, description_en, background_image_url, is_archived, event_start_date, event_end_date, created_at, checkin_count')
+      .eq('church_id', req.user.church_id);
 
     if (req.query.is_archived !== undefined) {
       const isArchived = req.query.is_archived === 'true';
-      query = query.eq('is_archived', isArchived);
+      eventQuery = eventQuery.eq('is_archived', isArchived);
     }
 
-    const { data: events, error } = await query.order('created_at', { ascending: false });
+    const { data: events, error: eventsError } = await eventQuery.order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (eventsError) throw eventsError;
 
-    const eventsWithAttendeeCount = events.map(event => ({
+    // 2. Obtenir les IDs des événements pour le comptage
+    const eventIds = events.map(e => e.id);
+
+    // 3. Compter les participants pour ces événements en une seule requête
+    const { data: counts, error: countsError } = await supabase
+      .from('attendees_v2')
+      .select('event_id, count:id.count')
+      .in('event_id', eventIds)
+      .eq('church_id', req.user.church_id) // S'assurer qu'on ne compte que pour l'église concernée
+      .groupBy('event_id');
+
+    if (countsError) throw countsError;
+
+    // 4. Mapper les comptes aux événements
+    const attendeeCounts = counts.reduce((acc, { event_id, count }) => {
+      acc[event_id] = count;
+      return acc;
+    }, {});
+
+    // 5. Combiner les données
+    const eventsWithCounts = events.map(event => ({
       ...event,
-      attendeeCount: event.attendees_v2[0]?.count || 0
+      attendeeCount: attendeeCounts[event.id] || 0,
+      checkinCount: event.checkin_count || 0 // Assurer que le champ existe
     }));
-    
-    res.status(200).json(eventsWithAttendeeCount);
+
+    res.status(200).json(eventsWithCounts);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error in GET /events_v2:', error.message);
+    res.status(500).json({ error: 'Failed to list events: ' + error.message });
   }
 });
 

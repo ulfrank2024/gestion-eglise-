@@ -6,7 +6,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import { api } from '../api/api';
-import { MdEvent, MdPeople, MdTrendingUp, MdCalendarToday } from 'react-icons/md';
+import { MdEvent, MdPeople, MdTrendingUp, MdCheckCircle } from 'react-icons/md';
 
 const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444'];
 
@@ -15,6 +15,7 @@ function AdminDashboardPage() {
   const navigate = useNavigate();
   const [totalEvents, setTotalEvents] = useState(0);
   const [totalAttendees, setTotalAttendees] = useState(0);
+  const [totalCheckIns, setTotalCheckIns] = useState(0); // Nouvel état pour les check-ins
   const [latestEvents, setLatestEvents] = useState([]);
   const [eventsData, setEventsData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,7 +27,6 @@ function AdminDashboardPage() {
       try {
         setError('');
 
-        // Récupérer les infos utilisateur via l'API (church_id est dans la DB, pas dans le token JWT)
         const userInfo = await api.auth.me();
         const currentChurchId = userInfo.church_id;
 
@@ -37,13 +37,17 @@ function AdminDashboardPage() {
         }
         setChurchId(currentChurchId);
 
-        // L'API côté serveur gère le filtrage par church_id via le token d'authentification
         const events = await api.admin.listEvents();
         setEventsData(events);
 
         setTotalEvents(events.length);
+        
+        // Calculer les totaux
         const attendeesCount = events.reduce((sum, event) => sum + (event.attendeeCount || 0), 0);
         setTotalAttendees(attendeesCount);
+
+        const checkInsCount = events.reduce((sum, event) => sum + (event.checkinCount || 0), 0);
+        setTotalCheckIns(checkInsCount);
 
         const sortedEvents = [...events].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         setLatestEvents(sortedEvents.slice(0, 5));
@@ -65,11 +69,13 @@ function AdminDashboardPage() {
   const pieData = [
     { name: t('total_events'), value: totalEvents },
     { name: t('total_attendees'), value: totalAttendees },
+    { name: t('checked_in_attendees'), value: totalCheckIns },
   ];
 
-  const barData = eventsData.slice(0, 3).map(event => ({
+  const barData = eventsData.slice(0, 5).map(event => ({
     name: event.name_fr,
     participants: event.attendeeCount || 0,
+    checkins: event.checkinCount || 0,
   })).sort((a, b) => a.name.localeCompare(b.name));
 
   if (loading) {
@@ -109,11 +115,24 @@ function AdminDashboardPage() {
         <div className="bg-gradient-to-br from-green-600 to-green-800 rounded-xl p-6 shadow-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-green-200 text-sm font-medium">{t('total_attendees')}</p>
+              <p className="text-green-200 text-sm font-medium">{t('registered_attendees')}</p>
               <p className="text-4xl font-bold text-white mt-2">{totalAttendees}</p>
             </div>
             <div className="bg-green-500/30 p-3 rounded-lg">
               <MdPeople className="text-3xl text-white" />
+            </div>
+          </div>
+        </div>
+
+        {/* Total Check-ins */}
+        <div className="bg-gradient-to-br from-sky-600 to-sky-800 rounded-xl p-6 shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sky-200 text-sm font-medium">{t('checked_in_attendees')}</p>
+              <p className="text-4xl font-bold text-white mt-2">{totalCheckIns}</p>
+            </div>
+            <div className="bg-sky-500/30 p-3 rounded-lg">
+              <MdCheckCircle className="text-3xl text-white" />
             </div>
           </div>
         </div>
@@ -129,21 +148,6 @@ function AdminDashboardPage() {
             </div>
             <div className="bg-amber-500/30 p-3 rounded-lg">
               <MdTrendingUp className="text-3xl text-white" />
-            </div>
-          </div>
-        </div>
-
-        {/* Upcoming Events */}
-        <div className="bg-gradient-to-br from-purple-600 to-purple-800 rounded-xl p-6 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-purple-200 text-sm font-medium">{t('upcoming_events') || 'À venir'}</p>
-              <p className="text-4xl font-bold text-white mt-2">
-                {eventsData.filter(e => !e.is_archived && new Date(e.event_start_date) > new Date()).length}
-              </p>
-            </div>
-            <div className="bg-purple-500/30 p-3 rounded-lg">
-              <MdCalendarToday className="text-3xl text-white" />
             </div>
           </div>
         </div>
@@ -192,7 +196,8 @@ function AdminDashboardPage() {
                 labelStyle={{ color: '#f3f4f6' }}
               />
               <Legend wrapperStyle={{ color: '#d1d5db' }} />
-              <Bar dataKey="participants" fill="#6366f1" name={t('number_of_participants')} radius={[4, 4, 0, 0]} />
+              <Bar dataKey="participants" fill="#6366f1" name={t('registered_attendees')} radius={[4, 4, 0, 0]} />
+              <Bar dataKey="checkins" fill="#0ea5e9" name={t('checked_in_attendees')} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -231,7 +236,15 @@ function AdminDashboardPage() {
                       <p className="text-sm text-gray-400">{event.name_en}</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-6">
+                    <div className="flex items-center text-gray-400" title={t('registered_attendees')}>
+                      <MdPeople className="mr-2" />
+                      <span>{event.attendeeCount || 0}</span>
+                    </div>
+                    <div className="flex items-center text-gray-400" title={t('checked_in_attendees')}>
+                      <MdCheckCircle className="mr-2" />
+                      <span>{event.checkinCount || 0}</span>
+                    </div>
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                       event.is_archived
                         ? 'bg-gray-700 text-gray-300'
@@ -239,10 +252,6 @@ function AdminDashboardPage() {
                     }`}>
                       {event.is_archived ? t('eventStatus.archived') : t('eventStatus.active')}
                     </span>
-                    <div className="flex items-center text-gray-400">
-                      <MdPeople className="mr-1" />
-                      <span>{event.attendeeCount || 0}</span>
-                    </div>
                   </div>
                 </div>
               </div>
