@@ -27,7 +27,7 @@ router.get('/:churchId/events/:id', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('events_v2')
-      .select('id, name_fr, name_en, description_fr, description_en, background_image_url, event_start_date') // Sélectionner aussi les dates
+      .select('id, name_fr, name_en, description_fr, description_en, background_image_url, event_start_date, church:churches_v2(name, logo_url)') // Sélectionner aussi les dates et les détails de l'église
       .eq('id', id)
       .eq('church_id', churchId) // Filtrer par churchId
       .eq('is_archived', false) // Exclure si archivé
