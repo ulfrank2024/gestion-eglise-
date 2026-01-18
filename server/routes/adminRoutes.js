@@ -353,7 +353,7 @@ router.get('/events_v2/:eventId/qrcode-checkin', protect, isSuperAdminOrChurchAd
     if (!event) return res.status(404).json({ error: 'Event not found or not authorized' });
 
     const backendBaseUrl = process.env.BACKEND_BASE_URL || 'http://localhost:5001';
-    const checkinUrl = `${backendBaseUrl}/api/public/checkin/${eventId}`; 
+    const checkinUrl = `${backendBaseUrl}/api/public/${req.user.church_id}/checkin/${eventId}`; 
 
     const qrCodeDataUrl = await qrcode.toDataURL(checkinUrl, { errorCorrectionLevel: 'H', width: 256 });
 
