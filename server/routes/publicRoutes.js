@@ -175,7 +175,6 @@ router.post('/:churchId/events/:eventId/register', async (req, res) => {
             console.error('Error sending confirmation email:', mailError.message);
         }
     }
-    }
 
     res.status(201).json(data[0]);
 
@@ -341,7 +340,8 @@ router.post('/churches/register', async (req, res) => {
                 console.error('Role update error:', updateLinkError);
                 throw new Error('Failed to update role: ' + updateLinkError.message);
             }
-        } else {
+        }
+        else {
             const { error: roleError } = await supabaseAdmin
                 .from('church_users_v2')
                 .insert({
