@@ -95,7 +95,7 @@ router.post('/:churchId/events/:eventId/register', async (req, res) => {
       throw checkError;
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('attendees_v2')
       .insert([{ 
         event_id: eventId, 
