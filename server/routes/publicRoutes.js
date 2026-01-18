@@ -241,7 +241,7 @@ router.get('/:churchId/checkin/:eventId', async (req, res) => {
     if (error) throw error;
 
     const frontendBaseUrl = process.env.FRONTEND_BASE_URL || 'http://localhost:3000';
-    res.redirect(`${frontendBaseUrl}/welcome/${eventId}`); 
+    res.redirect(`${frontendBaseUrl}/${churchId}/welcome/${eventId}`); 
 
   } catch (error) {
     console.error('Error during check-in:', error.message);
