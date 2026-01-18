@@ -76,12 +76,18 @@ function WelcomeCheckinPage() {
 
         {/* Conteneur pour le texte */}
         <div className="textContainer">
-          {/* Logo */}
-          <img src={logo} alt="Logo" className="logoStyle" />
-          <p style={{ fontWeight: 'bold', fontSize: '16px', marginTop: '10px', marginBottom: '15px', color: 'inherit' }}>MY EDEN X</p>
+          {/* Logo et Nom de l'Église */}
+          {event.church?.logo_url ? (
+            <img src={event.church.logo_url} alt={`Logo de ${event.church.name}`} className="logoStyle" />
+          ) : (
+            <div className="logo-placeholder">{event.church?.name?.charAt(0) || ''}</div>
+          )}
+          <p style={{ fontWeight: 'bold', fontSize: '16px', marginTop: '10px', marginBottom: '15px', color: 'inherit' }}>
+            {event.church?.name || t('event_welcome')}
+          </p>
 
-          <h1 className="welcome-title">{t('welcome_to_cite_eden')}</h1>
-          <p className="event-intro">{t('participating_in_event')}</p>
+          <h1 className="welcome-title">{t('welcome_message')}</h1>
+          <p className="event-intro">{t('you_are_checked_in_for')}</p>
           <h2 className="event-name">{eventName}</h2>
 
           <div className="language-switcher-container">
