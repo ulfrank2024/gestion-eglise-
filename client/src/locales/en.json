@@ -293,6 +293,7 @@
       "no_events": "No events for this church."
     },
     "view_all": "View all",
-    "view_details": "View details"
+    "view_details": "View details",
+    "default_fields_info_message": "\"Full Name\", \"Email\" (required) and \"Phone\" (optional) fields are included by default."
   }
 }

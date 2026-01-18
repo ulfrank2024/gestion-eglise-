@@ -119,21 +119,33 @@ router.post('/:churchId/events/:eventId/register', async (req, res) => {
         console.error('Error fetching event details for email:', eventError.message);
     } else {
         const eventNameFr = eventDetails?.name_fr || 'Événement';
+        const eventNameEn = eventDetails?.name_en || 'Event';
         const eventDescriptionFr = eventDetails?.description_fr || '';
+        const eventDescriptionEn = eventDetails?.description_en || '';
 
         const dateFormatOptions = { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' };
         const startDateFr = eventDetails?.event_start_date ? new Date(eventDetails.event_start_date).toLocaleString('fr-FR', dateFormatOptions) : 'Date non spécifiée';
+        const startDateEn = eventDetails?.event_start_date ? new Date(eventDetails.event_start_date).toLocaleString('en-US', dateFormatOptions) : 'Unspecified Date';
         
-        // Construction du récapitulatif simplifié des réponses
-        let responsesHtml = '<ul>';
-        responsesHtml += `<li><strong>Nom complet:</strong> ${fullName}</li>`;
-        responsesHtml += `<li><strong>Email:</strong> ${email}</li>`;
+        // Construction du récapitulatif simplifié FR
+        let responsesHtmlFr = '<ul>';
+        responsesHtmlFr += `<li><strong>Nom complet:</strong> ${fullName}</li>`;
+        responsesHtmlFr += `<li><strong>Email:</strong> ${email}</li>`;
         if (formResponses && formResponses.phone) {
-            responsesHtml += `<li><strong>Téléphone:</strong> ${formResponses.phone}</li>`;
+            responsesHtmlFr += `<li><strong>Téléphone:</strong> ${formResponses.phone}</li>`;
         }
-        responsesHtml += '</ul>';
+        responsesHtmlFr += '</ul>';
 
-        const emailBody = `
+        // Construction du récapitulatif simplifié EN
+        let responsesHtmlEn = '<ul>';
+        responsesHtmlEn += `<li><strong>Full Name:</strong> ${fullName}</li>`;
+        responsesHtmlEn += `<li><strong>Email:</strong> ${email}</li>`;
+        if (formResponses && formResponses.phone) {
+            responsesHtmlEn += `<li><strong>Phone:</strong> ${formResponses.phone}</li>`;
+        }
+        responsesHtmlEn += '</ul>';
+
+        const emailBodyFr = `
         <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 10px; overflow: hidden;">
           <div style="background-color: #4f46e5; color: white; padding: 20px; text-align: center;">
             <h1 style="margin: 0; font-size: 24px;">Confirmation d'inscription</h1>
@@ -149,23 +161,43 @@ router.post('/:churchId/events/:eventId/register', async (req, res) => {
             </div>
             <div style="margin-top: 20px;">
               <h3 style="margin-top: 0;">Récapitulatif de votre inscription</h3>
-              ${responsesHtml}
+              ${responsesHtmlFr}
             </div>
             <p>Nous sommes impatients de vous y retrouver !</p>
             <p>Cordialement,</p>
             <p><strong>L'équipe d'Eden Eve</strong></p>
           </div>
-          <div style="background-color: #f2f2f2; color: #777; padding: 15px; text-align: center; font-size: 12px;">
-            <p><em>Car là où deux ou trois sont assemblés en mon nom, je suis au milieu d'eux. - Matthieu 18:20</em></p>
+        </div>`;
+
+        const emailBodyEn = `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 10px; overflow: hidden;">
+          <div style="background-color: #4f46e5; color: white; padding: 20px; text-align: center;">
+            <h1 style="margin: 0; font-size: 24px;">Registration Confirmation</h1>
           </div>
-        </div>
-      `;
+          <div style="padding: 20px;">
+            <p>Hello ${fullName},</p>
+            <p>We are pleased to confirm your registration for the event:</p>
+            <h2 style="color: #4f46e5;">${eventNameEn}</h2>
+            <p><strong>Date and time:</strong> ${startDateEn}</p>
+            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin-top: 20px;">
+              <h3 style="margin-top: 0;">Event Description</h3>
+              <p>${eventDescriptionEn}</p>
+            </div>
+            <div style="margin-top: 20px;">
+              <h3 style="margin-top: 0;">Your Registration Summary</h3>
+              ${responsesHtmlEn}
+            </div>
+            <p>We look forward to seeing you there!</p>
+            <p>Sincerely,</p>
+            <p><strong>The Eden Eve Team</strong></p>
+          </div>
+        </div>`;
         
         const mailOptions = {
             from: process.env.NODEMAILER_EMAIL,
             to: email,
-            subject: `Confirmation d'inscription à l'événement : ${eventNameFr}`,
-            html: emailBody,
+            subject: `Confirmation d'inscription : ${eventNameFr} / Registration Confirmation: ${eventNameEn}`,
+            html: `${emailBodyFr}<hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">${emailBodyEn}<div style="text-align: center; margin-top: 20px; font-style: italic; font-size:12px; color: #777;"><p>Car là où deux ou trois sont assemblés en mon nom, je suis au milieu d'eux. - Matthieu 18:20</p><p>For where two or three gather in my name, there am I with them. - Matthew 18:20</p></div>`,
         };
 
         try {

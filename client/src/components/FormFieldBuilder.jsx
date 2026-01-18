@@ -4,6 +4,7 @@ import { api } from '../api/api'; // Utiliser notre objet api
 import { useNavigate } from 'react-router-dom'; // Pour la redirection
 import ConfirmationModal from './ConfirmationModal';
 import './FormFieldBuilder.css';
+import { MdInfoOutline } from 'react-icons/md'; // Importer une icône
 
 function FormFieldBuilder({ eventId, churchId }) { // Accepter churchId comme prop
   const { t, i18n } = useTranslation();
@@ -109,6 +110,22 @@ function FormFieldBuilder({ eventId, churchId }) { // Accepter churchId comme pr
       {error && <p className="error-message">{error}</p>}
       <h4>{t('custom_registration_form')}</h4>
       
+      {/* Note d'information pour l'admin */}
+      <div style={{ 
+        backgroundColor: 'rgba(55, 65, 81, 0.5)', 
+        padding: '12px', 
+        borderRadius: '8px', 
+        marginBottom: '20px',
+        display: 'flex',
+        alignItems: 'center',
+        border: '1px solid #4b5563'
+      }}>
+        <MdInfoOutline style={{ color: '#9ca3af', marginRight: '10px', fontSize: '1.2em' }} />
+        <p style={{ margin: 0, color: '#d1d5db', fontSize: '0.9em' }}>
+          {t('default_fields_info_message')}
+        </p>
+      </div>
+
       <div className="fields-list">
         {fields.length === 0 ? (
           <p>{t('no_custom_fields_yet')}</p>

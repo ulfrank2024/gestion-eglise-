@@ -293,6 +293,7 @@
       "no_events": "Aucun événement pour cette église."
     },
     "view_all": "Voir tout",
-    "view_details": "Voir les détails"
+    "view_details": "Voir les détails",
+    "default_fields_info_message": "Les champs \"Nom complet\", \"Email\" (obligatoires) et \"Téléphone\" (facultatif) sont inclus par défaut."
   }
 }
