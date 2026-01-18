@@ -1,50 +1,65 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api } from '../api/api'; // Utilisation de notre objet api
+import { api } from '../api/api';
 import './RegistrationModal.css';
 
-function RegistrationModal({ isOpen, onClose, eventId, churchId }) { // Ajout de churchId aux props
+function RegistrationModal({ isOpen, onClose, eventId, churchId }) {
   const { t, i18n } = useTranslation();
-  const [formFields, setFormFields] = useState([]);
-  const [formData, setFormData] = useState({});
+  
+  // États pour les champs fixes
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+
+  // États pour les champs dynamiques et la logique du formulaire
+  const [customFormFields, setCustomFormFields] = useState([]);
+  const [customFormData, setCustomFormData] = useState({});
+  
   const [registrationMessage, setRegistrationMessage] = useState('');
   const [error, setError] = useState('');
-  const [registrationLoading, setRegistrationLoading] = useState(false);
+  const [loading, setLoading] = useState(false); // Un seul état de chargement
 
   useEffect(() => {
     if (isOpen) {
+      // Réinitialiser tous les états à l'ouverture
+      setFullName('');
+      setEmail('');
+      setPhone('');
+      setCustomFormData({});
+      setCustomFormFields([]);
       setRegistrationMessage('');
       setError('');
-      setRegistrationLoading(false);
-      setFormFields([]);
+      setLoading(true);
 
       const fetchFormFields = async () => {
         try {
-          if (!churchId) { // Vérifier si churchId est disponible
-            setError(t('error_church_id_missing_public')); // Nouvelle clé de traduction
+          if (!churchId) {
+            setError(t('error_church_id_missing_public'));
             return;
           }
-          const data = await api.public.getEventFormFields(churchId, eventId); // Utiliser churchId
-          setFields(data);
+          const data = await api.public.getEventFormFields(churchId, eventId);
+          setCustomFormFields(data);
           
-          const initialFormData = {};
-          data.forEach(field => { // Utiliser 'data' au lieu de 'fields'
-            initialFormData[field.label_en] = field.field_type === 'checkbox' ? false : '';
+          const initialCustomFormData = {};
+          data.forEach(field => {
+            initialCustomFormData[field.label_en] = field.field_type === 'checkbox' ? false : '';
           });
-          setFormData(initialFormData);
+          setCustomFormData(initialCustomFormData);
 
         } catch (err) {
           console.error('Failed to fetch form fields', err);
           setError(err.response?.data?.error || err.message || t('error_fetching_fields'));
+        } finally {
+          setLoading(false);
         }
       };
       fetchFormFields();
     }
-  }, [isOpen, eventId, churchId, t]); // Ajout de churchId aux dépendances
+  }, [isOpen, eventId, churchId, t]);
 
-  const handleInputChange = (e) => {
+  const handleCustomInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setCustomFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
@@ -52,36 +67,34 @@ function RegistrationModal({ isOpen, onClose, eventId, churchId }) { // Ajout de
 
   const handleRegistration = async (e) => {
     e.preventDefault();
-    setRegistrationLoading(true);
+    setLoading(true);
     setRegistrationMessage('');
     setError('');
 
-    if (!churchId) { // Vérifier si churchId est disponible
+    if (!churchId) {
       setError(t('error_church_id_missing_public'));
-      setRegistrationLoading(false);
+      setLoading(false);
       return;
     }
 
-    const emailField = formFields.find(f => f.field_type === 'email');
-    const nameField = formFields.find(f => f.label_en.toLowerCase().includes('name'));
-
-    const email = emailField ? formData[emailField.label_en] : '';
-    const fullName = nameField ? formData[nameField.label_en] : '';
-
+    // Validation des champs fixes obligatoires
     if (!fullName || !email) {
-      setError(t('name_and_email_are_required_in_form'));
-      setRegistrationLoading(false);
+      setError(t('name_and_email_are_required'));
+      setLoading(false);
       return;
     }
 
     const payload = {
       fullName,
       email,
-      formResponses: { ...formData },
+      formResponses: {
+        phone, // Inclure le téléphone
+        ...customFormData, // Inclure les réponses des champs personnalisés
+      },
     };
     
     try {
-      await api.public.registerAttendee(churchId, eventId, payload); // Utiliser churchId
+      await api.public.registerAttendee(churchId, eventId, payload);
       
       setRegistrationMessage(t('registration_successful'));
       const registeredEvents = JSON.parse(localStorage.getItem('registeredEvents')) || {};
@@ -102,11 +115,11 @@ function RegistrationModal({ isOpen, onClose, eventId, churchId }) { // Ajout de
             onClose(true);
         }, 1500);
       } else {
-        setError(err.response?.data?.error || err.message || t('registration_failed')); // Nouvelle clé
+        setError(err.response?.data?.error || err.message || t('registration_failed'));
       }
       console.error('Registration error:', err);
     } finally {
-      setRegistrationLoading(false);
+      setLoading(false);
     }
   };
 
@@ -122,8 +135,8 @@ function RegistrationModal({ isOpen, onClose, eventId, churchId }) { // Ajout de
               type="checkbox"
               id={field.id}
               name={fieldName}
-              checked={formData[fieldName] || false}
-              onChange={handleInputChange}
+              checked={customFormData[fieldName] || false}
+              onChange={handleCustomInputChange}
             />
             <label htmlFor={field.id}>{label}{field.is_required && '*'}</label>
           </div>
@@ -136,8 +149,8 @@ function RegistrationModal({ isOpen, onClose, eventId, churchId }) { // Ajout de
               type={field.field_type}
               id={field.id}
               name={fieldName}
-              value={formData[fieldName] || ''}
-              onChange={handleInputChange}
+              value={customFormData[fieldName] || ''}
+              onChange={handleCustomInputChange}
               required={field.is_required}
               className="formInput"
             />
@@ -159,14 +172,55 @@ function RegistrationModal({ isOpen, onClose, eventId, churchId }) { // Ajout de
         
         <form onSubmit={handleRegistration} className="registrationForm">
           
-          {formFields.length > 0 ? (
-            formFields.map(field => renderField(field))
+          {/* Champs fixes */}
+          <div>
+            <label htmlFor="fullName" className="formField">{t('full_name')} *</label>
+            <input
+              type="text"
+              id="fullName"
+              name="fullName"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+              className="formInput"
+            />
+          </div>
+          <div>
+            <label htmlFor="email" className="formField">{t('email')} *</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="formInput"
+            />
+          </div>
+          <div>
+            <label htmlFor="phone" className="formField">{t('phone')}</label>
+            <input
+              type="tel"
+              id="phone"
+              name="phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="formInput"
+            />
+          </div>
+
+          {/* Séparateur visuel */}
+          {customFormFields.length > 0 && <hr className="formSeparator" />}
+
+          {/* Champs personnalisés */}
+          {loading ? (
+             <p>{t('loading_fields')}...</p>
           ) : (
-            <p>{t('loading_fields')}...</p>
+            customFormFields.map(field => renderField(field))
           )}
 
-          <button type="submit" disabled={registrationLoading || formFields.length === 0} className="submitButton">
-            {registrationLoading ? t('submitting') : t('register')}
+          <button type="submit" disabled={loading} className="submitButton">
+            {loading ? t('submitting') : t('register')}
           </button>
         </form>
       </div>
