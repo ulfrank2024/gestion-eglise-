@@ -220,31 +220,43 @@ router.post('/:churchId/events/:eventId/register', async (req, res) => {
 router.get('/:churchId/checkin/:eventId', async (req, res) => {
   const { churchId, eventId } = req.params;
   try {
-    const { data: event, error: fetchError } = await supabase
+    // Utiliser supabaseAdmin pour lire et écrire afin de contourner RLS pour cette opération publique de check-in
+    const { data: event, error: fetchError } = await supabaseAdmin
       .from('events_v2')
       .select('checkin_count')
       .eq('id', eventId)
       .eq('church_id', churchId)
       .single();
 
-    if (fetchError) throw fetchError;
-    if (!event) return res.status(404).send('Event not found for this church');
+    if (fetchError) {
+        console.error(`Check-in Error: Event ${eventId} not found or accessible for church ${churchId}. Details:`, fetchError.message);
+        return res.status(404).send('Event not found or not accessible for check-in.');
+    }
+    if (!event) {
+        console.error(`Check-in Error: Event ${eventId} not found for church ${churchId}.`);
+        return res.status(404).send('Event not found for this church.');
+    }
 
     const newCheckinCount = (event.checkin_count || 0) + 1;
+    console.log(`Event ${eventId}: Incrementing checkin_count from ${event.checkin_count} to ${newCheckinCount}`);
 
-    const { error } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from('events_v2')
       .update({ checkin_count: newCheckinCount })
       .eq('id', eventId)
       .eq('church_id', churchId);
 
-    if (error) throw error;
+    if (updateError) {
+        console.error(`Check-in Error: Failed to update checkin_count for event ${eventId}. Details:`, updateError.message);
+        throw updateError;
+    }
+    console.log(`Check-in successful for event ${eventId}. New count: ${newCheckinCount}`);
 
     const frontendBaseUrl = process.env.FRONTEND_BASE_URL || 'http://localhost:3000';
     res.redirect(`${frontendBaseUrl}/${churchId}/welcome/${eventId}`); 
 
   } catch (error) {
-    console.error('Error during check-in:', error.message);
+    console.error('Error during public check-in:', error.message);
     res.status(500).send('An error occurred during check-in.');
   }
 });
