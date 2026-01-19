@@ -321,6 +321,8 @@
     "label_fr_placeholder": "Ex: Your ministry",
     "label_en_placeholder": "Ex: Your ministry",
     "select_option": "Select an option",
-    "select_options": "Select one or more options"
+    "select_options": "Select one or more options",
+    "download_pdf": "Download PDF",
+    "attendee_information": "Attendee Information"
   }
 }

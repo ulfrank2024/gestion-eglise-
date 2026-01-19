@@ -321,6 +321,9 @@
     "label_fr_placeholder": "Ex: Votre ministère",
     "label_en_placeholder": "Ex: Your ministry",
     "select_option": "Sélectionnez une option",
-    "select_options": "Sélectionnez une ou plusieurs options"
+    "select_options": "Sélectionnez une ou plusieurs options",
+    "download_pdf": "Télécharger PDF",
+    "view_details": "Voir détails",
+    "attendee_information": "Informations du participant"
   }
 }

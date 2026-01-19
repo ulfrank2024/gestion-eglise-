@@ -9,7 +9,7 @@ import FormFieldBuilder from '../components/FormFieldBuilder';
 import {
   MdArrowBack, MdEdit, MdDelete, MdCheckCircle, MdQrCode,
   MdPeople, MdEmail, MdEvent, MdBarChart, MdSave, MdClose,
-  MdCalendarToday, MdLink
+  MdCalendarToday, MdLink, MdVisibility, MdDownload
 } from 'react-icons/md';
 
 function AdminEventDetailPage() {
@@ -44,6 +44,8 @@ function AdminEventDetailPage() {
   const [modalAction, setModalAction] = useState(null);
   const [eventStats, setEventStats] = useState({ registered: 0, checkedIn: 0 });
   const [formFields, setFormFields] = useState([]);
+  const [selectedAttendee, setSelectedAttendee] = useState(null);
+  const [showAttendeeModal, setShowAttendeeModal] = useState(false);
 
   const publicEventUrl = `${window.location.origin}/${event?.church_id}/event/${id}`;
 
@@ -135,6 +137,87 @@ function AdminEventDetailPage() {
       return i18n.language === 'fr' ? field.label_fr : field.label_en;
     }
     return labelEn; // Fallback sur la clé si pas trouvé
+  };
+
+  // Ouvrir la modal des détails d'un participant
+  const handleViewAttendee = (attendee) => {
+    setSelectedAttendee(attendee);
+    setShowAttendeeModal(true);
+  };
+
+  // Fermer la modal
+  const handleCloseAttendeeModal = () => {
+    setSelectedAttendee(null);
+    setShowAttendeeModal(false);
+  };
+
+  // Télécharger les détails en PDF
+  const handleDownloadPDF = () => {
+    if (!selectedAttendee) return;
+
+    const printContent = document.getElementById('attendee-details-print');
+    const printWindow = window.open('', '_blank');
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>${t('attendee_details')} - ${selectedAttendee.full_name}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
+          h1 { color: #4f46e5; border-bottom: 2px solid #4f46e5; padding-bottom: 10px; }
+          .info-row { margin: 15px 0; padding: 10px; background: #f3f4f6; border-radius: 5px; }
+          .label { font-weight: bold; color: #6b7280; }
+          .value { margin-top: 5px; }
+          .section-title { font-size: 18px; font-weight: bold; margin-top: 30px; margin-bottom: 15px; color: #374151; }
+          .response-item { margin: 10px 0; padding: 10px; background: #f9fafb; border-left: 3px solid #4f46e5; }
+        </style>
+      </head>
+      <body>
+        <h1>${t('attendee_details')}</h1>
+        <p style="color: #6b7280;">${event?.name_fr || ''}</p>
+
+        <div class="info-row">
+          <div class="label">${t('full_name')}</div>
+          <div class="value">${selectedAttendee.full_name}</div>
+        </div>
+
+        <div class="info-row">
+          <div class="label">${t('email')}</div>
+          <div class="value">${selectedAttendee.email}</div>
+        </div>
+
+        <div class="info-row">
+          <div class="label">${t('phone')}</div>
+          <div class="value">${selectedAttendee.form_responses?.phone || '-'}</div>
+        </div>
+
+        <div class="info-row">
+          <div class="label">${t('registered_at')}</div>
+          <div class="value">${selectedAttendee.created_at ? new Date(selectedAttendee.created_at).toLocaleString(i18n.language === 'fr' ? 'fr-FR' : 'en-US') : '-'}</div>
+        </div>
+
+        ${dynamicHeaders.filter(h => h !== 'phone').length > 0 ? `
+          <div class="section-title">${t('form_responses')}</div>
+          ${dynamicHeaders.filter(h => h !== 'phone').map(header => {
+            const value = selectedAttendee.form_responses?.[header];
+            if (value === null || value === undefined || value === '' || (Array.isArray(value) && value.length === 0)) {
+              return '';
+            }
+            return `
+              <div class="response-item">
+                <div class="label">${getFieldLabel(header)}</div>
+                <div class="value">${formatResponseValue(value)}</div>
+              </div>
+            `;
+          }).join('')}
+        ` : ''}
+      </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.print();
   };
 
   const handleFileChange = (e) => {
@@ -511,14 +594,11 @@ function AdminEventDetailPage() {
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase">
                           {t('phone')}
                         </th>
-                        {/* Une seule colonne pour toutes les réponses personnalisées */}
-                        {dynamicHeaders.filter(h => h !== 'phone').length > 0 && (
-                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase">
-                            {t('form_responses')}
-                          </th>
-                        )}
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase">
                           {t('registered_at')}
+                        </th>
+                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-300 uppercase">
+                          {t('actions')}
                         </th>
                       </tr>
                     </thead>
@@ -534,31 +614,19 @@ function AdminEventDetailPage() {
                           <td className="px-4 py-3 text-gray-300">
                             {attendee.form_responses?.phone || '-'}
                           </td>
-                          {/* Colonne des réponses personnalisées regroupées */}
-                          {dynamicHeaders.filter(h => h !== 'phone').length > 0 && (
-                            <td className="px-4 py-3">
-                              <div className="space-y-1">
-                                {dynamicHeaders.filter(h => h !== 'phone').map(header => {
-                                  const value = attendee.form_responses?.[header];
-                                  if (value === null || value === undefined || value === '' || (Array.isArray(value) && value.length === 0)) {
-                                    return null;
-                                  }
-                                  return (
-                                    <div key={header} className="flex flex-wrap items-center gap-1">
-                                      <span className="text-gray-400 text-xs">{getFieldLabel(header)}:</span>
-                                      <span className="text-gray-200 text-sm bg-gray-700 px-2 py-0.5 rounded">
-                                        {formatResponseValue(value)}
-                                      </span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </td>
-                          )}
                           <td className="px-4 py-3 text-gray-400 text-sm">
                             {attendee.created_at
                               ? new Date(attendee.created_at).toLocaleString(i18n.language === 'fr' ? 'fr-FR' : 'en-US')
                               : '-'}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <button
+                              onClick={() => handleViewAttendee(attendee)}
+                              className="inline-flex items-center px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition-colors"
+                            >
+                              <MdVisibility className="mr-1" />
+                              {t('view_details')}
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -677,6 +745,86 @@ function AdminEventDetailPage() {
           confirmText={modalAction === 'delete' ? t('delete') : t('confirm')}
           cancelText={t('cancel')}
         />
+      )}
+
+      {/* Modal des détails du participant */}
+      {showAttendeeModal && selectedAttendee && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-xl border border-gray-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="sticky top-0 bg-gray-800 px-6 py-4 border-b border-gray-700 flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-gray-100">
+                {t('attendee_details')}
+              </h3>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleDownloadPDF}
+                  className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  <MdDownload className="mr-2" />
+                  {t('download_pdf')}
+                </button>
+                <button
+                  onClick={handleCloseAttendeeModal}
+                  className="p-2 text-gray-400 hover:text-gray-200 hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  <MdClose size={24} />
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div id="attendee-details-print" className="p-6 space-y-6">
+              {/* Informations de base */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-gray-700/50 rounded-lg p-4">
+                  <p className="text-gray-400 text-sm mb-1">{t('full_name')}</p>
+                  <p className="text-gray-100 text-lg font-medium">{selectedAttendee.full_name}</p>
+                </div>
+                <div className="bg-gray-700/50 rounded-lg p-4">
+                  <p className="text-gray-400 text-sm mb-1">{t('email')}</p>
+                  <p className="text-gray-100 text-lg">{selectedAttendee.email}</p>
+                </div>
+                <div className="bg-gray-700/50 rounded-lg p-4">
+                  <p className="text-gray-400 text-sm mb-1">{t('phone')}</p>
+                  <p className="text-gray-100 text-lg">{selectedAttendee.form_responses?.phone || '-'}</p>
+                </div>
+                <div className="bg-gray-700/50 rounded-lg p-4">
+                  <p className="text-gray-400 text-sm mb-1">{t('registered_at')}</p>
+                  <p className="text-gray-100 text-lg">
+                    {selectedAttendee.created_at
+                      ? new Date(selectedAttendee.created_at).toLocaleString(i18n.language === 'fr' ? 'fr-FR' : 'en-US')
+                      : '-'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Réponses au formulaire */}
+              {dynamicHeaders.filter(h => h !== 'phone').length > 0 && (
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-100 mb-4 flex items-center">
+                    <MdEvent className="mr-2 text-indigo-400" />
+                    {t('form_responses')}
+                  </h4>
+                  <div className="space-y-3">
+                    {dynamicHeaders.filter(h => h !== 'phone').map(header => {
+                      const value = selectedAttendee.form_responses?.[header];
+                      if (value === null || value === undefined || value === '' || (Array.isArray(value) && value.length === 0)) {
+                        return null;
+                      }
+                      return (
+                        <div key={header} className="bg-gray-700/30 rounded-lg p-4 border-l-4 border-indigo-500">
+                          <p className="text-gray-400 text-sm mb-1">{getFieldLabel(header)}</p>
+                          <p className="text-gray-100">{formatResponseValue(value)}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

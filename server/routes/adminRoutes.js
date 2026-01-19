@@ -213,10 +213,16 @@ router.post('/events_v2/:eventId/send-thanks', protect, isSuperAdminOrChurchAdmi
   const { eventId } = req.params;
   const { subject, message } = req.body;
 
+  // Validation: sujet et message sont obligatoires
+  if (!subject || !message) {
+    return res.status(400).json({ error: 'Subject and message are required.' });
+  }
+
   try {
+    // Vérifier que l'événement appartient à l'église de l'admin
     const { data: eventData, error: eventError } = await supabaseAdmin
       .from('events_v2')
-      .select('name_fr, name_en')
+      .select('id')
       .eq('id', eventId)
       .eq('church_id', req.user.church_id)
       .single();
@@ -229,6 +235,7 @@ router.post('/events_v2/:eventId/send-thanks', protect, isSuperAdminOrChurchAdmi
     }
     if (!eventData) return res.status(404).json({ error: 'Event not found or not authorized' });
 
+    // Récupérer uniquement les participants de cet événement spécifique
     const { data: attendees, error: attendeesError } = await supabaseAdmin
       .from('attendees_v2')
       .select('email, full_name')
@@ -246,16 +253,14 @@ router.post('/events_v2/:eventId/send-thanks', protect, isSuperAdminOrChurchAdmi
       return res.status(404).json({ message: 'No attendees found for this event to send emails.' });
     }
 
+    // Envoyer l'email avec uniquement le sujet et message fournis par l'admin
     const emailPromises = attendees.map(async (attendee) => {
       const mailOptions = {
         from: process.env.NODEMAILER_EMAIL,
         to: attendee.email,
-        subject: subject || `Thank you for attending ${eventData.name_en} / Merci d'avoir participé à ${eventData.name_fr}`,
+        subject: subject,
         html: `<p>Bonjour ${attendee.full_name},</p>
-               <p>${message || `Thank you for participating in our event: <strong>${eventData.name_en}</strong>.</p>
-               <p>Nous vous remercions de votre participation à notre événement : <strong>${eventData.name_fr}</strong>.`}</p>
-               <p>Cordialement,</p>
-               <p>L'équipe de La Cité Eden</p>`,
+               <p>${message}</p>`,
       };
       return transporter.sendMail(mailOptions);
     });
