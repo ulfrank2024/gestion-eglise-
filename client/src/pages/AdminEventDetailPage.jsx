@@ -463,40 +463,59 @@ function AdminEventDetailPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="bg-gray-700/50">
-                        {/* Colonnes fixes */}
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase">
                           {t('full_name')}
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase">
                           {t('email')}
                         </th>
-                        {/* Colonnes dynamiques (form_responses) */}
-                        {dynamicHeaders.map(header => (
-                          <th key={header} className="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase">
-                            {header}
-                          </th>
-                        ))}
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase">
-                          {t('registered_at') || 'Inscrit le'}
+                          {t('phone')}
+                        </th>
+                        {/* Une seule colonne pour toutes les réponses personnalisées */}
+                        {dynamicHeaders.filter(h => h !== 'phone').length > 0 && (
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase">
+                            {t('form_responses')}
+                          </th>
+                        )}
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase">
+                          {t('registered_at')}
                         </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-700">
                       {attendees.map(attendee => (
                         <tr key={attendee.id} className="hover:bg-gray-700/30">
-                          {/* Colonnes fixes */}
                           <td className="px-4 py-3 text-gray-100 font-medium">
                             {attendee.full_name}
                           </td>
                           <td className="px-4 py-3 text-gray-300">
                             {attendee.email}
                           </td>
-                          {/* Colonnes dynamiques */}
-                          {dynamicHeaders.map(header => (
-                            <td key={`${attendee.id}-${header}`} className="px-4 py-3 text-gray-300">
-                              {formatResponseValue(attendee.form_responses?.[header])}
+                          <td className="px-4 py-3 text-gray-300">
+                            {attendee.form_responses?.phone || '-'}
+                          </td>
+                          {/* Colonne des réponses personnalisées regroupées */}
+                          {dynamicHeaders.filter(h => h !== 'phone').length > 0 && (
+                            <td className="px-4 py-3">
+                              <div className="space-y-1">
+                                {dynamicHeaders.filter(h => h !== 'phone').map(header => {
+                                  const value = attendee.form_responses?.[header];
+                                  if (value === null || value === undefined || value === '' || (Array.isArray(value) && value.length === 0)) {
+                                    return null;
+                                  }
+                                  return (
+                                    <div key={header} className="flex flex-wrap items-center gap-1">
+                                      <span className="text-gray-400 text-xs">{header}:</span>
+                                      <span className="text-gray-200 text-sm bg-gray-700 px-2 py-0.5 rounded">
+                                        {formatResponseValue(value)}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             </td>
-                          ))}
+                          )}
                           <td className="px-4 py-3 text-gray-400 text-sm">
                             {attendee.created_at
                               ? new Date(attendee.created_at).toLocaleString(i18n.language === 'fr' ? 'fr-FR' : 'en-US')
