@@ -413,6 +413,104 @@ router.post('/churches/register', async (req, res) => {
             .delete()
             .eq('id', invitation.id);
 
+        // 6. Envoyer l'email de bienvenue au nouvel admin
+        console.log('Step 6: Sending welcome email...');
+        const frontendUrl = process.env.FRONTEND_BASE_URL || 'http://localhost:3000';
+        const loginUrl = `${frontendUrl}/admin/login`;
+
+        const welcomeEmailFr = `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 10px; overflow: hidden;">
+          <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; padding: 30px; text-align: center;">
+            <h1 style="margin: 0; font-size: 28px;">🎉 Bienvenue sur MY EDEN X</h1>
+            <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Votre plateforme de gestion d'église</p>
+          </div>
+          <div style="padding: 25px;">
+            <p>Bonjour ${adminName},</p>
+            <p>Félicitations ! Votre église <strong>${churchName}</strong> a été créée avec succès sur MY EDEN X.</p>
+
+            <div style="background-color: #f0f9ff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4f46e5;">
+              <h3 style="margin-top: 0; color: #4f46e5;">📋 Récapitulatif de votre compte</h3>
+              <ul style="margin: 0; padding-left: 20px;">
+                <li><strong>Nom de l'église:</strong> ${churchName}</li>
+                <li><strong>Sous-domaine:</strong> ${subdomain}</li>
+                <li><strong>Email de connexion:</strong> ${invitation.email}</li>
+              </ul>
+            </div>
+
+            <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="margin-top: 0;">🚀 Prochaines étapes</h3>
+              <ol style="margin: 0; padding-left: 20px;">
+                <li>Connectez-vous à votre espace admin</li>
+                <li>Personnalisez les paramètres de votre église</li>
+                <li>Créez votre premier événement</li>
+                <li>Invitez votre équipe à collaborer</li>
+              </ol>
+            </div>
+
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${loginUrl}" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Accéder à mon espace admin</a>
+            </div>
+
+            <p>Si vous avez des questions, n'hésitez pas à nous contacter.</p>
+            <p>Cordialement,</p>
+            <p><strong>L'équipe MY EDEN X</strong></p>
+          </div>
+        </div>`;
+
+        const welcomeEmailEn = `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 10px; overflow: hidden;">
+          <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; padding: 30px; text-align: center;">
+            <h1 style="margin: 0; font-size: 28px;">🎉 Welcome to MY EDEN X</h1>
+            <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Your church management platform</p>
+          </div>
+          <div style="padding: 25px;">
+            <p>Hello ${adminName},</p>
+            <p>Congratulations! Your church <strong>${churchName}</strong> has been successfully created on MY EDEN X.</p>
+
+            <div style="background-color: #f0f9ff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4f46e5;">
+              <h3 style="margin-top: 0; color: #4f46e5;">📋 Account Summary</h3>
+              <ul style="margin: 0; padding-left: 20px;">
+                <li><strong>Church name:</strong> ${churchName}</li>
+                <li><strong>Subdomain:</strong> ${subdomain}</li>
+                <li><strong>Login email:</strong> ${invitation.email}</li>
+              </ul>
+            </div>
+
+            <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="margin-top: 0;">🚀 Next Steps</h3>
+              <ol style="margin: 0; padding-left: 20px;">
+                <li>Log in to your admin dashboard</li>
+                <li>Customize your church settings</li>
+                <li>Create your first event</li>
+                <li>Invite your team to collaborate</li>
+              </ol>
+            </div>
+
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${loginUrl}" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Access my admin dashboard</a>
+            </div>
+
+            <p>If you have any questions, feel free to contact us.</p>
+            <p>Sincerely,</p>
+            <p><strong>The MY EDEN X Team</strong></p>
+          </div>
+        </div>`;
+
+        const welcomeMailOptions = {
+            from: process.env.NODEMAILER_EMAIL,
+            to: invitation.email,
+            subject: `🎉 Bienvenue sur MY EDEN X - ${churchName} / Welcome to MY EDEN X - ${churchName}`,
+            html: `${welcomeEmailFr}<hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">${welcomeEmailEn}<div style="text-align: center; margin-top: 20px; font-style: italic; font-size:12px; color: #777;"><p>Car là où deux ou trois sont assemblés en mon nom, je suis au milieu d'eux. - Matthieu 18:20</p><p>For where two or three gather in my name, there am I with them. - Matthew 18:20</p></div>`,
+        };
+
+        try {
+            await transporter.sendMail(welcomeMailOptions);
+            console.log('Welcome email sent to:', invitation.email);
+        } catch (mailError) {
+            console.error('Error sending welcome email:', mailError.message);
+            // Ne pas faire échouer l'inscription si l'email échoue
+        }
+
         console.log('=== CHURCH REGISTRATION SUCCESS ===');
         res.status(201).json({ message: 'Church and admin account created successfully.' });
 

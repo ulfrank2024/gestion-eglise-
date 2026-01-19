@@ -219,10 +219,10 @@ router.post('/events_v2/:eventId/send-thanks', protect, isSuperAdminOrChurchAdmi
   }
 
   try {
-    // Vérifier que l'événement appartient à l'église de l'admin
+    // Récupérer les détails de l'événement et de l'église
     const { data: eventData, error: eventError } = await supabaseAdmin
       .from('events_v2')
-      .select('id')
+      .select('id, name_fr, name_en')
       .eq('id', eventId)
       .eq('church_id', req.user.church_id)
       .single();
@@ -234,6 +234,15 @@ router.post('/events_v2/:eventId/send-thanks', protect, isSuperAdminOrChurchAdmi
         throw eventError;
     }
     if (!eventData) return res.status(404).json({ error: 'Event not found or not authorized' });
+
+    // Récupérer le nom de l'église
+    const { data: churchData } = await supabaseAdmin
+      .from('churches_v2')
+      .select('name')
+      .eq('id', req.user.church_id)
+      .single();
+
+    const churchName = churchData?.name || 'MY EDEN X';
 
     // Récupérer uniquement les participants de cet événement spécifique
     const { data: attendees, error: attendeesError } = await supabaseAdmin
@@ -253,14 +262,43 @@ router.post('/events_v2/:eventId/send-thanks', protect, isSuperAdminOrChurchAdmi
       return res.status(404).json({ message: 'No attendees found for this event to send emails.' });
     }
 
-    // Envoyer l'email avec uniquement le sujet et message fournis par l'admin
+    // Envoyer l'email avec le template professionnel
     const emailPromises = attendees.map(async (attendee) => {
+      const emailBodyFr = `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 10px; overflow: hidden;">
+          <div style="background-color: #4f46e5; color: white; padding: 20px; text-align: center;">
+            <h1 style="margin: 0; font-size: 24px;">${subject}</h1>
+          </div>
+          <div style="padding: 20px;">
+            <p>Bonjour ${attendee.full_name},</p>
+            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <p style="margin: 0; white-space: pre-line;">${message}</p>
+            </div>
+            <p>Cordialement,</p>
+            <p><strong>L'équipe de ${churchName}</strong></p>
+          </div>
+        </div>`;
+
+      const emailBodyEn = `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 10px; overflow: hidden;">
+          <div style="background-color: #4f46e5; color: white; padding: 20px; text-align: center;">
+            <h1 style="margin: 0; font-size: 24px;">${subject}</h1>
+          </div>
+          <div style="padding: 20px;">
+            <p>Hello ${attendee.full_name},</p>
+            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <p style="margin: 0; white-space: pre-line;">${message}</p>
+            </div>
+            <p>Sincerely,</p>
+            <p><strong>The ${churchName} Team</strong></p>
+          </div>
+        </div>`;
+
       const mailOptions = {
         from: process.env.NODEMAILER_EMAIL,
         to: attendee.email,
         subject: subject,
-        html: `<p>Bonjour ${attendee.full_name},</p>
-               <p>${message}</p>`,
+        html: `${emailBodyFr}<hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">${emailBodyEn}<div style="text-align: center; margin-top: 20px; font-style: italic; font-size:12px; color: #777;"><p>Car là où deux ou trois sont assemblés en mon nom, je suis au milieu d'eux. - Matthieu 18:20</p><p>For where two or three gather in my name, there am I with them. - Matthew 18:20</p></div>`,
       };
       return transporter.sendMail(mailOptions);
     });
