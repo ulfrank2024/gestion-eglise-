@@ -163,11 +163,11 @@ export const api = {
         return data;
     },
     updateFormField: async (fieldId, fieldData) => {
-        const { data } = await apiClient.put(`/admin/form-fields_v2/${fieldId}`, fieldData);
+        const { data } = await apiClient.put(`/admin/form-fields/${fieldId}`, fieldData);
         return data;
     },
     deleteFormField: async (fieldId) => {
-        await apiClient.delete(`/admin/form-fields_v2/${fieldId}`);
+        await apiClient.delete(`/admin/form-fields/${fieldId}`);
     },
     getEventStatistics: async (id) => {
         const { data } = await apiClient.get(`/admin/events_v2/${id}/statistics`);
