@@ -1539,3 +1539,60 @@ Logs → Chercher "401" ou "Unauthorized"
 - ✅ Pas de réponses 304 problématiques grâce aux headers no-cache
 - ✅ Meilleur diagnostic grâce aux logs détaillés
 - ✅ Pas de mises à jour d'état sur composants démontés
+
+---
+
+### 2026-01-19 - Correction erreur 500 sur GET /api/admin/events_v2
+
+**Problème identifié:**
+- Erreur 500 lors de la connexion admin sur le dashboard
+- Message: `GET https://my-eden-x.onrender.com/api/admin/events_v2 500 (Internal Server Error)`
+
+**Cause racine:**
+- La route `GET /events_v2` utilisait une fonction RPC PostgreSQL `get_event_attendee_and_checkin_counts`
+- Cette fonction RPC n'avait jamais été créée dans Supabase (fichier SQL non exécuté)
+- L'appel à `supabase.rpc()` échouait et causait l'erreur 500
+
+**Solution implémentée:**
+
+1. **Modification de `/server/routes/adminRoutes.js`** (route GET /events_v2)
+   - ✅ Suppression de l'appel à la fonction RPC
+   - ✅ Remplacement par des requêtes directes pour compter les participants
+   - ✅ Utilisation de `select('*', { count: 'exact', head: true })` pour un comptage efficace
+   - ✅ La colonne `checkin_count` est maintenant récupérée directement depuis `events_v2`
+
+**Ancien code problématique:**
+```javascript
+const { data: counts, error: countsError } = await supabase.rpc('get_event_attendee_and_checkin_counts', {
+  p_event_ids: eventIds,
+  p_church_id: req.user.church_id
+});
+```
+
+**Nouveau code:**
+```javascript
+const eventsWithCounts = await Promise.all(events.map(async (event) => {
+  const { count, error: countError } = await supabase
+    .from('attendees_v2')
+    .select('*', { count: 'exact', head: true })
+    .eq('event_id', event.id)
+    .eq('church_id', req.user.church_id);
+
+  return {
+    ...event,
+    attendeeCount: count || 0,
+    checkinCount: event.checkin_count || 0
+  };
+}));
+```
+
+**Avantages de la nouvelle approche:**
+- ✅ Pas de dépendance à une fonction RPC (plus portable)
+- ✅ Utilise `head: true` pour ne récupérer que le count (performant)
+- ✅ Fonctionne sans modification de la base de données
+- ✅ Plus facile à maintenir et déboguer
+
+**Résultat:**
+- ✅ Le dashboard admin charge correctement
+- ✅ Les événements s'affichent avec les compteurs de participants
+- ✅ Plus d'erreur 500

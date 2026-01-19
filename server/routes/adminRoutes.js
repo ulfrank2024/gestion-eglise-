@@ -42,10 +42,10 @@ router.post('/events_v2', protect, isSuperAdminOrChurchAdmin, async (req, res) =
 // GET /api/admin/events_v2 - Lister tous les événements de l'église connectée
 router.get('/events_v2', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
   try {
-    // 1. Récupérer les événements de base (sans les comptes pour l'instant)
+    // 1. Récupérer les événements avec checkin_count
     let eventQuery = supabase
       .from('events_v2')
-      .select('id, name_fr, name_en, is_archived, event_start_date, created_at') // Simplified select
+      .select('id, name_fr, name_en, is_archived, event_start_date, created_at, checkin_count')
       .eq('church_id', req.user.church_id);
 
     if (req.query.is_archived !== undefined) {
@@ -57,30 +57,23 @@ router.get('/events_v2', protect, isSuperAdminOrChurchAdmin, async (req, res) =>
 
     if (eventsError) throw eventsError;
 
-    // 2. Obtenir les IDs des événements pour le RPC
-    const eventIds = events.map(e => e.id);
+    // 2. Compter les attendees pour chaque événement (sans utiliser de fonction RPC)
+    const eventsWithCounts = await Promise.all(events.map(async (event) => {
+      const { count, error: countError } = await supabase
+        .from('attendees_v2')
+        .select('*', { count: 'exact', head: true })
+        .eq('event_id', event.id)
+        .eq('church_id', req.user.church_id);
 
-    // 3. Appeler la fonction RPC pour obtenir les comptes d'attendees et de checkins
-    const { data: counts, error: countsError } = await supabase.rpc('get_event_attendee_and_checkin_counts', {
-      p_event_ids: eventIds,
-      p_church_id: req.user.church_id
-    });
+      if (countError) {
+        console.error(`Error counting attendees for event ${event.id}:`, countError.message);
+      }
 
-    if (countsError) throw countsError;
-
-    // 4. Mapper les comptes aux événements
-    const countsMap = counts.reduce((acc, current) => {
-      acc[current.event_id] = {
-        attendee_count: current.attendee_count,
-        checkin_count: current.checkin_count
+      return {
+        ...event,
+        attendeeCount: count || 0,
+        checkinCount: event.checkin_count || 0
       };
-      return acc;
-    }, {});
-
-    const eventsWithCounts = events.map(event => ({
-      ...event,
-      attendeeCount: countsMap[event.id]?.attendee_count || 0,
-      checkinCount: countsMap[event.id]?.checkin_count || 0
     }));
 
     res.status(200).json(eventsWithCounts);
