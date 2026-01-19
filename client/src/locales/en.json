@@ -323,6 +323,13 @@
     "select_option": "Select an option",
     "select_options": "Select one or more options",
     "download_pdf": "Download PDF",
-    "attendee_information": "Attendee Information"
+    "attendee_information": "Attendee Information",
+    "download_all_pdf": "Download All (PDF)",
+    "all_events": "All Events",
+    "filter": "Filter",
+    "total": "Total",
+    "close": "Close",
+    "unknown_event": "Unknown Event",
+    "date": "Date"
   }
 }

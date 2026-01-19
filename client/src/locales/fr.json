@@ -324,6 +324,13 @@
     "select_options": "Sélectionnez une ou plusieurs options",
     "download_pdf": "Télécharger PDF",
     "view_details": "Voir détails",
-    "attendee_information": "Informations du participant"
+    "attendee_information": "Informations du participant",
+    "download_all_pdf": "Télécharger tout (PDF)",
+    "all_events": "Tous les événements",
+    "filter": "Filtre",
+    "total": "Total",
+    "close": "Fermer",
+    "unknown_event": "Événement inconnu",
+    "date": "Date"
   }
 }

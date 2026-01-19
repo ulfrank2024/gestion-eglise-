@@ -150,6 +150,10 @@ export const api = {
         const { data } = await apiClient.get(`/admin/events_v2/${eventId}/attendees`);
         return data;
     },
+    listAllAttendees: async () => {
+        const { data } = await apiClient.get('/admin/attendees_v2');
+        return data;
+    },
     sendThankYouEmails: async (eventId, emailData) => {
         await apiClient.post(`/admin/events_v2/${eventId}/send-thanks`, emailData);
     },

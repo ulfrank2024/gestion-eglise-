@@ -230,7 +230,11 @@ function AdminLayout() {
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        borderRight: '1px solid #374151'
+        borderRight: '1px solid #374151',
+        position: 'sticky',
+        top: 0,
+        height: '100vh',
+        overflowY: 'auto'
       }}>
         <div>
           {/* Logo et nom de l'église */}
