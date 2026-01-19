@@ -1596,3 +1596,66 @@ const eventsWithCounts = await Promise.all(events.map(async (event) => {
 - ✅ Le dashboard admin charge correctement
 - ✅ Les événements s'affichent avec les compteurs de participants
 - ✅ Plus d'erreur 500
+
+---
+
+### 2026-01-19 - Correction critique: Politiques RLS bloquaient les lectures
+
+**Problème identifié:**
+- Les inscriptions aux événements fonctionnaient (email envoyé) mais les données n'apparaissaient pas dans le dashboard
+- Le compteur de check-in ne se mettait pas à jour dans le dashboard
+- Les données étaient bien insérées mais invisibles lors de la lecture
+
+**Cause racine:**
+- Les routes backend utilisaient `supabase` (client anon) pour les opérations de LECTURE
+- Le client anon respecte les politiques RLS (Row Level Security)
+- Les politiques RLS utilisent `auth.uid()` pour identifier l'utilisateur
+- Depuis le backend Node.js, il n'y a pas de contexte d'authentification Supabase → `auth.uid()` retourne NULL
+- Résultat: toutes les lectures retournaient des résultats vides
+
+**Solution implémentée:**
+
+1. **Routes admin (`/server/routes/adminRoutes.js`)**
+   - ✅ Toutes les routes de lecture utilisent maintenant `supabaseAdmin` au lieu de `supabase`
+   - ✅ Routes corrigées:
+     - GET /events_v2 (liste des événements)
+     - GET /events_v2/:id (détails d'un événement)
+     - GET /attendees_v2 (tous les participants)
+     - GET /events_v2/:eventId/attendees (participants d'un événement)
+     - GET /events_v2/:eventId/statistics (statistiques)
+     - GET /events_v2/:eventId/qrcode-checkin (QR code)
+     - GET /events_v2/:eventId/form-fields (champs de formulaire)
+     - POST /events_v2/:eventId/send-thanks (lecture des attendees pour email)
+     - POST /checkin-event/:eventId (lecture du compteur)
+   - ✅ Ajout du middleware `protect` et `isSuperAdminOrChurchAdmin` aux routes qui ne l'avaient pas
+
+2. **Routes publiques (`/server/routes/publicRoutes.js`)**
+   - ✅ Routes de lecture utilisent `supabaseAdmin` pour bypasser RLS
+   - ✅ Routes corrigées:
+     - GET /:churchId/events (liste publique des événements)
+     - GET /:churchId/events/:id (détails publics d'un événement)
+     - GET /:churchId/events/:eventId/form-fields (champs du formulaire d'inscription)
+     - POST /:churchId/events/:eventId/register (vérification de l'événement et récupération des détails pour email)
+
+**Architecture d'accès aux données clarifiée:**
+```
+Frontend → Backend (middleware protect vérifie le JWT)
+                ↓
+        supabaseAdmin (bypasse RLS car auth déjà validée)
+                ↓
+        Base de données Supabase
+```
+
+**Pourquoi utiliser supabaseAdmin partout côté serveur:**
+- L'authentification est déjà gérée par notre middleware `protect`
+- Le middleware vérifie le token JWT et récupère le `church_id` depuis `church_users_v2`
+- Le code filtre explicitement par `church_id` dans chaque requête
+- Les politiques RLS de Supabase ne sont pas adaptées aux requêtes serveur (pas de contexte auth)
+- `supabaseAdmin` permet de contourner RLS tout en maintenant la sécurité via notre middleware
+
+**Résultat:**
+- ✅ Les inscriptions apparaissent dans le dashboard admin
+- ✅ Le compteur de participants se met à jour en temps réel
+- ✅ Le compteur de check-in s'incrémente correctement
+- ✅ Les événements publics sont visibles pour tous les visiteurs
+- ✅ Le formulaire d'inscription s'affiche correctement

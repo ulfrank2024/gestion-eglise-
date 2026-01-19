@@ -7,7 +7,8 @@ const { transporter } = require('../services/mailer'); // Importer le transporte
 router.get('/:churchId/events', async (req, res) => {
   const { churchId } = req.params;
   try {
-    const { data, error } = await supabase
+    // Utiliser supabaseAdmin pour bypasser RLS (route publique)
+    const { data, error } = await supabaseAdmin
       .from('events_v2')
       .select('id, name_fr, name_en, background_image_url') // Sélectionner les champs publics nécessaires
       .eq('church_id', churchId) // Filtrer par churchId
@@ -25,7 +26,8 @@ router.get('/:churchId/events', async (req, res) => {
 router.get('/:churchId/events/:id', async (req, res) => {
   const { churchId, id } = req.params;
   try {
-    const { data, error } = await supabase
+    // Utiliser supabaseAdmin pour bypasser RLS (route publique)
+    const { data, error } = await supabaseAdmin
       .from('events_v2')
       .select('id, name_fr, name_en, description_fr, description_en, background_image_url, event_start_date, church:churches_v2(name, logo_url)') // Sélectionner aussi les dates et les détails de l'église
       .eq('id', id)
@@ -45,13 +47,14 @@ router.get('/:churchId/events/:id', async (req, res) => {
 router.get('/:churchId/events/:eventId/form-fields', async (req, res) => {
     const { churchId, eventId } = req.params;
     try {
-      const { data, error } = await supabase
+      // Utiliser supabaseAdmin pour bypasser RLS (route publique pour l'inscription)
+      const { data, error } = await supabaseAdmin
         .from('form_fields_v2')
         .select('*')
         .eq('event_id', eventId)
         .eq('church_id', churchId) // Filtrer par churchId
         .order('order', { ascending: true });
-  
+
       if (error) throw error;
       res.status(200).json(data);
     } catch (error) {
@@ -69,7 +72,8 @@ router.post('/:churchId/events/:eventId/register', async (req, res) => {
   }
 
   try {
-    const { data: eventCheck, error: eventCheckError } = await supabase
+    // Utiliser supabaseAdmin pour bypasser RLS (route publique)
+    const { data: eventCheck, error: eventCheckError } = await supabaseAdmin
       .from('events_v2')
       .select('id')
       .eq('id', eventId)
@@ -97,10 +101,10 @@ router.post('/:churchId/events/:eventId/register', async (req, res) => {
 
     const { data, error } = await supabaseAdmin
       .from('attendees_v2')
-      .insert([{ 
-        event_id: eventId, 
-        full_name: fullName, 
-        email, 
+      .insert([{
+        event_id: eventId,
+        full_name: fullName,
+        email,
         form_responses: formResponses,
         church_id: churchId
       }])
@@ -108,7 +112,8 @@ router.post('/:churchId/events/:eventId/register', async (req, res) => {
 
     if (error) throw error;
 
-    const { data: eventDetails, error: eventError } = await supabase
+    // Utiliser supabaseAdmin pour récupérer les détails de l'événement (pour l'email)
+    const { data: eventDetails, error: eventError } = await supabaseAdmin
         .from('events_v2')
         .select('name_fr, name_en, description_fr, description_en, event_start_date')
         .eq('id', eventId)

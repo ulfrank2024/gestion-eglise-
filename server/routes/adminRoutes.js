@@ -42,8 +42,8 @@ router.post('/events_v2', protect, isSuperAdminOrChurchAdmin, async (req, res) =
 // GET /api/admin/events_v2 - Lister tous les événements de l'église connectée
 router.get('/events_v2', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
   try {
-    // 1. Récupérer les événements avec checkin_count
-    let eventQuery = supabase
+    // 1. Récupérer les événements avec checkin_count (supabaseAdmin pour bypasser RLS)
+    let eventQuery = supabaseAdmin
       .from('events_v2')
       .select('id, name_fr, name_en, is_archived, event_start_date, created_at, checkin_count')
       .eq('church_id', req.user.church_id);
@@ -57,9 +57,9 @@ router.get('/events_v2', protect, isSuperAdminOrChurchAdmin, async (req, res) =>
 
     if (eventsError) throw eventsError;
 
-    // 2. Compter les attendees pour chaque événement (sans utiliser de fonction RPC)
+    // 2. Compter les attendees pour chaque événement (supabaseAdmin pour bypasser RLS)
     const eventsWithCounts = await Promise.all(events.map(async (event) => {
-      const { count, error: countError } = await supabase
+      const { count, error: countError } = await supabaseAdmin
         .from('attendees_v2')
         .select('*', { count: 'exact', head: true })
         .eq('event_id', event.id)
@@ -88,7 +88,7 @@ router.get('/events_v2/:id', protect, isSuperAdminOrChurchAdmin, async (req, res
   const { id } = req.params;
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('events_v2')
       .select('*, is_archived')
       .eq('id', id)
@@ -101,7 +101,7 @@ router.get('/events_v2/:id', protect, isSuperAdminOrChurchAdmin, async (req, res
       }
       throw error;
     }
-    
+
     if (!data) return res.status(404).json({ error: 'Event not found' });
     res.status(200).json(data);
   } catch (error) {
@@ -163,7 +163,7 @@ router.delete('/events_v2/:id', protect, isSuperAdminOrChurchAdmin, async (req, 
 // GET /api/admin/attendees_v2 - Lister tous les participants de l'église connectée
 router.get('/attendees_v2', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('attendees_v2')
       .select(`
         *,
@@ -188,10 +188,11 @@ router.get('/events_v2/:eventId/attendees', protect, isSuperAdminOrChurchAdmin, 
   const { eventId } = req.params;
 
   try {
-    const { data: attendees, count, error } = await supabase
+    const { data: attendees, count, error } = await supabaseAdmin
       .from('attendees_v2')
       .select('*', { count: 'exact' })
       .eq('event_id', eventId)
+      .eq('church_id', req.user.church_id) // Filtrer par église
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -213,10 +214,11 @@ router.post('/events_v2/:eventId/send-thanks', protect, isSuperAdminOrChurchAdmi
   const { subject, message } = req.body;
 
   try {
-    const { data: eventData, error: eventError } = await supabase
+    const { data: eventData, error: eventError } = await supabaseAdmin
       .from('events_v2')
       .select('name_fr, name_en')
       .eq('id', eventId)
+      .eq('church_id', req.user.church_id)
       .single();
 
     if (eventError) {
@@ -227,10 +229,11 @@ router.post('/events_v2/:eventId/send-thanks', protect, isSuperAdminOrChurchAdmi
     }
     if (!eventData) return res.status(404).json({ error: 'Event not found or not authorized' });
 
-    const { data: attendees, error: attendeesError } = await supabase
+    const { data: attendees, error: attendeesError } = await supabaseAdmin
       .from('attendees_v2')
       .select('email, full_name')
-      .eq('event_id', eventId);
+      .eq('event_id', eventId)
+      .eq('church_id', req.user.church_id);
 
     if (attendeesError) {
         if (attendeesError.code === 'PGRST116') {
@@ -272,10 +275,11 @@ router.post('/events_v2/:eventId/send-thanks', protect, isSuperAdminOrChurchAdmi
 router.post('/checkin-event/:eventId', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
   const { eventId } = req.params;
   try {
-    const { data: event, error: fetchError } = await supabase
+    const { data: event, error: fetchError } = await supabaseAdmin
       .from('events_v2')
       .select('checkin_count')
       .eq('id', eventId)
+      .eq('church_id', req.user.church_id)
       .single();
 
     if (fetchError) {
@@ -292,6 +296,7 @@ router.post('/checkin-event/:eventId', protect, isSuperAdminOrChurchAdmin, async
       .from('events_v2')
       .update({ checkin_count: newCheckinCount })
       .eq('id', eventId)
+      .eq('church_id', req.user.church_id)
       .select();
 
     if (error) {
@@ -308,13 +313,14 @@ router.post('/checkin-event/:eventId', protect, isSuperAdminOrChurchAdmin, async
 });
 
 // GET /api/admin/events_v2/:eventId/statistics - Obtenir les statistiques d'un événement
-router.get('/events_v2/:eventId/statistics', async (req, res) => {
+router.get('/events_v2/:eventId/statistics', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
   const { eventId } = req.params;
   try {
-    const { count: attendeeCount, error: attendeesError } = await supabase
+    const { count: attendeeCount, error: attendeesError } = await supabaseAdmin
       .from('attendees_v2')
-      .select('*', { count: 'exact' })
-      .eq('event_id', eventId);
+      .select('*', { count: 'exact', head: true })
+      .eq('event_id', eventId)
+      .eq('church_id', req.user.church_id);
 
     if (attendeesError) {
         if (attendeesError.code === 'PGRST116') {
@@ -323,10 +329,11 @@ router.get('/events_v2/:eventId/statistics', async (req, res) => {
         throw attendeesError;
     }
 
-    const { data: event, error: eventError } = await supabase
+    const { data: event, error: eventError } = await supabaseAdmin
       .from('events_v2')
       .select('checkin_count')
       .eq('id', eventId)
+      .eq('church_id', req.user.church_id)
       .single();
 
     if (eventError) {
@@ -351,7 +358,7 @@ router.get('/events_v2/:eventId/statistics', async (req, res) => {
 router.get('/events_v2/:eventId/qrcode-checkin', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
   const { eventId } = req.params;
   try {
-    const { data: event, error: eventError } = await supabase
+    const { data: event, error: eventError } = await supabaseAdmin
       .from('events_v2')
       .select('id')
       .eq('id', eventId)
@@ -367,7 +374,7 @@ router.get('/events_v2/:eventId/qrcode-checkin', protect, isSuperAdminOrChurchAd
     if (!event) return res.status(404).json({ error: 'Event not found or not authorized' });
 
     const backendBaseUrl = process.env.BACKEND_BASE_URL || 'http://localhost:5001';
-    const checkinUrl = `${backendBaseUrl}/api/public/${req.user.church_id}/checkin/${eventId}`; 
+    const checkinUrl = `${backendBaseUrl}/api/public/${req.user.church_id}/checkin/${eventId}`;
 
     const qrCodeDataUrl = await qrcode.toDataURL(checkinUrl, { errorCorrectionLevel: 'H', width: 256 });
 
@@ -381,13 +388,14 @@ router.get('/events_v2/:eventId/qrcode-checkin', protect, isSuperAdminOrChurchAd
 // --- Endpoints CRUD pour les champs de formulaire (protégés Admin) ---
 
 // GET /api/admin/events_v2/:eventId/form-fields - Récupérer les champs de formulaire pour un événement
-router.get('/events_v2/:eventId/form-fields', async (req, res) => {
+router.get('/events_v2/:eventId/form-fields', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
   const { eventId } = req.params;
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('form_fields_v2')
       .select('*')
       .eq('event_id', eventId)
+      .eq('church_id', req.user.church_id)
       .order('order', { ascending: true });
 
     if (error) {
@@ -403,7 +411,7 @@ router.get('/events_v2/:eventId/form-fields', async (req, res) => {
 });
 
 // POST /api/admin/events_v2/:eventId/form-fields - Créer un champ de formulaire
-router.post('/events_v2/:eventId/form-fields', async (req, res) => {
+router.post('/events_v2/:eventId/form-fields', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
   const { eventId } = req.params;
   const { label_fr, label_en, field_type, is_required, order } = req.body;
 
@@ -421,7 +429,7 @@ router.post('/events_v2/:eventId/form-fields', async (req, res) => {
 });
 
 // PUT /api/admin/form-fields/:fieldId - Mettre à jour un champ de formulaire
-router.put('/form-fields/:fieldId', async (req, res) => {
+router.put('/form-fields/:fieldId', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
   const { fieldId } = req.params;
   const { label_fr, label_en, field_type, is_required, order } = req.body;
 
@@ -445,7 +453,7 @@ router.put('/form-fields/:fieldId', async (req, res) => {
 });
 
 // DELETE /api/admin/form-fields/:fieldId - Supprimer un champ de formulaire
-router.delete('/form-fields/:fieldId', async (req, res) => {
+router.delete('/form-fields/:fieldId', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
   const { fieldId } = req.params;
 
   try {
