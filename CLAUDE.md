@@ -1698,3 +1698,53 @@ Frontend → Backend (middleware protect vérifie le JWT)
 - ✅ Le tableau affiche toutes les informations des participants
 - ✅ Les statistiques de l'événement sont visibles dans la sidebar
 - ✅ Le taux de présence est calculé automatiquement
+
+
+---
+
+### 2026-01-19 - Correction du thème dark pour FormFieldBuilder
+
+**Problème identifié:**
+- Le texte des champs de saisie dans le formulaire de création de champs personnalisés était invisible
+- Les inputs avaient un texte blanc sur fond blanc/gris clair
+- Le composant utilisait encore le thème clair alors que le reste de l'interface admin était en thème sombre
+
+**Cause racine:**
+- Le fichier CSS `FormFieldBuilder.css` utilisait des couleurs claires (fond `#f9f9f9`, `white`)
+- Les inputs n'avaient pas de couleur de texte explicite définie
+- Le texte héritait du blanc de la page parente (thème dark)
+
+**Corrections apportées dans `/client/src/components/FormFieldBuilder.css`:**
+
+1. **Container principal**
+   - Fond: `#1f2937` (gray-800)
+   - Bordure: `#374151` (gray-700)
+
+2. **Titres (h4, h5)**
+   - Couleur: `#f3f4f6` (gray-100)
+   - Soulignement: `#6366f1` (indigo-500)
+
+3. **Liste des champs existants**
+   - Fond: `#374151` (gray-700)
+   - Texte: `#d1d5db` (gray-300)
+
+4. **Formulaire d'ajout**
+   - Fond: `#111827` (gray-900)
+   - Inputs: `bg-color #374151`, `text-color #f3f4f6`
+   - Labels: `#d1d5db` (gray-300)
+   - Focus ring: indigo avec ombre
+
+5. **Bouton Ajouter**
+   - Gradient indigo → violet
+   - Effet hover et active
+
+6. **Messages d'erreur**
+   - Fond rouge semi-transparent
+   - Bordure rouge
+   - Texte `#f87171` (red-400)
+
+**Résultat:**
+- ✅ Texte des inputs maintenant visible (blanc sur fond sombre)
+- ✅ Cohérence visuelle avec le reste de l'interface admin
+- ✅ Focus states bien visibles avec ring indigo
+- ✅ Select dropdown également stylisé
