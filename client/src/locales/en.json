@@ -301,6 +301,26 @@
     },
     "view_all": "View all",
     "view_details": "View details",
-    "default_fields_info_message": "\"Full Name\", \"Email\" (required) and \"Phone\" (optional) fields are included by default."
+    "default_fields_info_message": "\"Full Name\", \"Email\" (required) and \"Phone\" (optional) fields are included by default.",
+    "phone": "Phone",
+    "name_and_email_are_required": "Name and email are required.",
+    "field_type_text": "Text",
+    "field_type_email": "Email",
+    "field_type_select": "Choice",
+    "field_type_checkbox_simple": "Checkbox (Yes/No)",
+    "selection_type": "Selection type",
+    "single_selection": "Single selection",
+    "multiple_selection": "Multiple selection",
+    "field_options": "Choice options",
+    "option_label_fr": "Option (French)",
+    "option_label_en": "Option (English)",
+    "add_option": "Add",
+    "option_labels_required": "French and English option labels are required.",
+    "min_two_options_required": "At least 2 options are required for a Choice field.",
+    "min_options_hint": "Add at least 2 options for this field.",
+    "label_fr_placeholder": "Ex: Your ministry",
+    "label_en_placeholder": "Ex: Your ministry",
+    "select_option": "Select an option",
+    "select_options": "Select one or more options"
   }
 }

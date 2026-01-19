@@ -301,6 +301,26 @@
     },
     "view_all": "Voir tout",
     "view_details": "Voir les détails",
-    "default_fields_info_message": "Les champs \"Nom complet\", \"Email\" (obligatoires) et \"Téléphone\" (facultatif) sont inclus par défaut."
+    "default_fields_info_message": "Les champs \"Nom complet\", \"Email\" (obligatoires) et \"Téléphone\" (facultatif) sont inclus par défaut.",
+    "phone": "Téléphone",
+    "name_and_email_are_required": "Le nom et l'email sont requis.",
+    "field_type_text": "Texte",
+    "field_type_email": "Email",
+    "field_type_select": "Choix",
+    "field_type_checkbox_simple": "Case à cocher (Oui/Non)",
+    "selection_type": "Type de sélection",
+    "single_selection": "Sélection unique",
+    "multiple_selection": "Sélection multiple",
+    "field_options": "Options de choix",
+    "option_label_fr": "Option (Français)",
+    "option_label_en": "Option (Anglais)",
+    "add_option": "Ajouter",
+    "option_labels_required": "Les libellés français et anglais de l'option sont requis.",
+    "min_two_options_required": "Au moins 2 options sont requises pour un champ de type Choix.",
+    "min_options_hint": "Ajoutez au moins 2 options pour ce champ.",
+    "label_fr_placeholder": "Ex: Votre ministère",
+    "label_en_placeholder": "Ex: Your ministry",
+    "select_option": "Sélectionnez une option",
+    "select_options": "Sélectionnez une ou plusieurs options"
   }
 }

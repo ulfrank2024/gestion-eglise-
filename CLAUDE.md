@@ -1748,3 +1748,84 @@ Frontend → Backend (middleware protect vérifie le JWT)
 - ✅ Cohérence visuelle avec le reste de l'interface admin
 - ✅ Focus states bien visibles avec ring indigo
 - ✅ Select dropdown également stylisé
+
+
+---
+
+### 2026-01-19 - Implémentation complète des champs de type Choix (checkbox/radio)
+
+**Demande utilisateur:**
+- Améliorer la logique des checkboxes dans le formulaire de création
+- Permettre de définir des options à cocher
+- Choisir entre sélection unique (radio) et sélection multiple (checkboxes)
+- Afficher correctement côté client et dans le dashboard
+
+**Modifications apportées:**
+
+1. **Script SQL de migration** (`/server/db/add_checkbox_options.sql`)
+   - Ajout de la colonne `options` (JSONB) pour stocker les choix
+   - Ajout de la colonne `selection_type` (TEXT: 'single' ou 'multiple')
+
+2. **FormFieldBuilder.jsx** - Création de champs avec options
+   - Nouveau type de champ: "Choix" (select)
+   - Interface pour ajouter/supprimer des options bilingues
+   - Sélecteur de type: Sélection unique vs Sélection multiple
+   - Validation: minimum 2 options requises
+   - Affichage des options existantes avec badges
+
+3. **Backend - adminRoutes.js**
+   - Route POST `/events_v2/:eventId/form-fields` mise à jour pour accepter `options` et `selection_type`
+   - Route PUT `/form-fields/:fieldId` mise à jour pour gérer ces champs
+
+4. **RegistrationModal.jsx** - Formulaire d'inscription côté client
+   - Affichage de radio buttons pour `selection_type === 'single'`
+   - Affichage de checkboxes pour `selection_type === 'multiple'`
+   - Gestion des états pour les deux types de sélection
+   - Labels bilingues (FR/EN) des options
+
+5. **RegistrationModal.css** - Styles pour les options
+   - `.selectFieldContainer` - Container du champ select
+   - `.optionsGroup` - Groupe d'options avec fond gris clair
+   - `.optionItem` - Item individuel avec radio/checkbox
+   - `.selectHint` - Indication "Sélectionnez une option" / "Sélectionnez plusieurs options"
+
+6. **AdminEventDetailPage.jsx** - Affichage dans le dashboard
+   - Fonction `formatResponseValue()` pour formater les réponses:
+     - Tableaux (sélection multiple) → jointure par virgules
+     - Booléens (checkbox simple) → "Oui" / "Non"
+     - Chaînes vides → "-"
+   - Affichage correct de tous les types de réponses
+
+7. **Traductions ajoutées** (fr.json et en.json)
+   - `field_type_text`, `field_type_email`, `field_type_select`, `field_type_checkbox_simple`
+   - `selection_type`, `single_selection`, `multiple_selection`
+   - `field_options`, `option_label_fr`, `option_label_en`, `add_option`
+   - `option_labels_required`, `min_two_options_required`, `min_options_hint`
+   - `select_option`, `select_options`
+
+**Types de champs disponibles:**
+1. **Texte** - Champ texte libre
+2. **Email** - Champ email avec validation
+3. **Choix** - Options avec sélection unique (radio) ou multiple (checkboxes)
+4. **Case à cocher** - Simple Oui/Non
+
+**Format de stockage des options:**
+```json
+{
+  "options": [
+    {"label_fr": "Option 1", "label_en": "Option 1"},
+    {"label_fr": "Option 2", "label_en": "Option 2"}
+  ],
+  "selection_type": "single" | "multiple"
+}
+```
+
+**Format de stockage des réponses:**
+- Sélection unique: `"Option choisie"` (string)
+- Sélection multiple: `["Option 1", "Option 3"]` (array)
+
+**Résultat:**
+- ✅ Admin peut créer des champs avec options
+- ✅ Client voit les options sous forme radio/checkbox
+- ✅ Dashboard affiche correctement toutes les réponses
+- ✅ Support bilingue complet

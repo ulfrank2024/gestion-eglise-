@@ -15,45 +15,125 @@
     margin-bottom: 20px;
 }
 
+.loading-text {
+    color: #d1d5db;
+}
+
+/* Note d'information */
+.info-note {
+    background-color: rgba(55, 65, 81, 0.5);
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    border: 1px solid #4b5563;
+}
+
+.info-note .info-icon {
+    color: #f59e0b;
+    margin-right: 10px;
+    font-size: 1.3em;
+    flex-shrink: 0;
+}
+
+.info-note p {
+    margin: 0;
+    color: #d1d5db;
+    font-size: 0.9em;
+}
+
+/* Liste des champs */
 .fields-list {
     margin-bottom: 30px;
+}
+
+.no-fields-message {
+    color: #9ca3af;
+    font-style: italic;
 }
 
 .field-item {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    padding: 10px 15px;
+    align-items: flex-start;
+    padding: 12px 15px;
     background-color: #374151;
     border: 1px solid #4b5563;
-    border-radius: 5px;
+    border-radius: 8px;
     margin-bottom: 10px;
 }
 
-.field-item span {
+.field-info {
+    flex: 1;
+}
+
+.field-label {
+    display: block;
     font-size: 1rem;
+    font-weight: 500;
+    color: #f3f4f6;
+    margin-bottom: 4px;
+}
+
+.field-meta {
+    display: block;
+    font-size: 0.85rem;
+    color: #9ca3af;
+}
+
+/* Preview des options dans la liste des champs */
+.field-options-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.option-badge {
+    background-color: #4b5563;
     color: #d1d5db;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
 }
 
 .delete-btn {
     background: none;
     border: none;
     color: #f87171;
-    font-size: 1.5rem;
+    font-size: 1.3rem;
     cursor: pointer;
-    line-height: 1;
+    padding: 5px;
     transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .delete-btn:hover {
     color: #ef4444;
 }
 
+/* Formulaire d'ajout */
 .add-field-form {
     padding: 20px;
     border: 1px solid #374151;
     border-radius: 8px;
     background-color: #111827;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+@media (max-width: 600px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
 }
 
 .form-group {
@@ -80,8 +160,7 @@
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.form-group input[type="text"]::placeholder,
-.form-group select::placeholder {
+.form-group input[type="text"]::placeholder {
     color: #9ca3af;
 }
 
@@ -97,6 +176,120 @@
     color: #f3f4f6;
 }
 
+/* Section des options */
+.options-section {
+    background-color: rgba(55, 65, 81, 0.3);
+    border: 1px solid #4b5563;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.options-label {
+    display: block;
+    font-weight: bold;
+    color: #d1d5db;
+    margin-bottom: 12px;
+}
+
+.options-list {
+    margin-bottom: 15px;
+}
+
+.option-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #374151;
+    border: 1px solid #4b5563;
+    border-radius: 5px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+}
+
+.option-text {
+    color: #f3f4f6;
+    font-size: 0.95rem;
+}
+
+.option-alt {
+    color: #9ca3af;
+    font-size: 0.85rem;
+    margin-left: 8px;
+}
+
+.remove-option-btn {
+    background: none;
+    border: none;
+    color: #f87171;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    font-size: 1.1rem;
+    transition: color 0.2s;
+}
+
+.remove-option-btn:hover {
+    color: #ef4444;
+}
+
+.add-option-form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.option-input {
+    flex: 1;
+    min-width: 120px;
+    padding: 8px 12px;
+    border: 1px solid #4b5563;
+    border-radius: 5px;
+    background-color: #374151;
+    color: #f3f4f6;
+    font-size: 0.9rem;
+}
+
+.option-input::placeholder {
+    color: #9ca3af;
+}
+
+.option-input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+}
+
+.add-option-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background-color: #059669;
+    color: white;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+    white-space: nowrap;
+}
+
+.add-option-btn:hover {
+    background-color: #047857;
+}
+
+.options-hint {
+    color: #9ca3af;
+    font-size: 0.8rem;
+    margin-top: 10px;
+    margin-bottom: 0;
+    font-style: italic;
+}
+
+/* Checkbox obligatoire */
 .form-group-checkbox {
     display: flex;
     align-items: center;
@@ -116,6 +309,7 @@
     cursor: pointer;
 }
 
+/* Bouton d'ajout */
 .add-btn {
     background: linear-gradient(to right, #6366f1, #8b5cf6);
     color: white;
@@ -137,6 +331,7 @@
     transform: translateY(0);
 }
 
+/* Messages d'erreur */
 .error-message {
     color: #f87171;
     background-color: rgba(239, 68, 68, 0.1);

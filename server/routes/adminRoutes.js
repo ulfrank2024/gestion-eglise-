@@ -413,12 +413,28 @@ router.get('/events_v2/:eventId/form-fields', protect, isSuperAdminOrChurchAdmin
 // POST /api/admin/events_v2/:eventId/form-fields - Créer un champ de formulaire
 router.post('/events_v2/:eventId/form-fields', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
   const { eventId } = req.params;
-  const { label_fr, label_en, field_type, is_required, order } = req.body;
+  const { label_fr, label_en, field_type, is_required, order, options, selection_type } = req.body;
 
   try {
+    const fieldData = {
+      event_id: eventId,
+      label_fr,
+      label_en,
+      field_type,
+      is_required,
+      order,
+      church_id: req.user.church_id,
+    };
+
+    // Ajouter options et selection_type si le type est 'select'
+    if (field_type === 'select' && options) {
+      fieldData.options = options;
+      fieldData.selection_type = selection_type || 'single';
+    }
+
     const { data, error } = await supabaseAdmin
       .from('form_fields_v2')
-      .insert([{ event_id: eventId, label_fr, label_en, field_type, is_required, order, church_id: req.user.church_id }])
+      .insert([fieldData])
       .select();
 
     if (error) throw error;
@@ -431,12 +447,24 @@ router.post('/events_v2/:eventId/form-fields', protect, isSuperAdminOrChurchAdmi
 // PUT /api/admin/form-fields/:fieldId - Mettre à jour un champ de formulaire
 router.put('/form-fields/:fieldId', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
   const { fieldId } = req.params;
-  const { label_fr, label_en, field_type, is_required, order } = req.body;
+  const { label_fr, label_en, field_type, is_required, order, options, selection_type } = req.body;
 
   try {
+    const updateData = { label_fr, label_en, field_type, is_required, order };
+
+    // Ajouter options et selection_type si le type est 'select'
+    if (field_type === 'select') {
+      updateData.options = options || null;
+      updateData.selection_type = selection_type || 'single';
+    } else {
+      // Réinitialiser ces champs si le type n'est plus 'select'
+      updateData.options = null;
+      updateData.selection_type = null;
+    }
+
     const { data, error } = await supabaseAdmin
       .from('form_fields_v2')
-      .update({ label_fr, label_en, field_type, is_required, order })
+      .update(updateData)
       .eq('id', fieldId)
       .select();
     if (error) {

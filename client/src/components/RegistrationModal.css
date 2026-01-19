@@ -94,3 +94,61 @@
     border-top: 1px solid #eee;
     margin: 20px 0;
   }
+
+  /* Styles pour les champs de type select (options multiples) */
+  .selectFieldContainer {
+    margin-bottom: 5px;
+  }
+
+  .selectHint {
+    font-size: 0.85rem;
+    color: #888;
+    margin: 0 0 10px 0;
+    font-style: italic;
+  }
+
+  .optionsGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+  }
+
+  .optionItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .optionItem input[type="radio"],
+  .optionItem input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #007bff;
+  }
+
+  .optionItem label {
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: #333;
+  }
+
+  .optionItem label:hover {
+    color: #007bff;
+  }
+
+  .checkboxContainer input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-right: 10px;
+    cursor: pointer;
+    accent-color: #007bff;
+  }
+
+  .checkboxContainer label {
+    cursor: pointer;
+  }

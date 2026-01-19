@@ -252,6 +252,28 @@ function AdminEventDetailPage() {
     return acc;
   }, []);
 
+  // Fonction pour formater les valeurs des réponses
+  const formatResponseValue = (value) => {
+    if (value === null || value === undefined) return '-';
+
+    // Si c'est un tableau (sélection multiple)
+    if (Array.isArray(value)) {
+      if (value.length === 0) return '-';
+      return value.join(', ');
+    }
+
+    // Si c'est un booléen (checkbox simple)
+    if (typeof value === 'boolean') {
+      return value ? t('yes') : t('no');
+    }
+
+    // Si c'est une chaîne vide
+    if (value === '') return '-';
+
+    // Sinon, convertir en chaîne
+    return String(value);
+  };
+
   return (
     <div className="p-6">
       {/* Header */}
@@ -472,7 +494,7 @@ function AdminEventDetailPage() {
                           {/* Colonnes dynamiques */}
                           {dynamicHeaders.map(header => (
                             <td key={`${attendee.id}-${header}`} className="px-4 py-3 text-gray-300">
-                              {attendee.form_responses?.[header]?.toString() || '-'}
+                              {formatResponseValue(attendee.form_responses?.[header])}
                             </td>
                           ))}
                           <td className="px-4 py-3 text-gray-400 text-sm">
