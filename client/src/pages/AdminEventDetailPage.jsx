@@ -43,6 +43,7 @@ function AdminEventDetailPage() {
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [modalAction, setModalAction] = useState(null);
   const [eventStats, setEventStats] = useState({ registered: 0, checkedIn: 0 });
+  const [formFields, setFormFields] = useState([]);
 
   const publicEventUrl = `${window.location.origin}/${event?.church_id}/event/${id}`;
 
@@ -112,6 +113,29 @@ function AdminEventDetailPage() {
     };
     fetchEventStats();
   }, [id]);
+
+  // Récupérer les champs de formulaire pour avoir les labels bilingues
+  useEffect(() => {
+    const fetchFormFields = async () => {
+      if (!id) return;
+      try {
+        const data = await api.admin.getEventFormFields(id);
+        setFormFields(data);
+      } catch (err) {
+        console.error('Error fetching form fields:', err);
+      }
+    };
+    fetchFormFields();
+  }, [id]);
+
+  // Fonction pour obtenir le label dans la bonne langue
+  const getFieldLabel = (labelEn) => {
+    const field = formFields.find(f => f.label_en === labelEn);
+    if (field) {
+      return i18n.language === 'fr' ? field.label_fr : field.label_en;
+    }
+    return labelEn; // Fallback sur la clé si pas trouvé
+  };
 
   const handleFileChange = (e) => {
     setBackgroundImageFile(e.target.files[0] || null);
@@ -259,9 +283,15 @@ function AdminEventDetailPage() {
     // Si c'est un tableau (sélection multiple)
     if (Array.isArray(value)) {
       if (value.length === 0) return '-';
-      return value.join(', ');
+      // Traduire chaque valeur du tableau si c'est yes/no
+      return value.map(v => formatSingleValue(v)).join(', ');
     }
 
+    return formatSingleValue(value);
+  };
+
+  // Fonction helper pour formater une valeur unique
+  const formatSingleValue = (value) => {
     // Si c'est un booléen (checkbox simple)
     if (typeof value === 'boolean') {
       return value ? t('yes') : t('no');
@@ -270,7 +300,16 @@ function AdminEventDetailPage() {
     // Si c'est une chaîne vide
     if (value === '') return '-';
 
-    // Sinon, convertir en chaîne
+    // Si c'est une chaîne "yes"/"no"/"oui"/"non" - traduire
+    const lowerValue = String(value).toLowerCase();
+    if (lowerValue === 'yes' || lowerValue === 'oui' || lowerValue === 'true') {
+      return t('yes');
+    }
+    if (lowerValue === 'no' || lowerValue === 'non' || lowerValue === 'false') {
+      return t('no');
+    }
+
+    // Sinon, retourner la chaîne telle quelle
     return String(value);
   };
 
@@ -506,7 +545,7 @@ function AdminEventDetailPage() {
                                   }
                                   return (
                                     <div key={header} className="flex flex-wrap items-center gap-1">
-                                      <span className="text-gray-400 text-xs">{header}:</span>
+                                      <span className="text-gray-400 text-xs">{getFieldLabel(header)}:</span>
                                       <span className="text-gray-200 text-sm bg-gray-700 px-2 py-0.5 rounded">
                                         {formatResponseValue(value)}
                                       </span>
