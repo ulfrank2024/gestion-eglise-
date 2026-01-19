@@ -44,7 +44,8 @@ function RegistrationModal({ isOpen, onClose, eventId, churchId }) {
           const initialCustomFormData = {};
           data.forEach(field => {
             if (field.field_type === 'checkbox') {
-              initialCustomFormData[field.label_en] = false;
+              // Ne pas initialiser pour forcer l'utilisateur à choisir
+              initialCustomFormData[field.label_en] = null;
             } else if (field.field_type === 'select') {
               // Pour les champs select, initialiser en fonction du type de sélection
               if (field.selection_type === 'multiple') {
@@ -173,17 +174,35 @@ function RegistrationModal({ isOpen, onClose, eventId, churchId }) {
 
     switch (field.field_type) {
       case 'checkbox':
-        // Simple checkbox Oui/Non
+        // Case à cocher Oui/Non - affichée comme radio buttons pour plus de clarté
         return (
-          <div className="checkboxContainer" key={field.id}>
-            <input
-              type="checkbox"
-              id={field.id}
-              name={fieldName}
-              checked={customFormData[fieldName] || false}
-              onChange={handleCustomInputChange}
-            />
-            <label htmlFor={field.id}>{label}{field.is_required && ' *'}</label>
+          <div key={field.id} className="yesNoFieldContainer">
+            <label className="formField">{label}{field.is_required && ' *'}</label>
+            <div className="yesNoGroup">
+              <div className="yesNoOption">
+                <input
+                  type="radio"
+                  id={`${field.id}-yes`}
+                  name={fieldName}
+                  value="yes"
+                  checked={customFormData[fieldName] === true}
+                  onChange={() => setCustomFormData(prev => ({ ...prev, [fieldName]: true }))}
+                  required={field.is_required}
+                />
+                <label htmlFor={`${field.id}-yes`}>{t('yes')}</label>
+              </div>
+              <div className="yesNoOption">
+                <input
+                  type="radio"
+                  id={`${field.id}-no`}
+                  name={fieldName}
+                  value="no"
+                  checked={customFormData[fieldName] === false}
+                  onChange={() => setCustomFormData(prev => ({ ...prev, [fieldName]: false }))}
+                />
+                <label htmlFor={`${field.id}-no`}>{t('no')}</label>
+              </div>
+            </div>
           </div>
         );
 
