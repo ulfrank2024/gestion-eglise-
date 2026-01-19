@@ -42,6 +42,7 @@ function AdminEventDetailPage() {
 
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [modalAction, setModalAction] = useState(null);
+  const [eventStats, setEventStats] = useState({ registered: 0, checkedIn: 0 });
 
   const publicEventUrl = `${window.location.origin}/${event?.church_id}/event/${id}`;
 
@@ -94,6 +95,22 @@ function AdminEventDetailPage() {
       }
     };
     fetchAttendees();
+  }, [id]);
+
+  useEffect(() => {
+    const fetchEventStats = async () => {
+      if (!id) return;
+      try {
+        const stats = await api.admin.getEventStatistics(id);
+        setEventStats({
+          registered: stats.registered_attendees || 0,
+          checkedIn: stats.checked_in_attendees || 0
+        });
+      } catch (err) {
+        console.error('Error fetching event statistics:', err);
+      }
+    };
+    fetchEventStats();
   }, [id]);
 
   const handleFileChange = (e) => {
@@ -225,7 +242,8 @@ function AdminEventDetailPage() {
     );
   }
 
-  const formHeaders = attendees.reduce((acc, attendee) => {
+  // Colonnes fixes (nom, email) + colonnes dynamiques (form_responses)
+  const dynamicHeaders = attendees.reduce((acc, attendee) => {
     if (attendee.form_responses) {
       Object.keys(attendee.form_responses).forEach(key => {
         if (!acc.includes(key)) acc.push(key);
@@ -423,21 +441,45 @@ function AdminEventDetailPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="bg-gray-700/50">
-                        {formHeaders.map(header => (
+                        {/* Colonnes fixes */}
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase">
+                          {t('full_name')}
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase">
+                          {t('email')}
+                        </th>
+                        {/* Colonnes dynamiques (form_responses) */}
+                        {dynamicHeaders.map(header => (
                           <th key={header} className="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase">
                             {header}
                           </th>
                         ))}
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase">
+                          {t('registered_at') || 'Inscrit le'}
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-700">
                       {attendees.map(attendee => (
                         <tr key={attendee.id} className="hover:bg-gray-700/30">
-                          {formHeaders.map(header => (
+                          {/* Colonnes fixes */}
+                          <td className="px-4 py-3 text-gray-100 font-medium">
+                            {attendee.full_name}
+                          </td>
+                          <td className="px-4 py-3 text-gray-300">
+                            {attendee.email}
+                          </td>
+                          {/* Colonnes dynamiques */}
+                          {dynamicHeaders.map(header => (
                             <td key={`${attendee.id}-${header}`} className="px-4 py-3 text-gray-300">
-                              {attendee.form_responses?.[header]?.toString() || ''}
+                              {attendee.form_responses?.[header]?.toString() || '-'}
                             </td>
                           ))}
+                          <td className="px-4 py-3 text-gray-400 text-sm">
+                            {attendee.created_at
+                              ? new Date(attendee.created_at).toLocaleString(i18n.language === 'fr' ? 'fr-FR' : 'en-US')
+                              : '-'}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -449,6 +491,38 @@ function AdminEventDetailPage() {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Event Statistics */}
+            <div className="bg-gray-800 rounded-xl border border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-gray-100 mb-4 flex items-center">
+                <MdBarChart className="mr-2 text-amber-400" />
+                {t('statistics') || 'Statistiques'}
+              </h3>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center p-3 bg-gray-700/50 rounded-lg">
+                  <span className="text-gray-300">{t('registered') || 'Inscrits'}</span>
+                  <span className="text-2xl font-bold text-green-400">{eventStats.registered}</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-gray-700/50 rounded-lg">
+                  <span className="text-gray-300">{t('checked_in') || 'Pointés'}</span>
+                  <span className="text-2xl font-bold text-indigo-400">{eventStats.checkedIn}</span>
+                </div>
+                {eventStats.registered > 0 && (
+                  <div className="mt-4">
+                    <div className="flex justify-between text-sm text-gray-400 mb-1">
+                      <span>{t('attendance_rate') || 'Taux de présence'}</span>
+                      <span>{Math.round((eventStats.checkedIn / eventStats.registered) * 100)}%</span>
+                    </div>
+                    <div className="w-full bg-gray-700 rounded-full h-2">
+                      <div
+                        className="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min((eventStats.checkedIn / eventStats.registered) * 100, 100)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* QR Code Public */}
             <div className="bg-gray-800 rounded-xl border border-gray-700 p-6">
               <h3 className="text-lg font-semibold text-gray-100 mb-4 flex items-center">

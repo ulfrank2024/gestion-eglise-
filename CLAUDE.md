@@ -1659,3 +1659,42 @@ Frontend → Backend (middleware protect vérifie le JWT)
 - ✅ Le compteur de check-in s'incrémente correctement
 - ✅ Les événements publics sont visibles pour tous les visiteurs
 - ✅ Le formulaire d'inscription s'affiche correctement
+
+---
+
+### 2026-01-19 - Amélioration de l'affichage des participants et statistiques par événement
+
+**Problèmes identifiés:**
+1. La liste des participants n'affichait que le téléphone (contenu de `form_responses`), pas le nom ni l'email
+2. Pas de statistiques visibles pour un événement spécifique (inscrits vs pointés)
+
+**Corrections apportées:**
+
+1. **AdminEventDetailPage.jsx - Tableau des participants amélioré**
+   - ✅ Ajout des colonnes fixes : **Nom complet**, **Email**
+   - ✅ Ajout de la colonne **Inscrit le** (date d'inscription)
+   - ✅ Les colonnes dynamiques (form_responses) s'affichent après les colonnes fixes
+   - ✅ Meilleur formatage : nom en gras, dates localisées
+
+2. **AdminEventDetailPage.jsx - Section statistiques ajoutée**
+   - ✅ Nouvelle carte "Statistiques" dans la sidebar
+   - ✅ Affichage du nombre d'**inscrits**
+   - ✅ Affichage du nombre de **pointés** (check-ins)
+   - ✅ **Barre de progression** avec taux de présence en pourcentage
+   - ✅ Design cohérent avec le thème dark
+
+3. **Traductions ajoutées** (fr.json et en.json)
+   - `registered` - FR: "Inscrits" / EN: "Registered"
+   - `checked_in` - FR: "Pointés" / EN: "Checked In"
+   - `attendance_rate` - FR: "Taux de présence" / EN: "Attendance Rate"
+   - `registered_at` - FR: "Inscrit le" / EN: "Registered At"
+
+**Structure du tableau des participants:**
+| Nom complet | Email | Téléphone | [Champs perso...] | Inscrit le |
+|-------------|-------|-----------|-------------------|------------|
+| Jean Dupont | jean@email.com | 438... | ... | 19/01/2026 |
+
+**Résultat:**
+- ✅ Le tableau affiche toutes les informations des participants
+- ✅ Les statistiques de l'événement sont visibles dans la sidebar
+- ✅ Le taux de présence est calculé automatiquement
