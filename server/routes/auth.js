@@ -42,6 +42,9 @@ router.get('/me', protect, async (req, res) => {
       email: req.user.email,
       church_id: req.user.church_id,
       church_role: req.user.church_role,
+      permissions: req.user.permissions || ['all'],
+      is_main_admin: req.user.is_main_admin || false,
+      full_name: req.user.full_name || req.user.email,
     };
 
     console.log('=== /api/auth/me response ===');

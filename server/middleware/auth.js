@@ -21,12 +21,12 @@ const protect = async (req, res, next) => {
     // Attache l'utilisateur à l'objet de requête
     req.user = data.user; 
 
-    // Récupérer le church_id et le rôle de l'utilisateur à partir de la table church_users_v2
+    // Récupérer le church_id, rôle, permissions et infos de l'utilisateur à partir de church_users_v2
     // Utiliser supabaseAdmin pour contourner RLS lors de la récupération du rôle,
     // car le middleware doit toujours être capable de déterminer le rôle.
     const { data: churchUserData, error: churchUserError } = await supabaseAdmin
       .from('church_users_v2')
-      .select('church_id, role')
+      .select('church_id, role, permissions, is_main_admin, full_name')
       .eq('user_id', req.user.id)
       .limit(1) // On prend le premier rôle trouvé pour cet utilisateur
       .single();
@@ -39,6 +39,9 @@ const protect = async (req, res, next) => {
     if (churchUserData) {
       req.user.church_id = churchUserData.church_id;
       req.user.church_role = churchUserData.role;
+      req.user.permissions = churchUserData.permissions || ['all'];
+      req.user.is_main_admin = churchUserData.is_main_admin || false;
+      req.user.full_name = churchUserData.full_name || req.user.email;
     } else {
       // Si l'utilisateur n'est pas trouvé dans 'church_users_v2', vérifier si c'est un Super Admin par email.
       // Cela permet aux Super Admins de ne pas avoir forcément une entrée dans 'church_users_v2' liée à un church_id.
@@ -126,4 +129,70 @@ const isMember = async (req, res, next) => {
 };
 
 
-module.exports = { protect, isSuperAdmin, isAdminChurch, isSuperAdminOrChurchAdmin, isMember };
+/**
+ * Middleware factory pour vérifier les permissions par module
+ * @param {string} requiredModule - Le module requis ('events', 'members', 'roles', 'announcements', etc.)
+ * @returns {Function} Middleware Express
+ */
+const hasModulePermission = (requiredModule) => {
+  return (req, res, next) => {
+    // Super Admin a toujours accès
+    if (req.user.church_role === 'super_admin') {
+      return next();
+    }
+
+    // Vérifier que c'est un church_admin
+    if (req.user.church_role !== 'church_admin') {
+      return res.status(403).json({ error: 'Forbidden: Not authorized' });
+    }
+
+    const permissions = req.user.permissions || [];
+
+    // Si l'utilisateur a "all", il a accès à tout
+    if (permissions.includes('all')) {
+      return next();
+    }
+
+    // Vérifier si le module requis est dans les permissions
+    if (permissions.includes(requiredModule)) {
+      return next();
+    }
+
+    // Permission refusée
+    return res.status(403).json({
+      error: 'Forbidden: You do not have permission to access this module',
+      required_permission: requiredModule,
+      your_permissions: permissions
+    });
+  };
+};
+
+/**
+ * Vérifie si l'utilisateur peut gérer l'équipe (inviter/modifier des admins)
+ * Seul l'admin principal peut gérer l'équipe
+ */
+const canManageTeam = (req, res, next) => {
+  // Super Admin peut toujours gérer
+  if (req.user.church_role === 'super_admin') {
+    return next();
+  }
+
+  // Seul l'admin principal de l'église peut gérer l'équipe
+  if (req.user.church_role === 'church_admin' && req.user.is_main_admin) {
+    return next();
+  }
+
+  return res.status(403).json({
+    error: 'Forbidden: Only the main administrator can manage the team'
+  });
+};
+
+module.exports = {
+  protect,
+  isSuperAdmin,
+  isAdminChurch,
+  isSuperAdminOrChurchAdmin,
+  isMember,
+  hasModulePermission,
+  canManageTeam
+};

@@ -20,8 +20,16 @@ function AdminLayout() {
   const [error, setError] = useState('');
   const hasRun = useRef(false);
 
+  // Permissions et rôle principal
+  const [permissions, setPermissions] = useState(['all']);
+  const [isMainAdmin, setIsMainAdmin] = useState(false);
+  const [adminName, setAdminName] = useState('');
+
   // État pour le module actif (events ou members)
-  const [activeModule, setActiveModule] = useState('events');
+  const [activeModule, setActiveModule] = useState(() => {
+    // Récupérer le module actif depuis localStorage
+    return localStorage.getItem('adminActiveModule') || 'events';
+  });
 
   const [openSections, setOpenSections] = useState({
     events: true,
@@ -60,6 +68,18 @@ function AdminLayout() {
         console.log('=== AdminLayout: Authentication successful ===', { currentUserRole, currentChurchId });
         setUserRole(currentUserRole);
         setChurchId(currentChurchId);
+        setPermissions(userInfo.permissions || ['all']);
+        setIsMainAdmin(userInfo.is_main_admin || false);
+        setAdminName(userInfo.full_name || userInfo.email);
+
+        // Si l'utilisateur n'a pas accès au module actif, rediriger vers un module autorisé
+        const currentModule = localStorage.getItem('adminActiveModule') || 'events';
+        const userPermissions = userInfo.permissions || ['all'];
+        if (!userPermissions.includes('all') && !userPermissions.includes(currentModule)) {
+          const firstPermission = userPermissions[0];
+          setActiveModule(firstPermission);
+          localStorage.setItem('adminActiveModule', firstPermission);
+        }
 
         try {
           const details = await api.admin.getChurchDetails(currentChurchId);
@@ -113,6 +133,18 @@ function AdminLayout() {
 
   const toggleSection = (section) => {
     setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  // Vérifier si l'utilisateur a accès à un module
+  const hasPermission = (module) => {
+    if (permissions.includes('all')) return true;
+    return permissions.includes(module);
+  };
+
+  // Changer de module et sauvegarder dans localStorage
+  const handleModuleChange = (module) => {
+    setActiveModule(module);
+    localStorage.setItem('adminActiveModule', module);
   };
 
   const handleLogout = async () => {
@@ -286,7 +318,7 @@ function AdminLayout() {
             </p>
           </div>
 
-          {/* Sélecteur de Module */}
+          {/* Sélecteur de Module - Affiche uniquement les modules autorisés */}
           <div style={{
             marginBottom: '20px',
             padding: '4px',
@@ -295,25 +327,44 @@ function AdminLayout() {
             display: 'flex',
             gap: '4px'
           }}>
-            <button
-              onClick={() => setActiveModule('events')}
-              style={getModuleButtonStyle('events')}
-            >
-              <MdEvent size={16} />
-              {t('events_module') || 'Événements'}
-            </button>
-            <button
-              onClick={() => setActiveModule('members')}
-              style={getModuleButtonStyle('members')}
-            >
-              <MdPeople size={16} />
-              {t('members_module') || 'Membres'}
-            </button>
+            {hasPermission('events') && (
+              <button
+                onClick={() => handleModuleChange('events')}
+                style={getModuleButtonStyle('events')}
+              >
+                <MdEvent size={16} />
+                {t('events_module') || 'Événements'}
+              </button>
+            )}
+            {hasPermission('members') && (
+              <button
+                onClick={() => handleModuleChange('members')}
+                style={getModuleButtonStyle('members')}
+              >
+                <MdPeople size={16} />
+                {t('members_module') || 'Membres'}
+              </button>
+            )}
           </div>
 
+          {/* Message si aucun module autorisé */}
+          {!hasPermission('events') && !hasPermission('members') && (
+            <div style={{
+              padding: '15px',
+              backgroundColor: '#374151',
+              borderRadius: '8px',
+              marginBottom: '20px',
+              textAlign: 'center'
+            }}>
+              <p style={{ color: '#fbbf24', fontSize: '13px', margin: 0 }}>
+                {t('no_module_access') || 'Aucun module autorisé. Contactez l\'administrateur principal.'}
+              </p>
+            </div>
+          )}
+
           <ul style={{ listStyle: 'none', padding: 0 }}>
-            {/* Module Événements */}
-            {activeModule === 'events' && (
+            {/* Module Événements - Visible uniquement si autorisé */}
+            {activeModule === 'events' && hasPermission('events') && (
               <>
                 {/* Section Gestion des Événements */}
                 <li style={{ marginBottom: '10px' }}>
@@ -412,8 +463,8 @@ function AdminLayout() {
               </>
             )}
 
-            {/* Module Membres */}
-            {activeModule === 'members' && (
+            {/* Module Membres - Visible uniquement si autorisé */}
+            {activeModule === 'members' && hasPermission('members') && (
               <>
                 {/* Section Gestion des Membres */}
                 <li style={{ marginBottom: '10px' }}>
@@ -482,18 +533,26 @@ function AdminLayout() {
             )}
 
             {/* Section commune : Paramètres */}
-            <li style={{ marginTop: '20px', borderTop: '1px solid #374151', paddingTop: '15px' }}>
-              <NavLink
-                to="/admin/church-users"
-                onMouseEnter={() => setHoveredItem('church-users')}
-                onMouseLeave={() => setHoveredItem(null)}
-                style={({ isActive }) => getLinkStyle({ isActive, itemName: 'church-users' })}
-              >
-                <MdGroupAdd style={iconStyle} />
-                {t('team_members')}
-              </NavLink>
-            </li>
-            <li style={{ marginBottom: '5px' }}>
+            {/* Membres de l'équipe - Visible uniquement pour l'admin principal */}
+            {isMainAdmin && (
+              <li style={{ marginTop: '20px', borderTop: '1px solid #374151', paddingTop: '15px' }}>
+                <NavLink
+                  to="/admin/church-users"
+                  onMouseEnter={() => setHoveredItem('church-users')}
+                  onMouseLeave={() => setHoveredItem(null)}
+                  style={({ isActive }) => getLinkStyle({ isActive, itemName: 'church-users' })}
+                >
+                  <MdGroupAdd style={iconStyle} />
+                  {t('team_members')}
+                </NavLink>
+              </li>
+            )}
+            <li style={{
+              marginBottom: '5px',
+              marginTop: isMainAdmin ? '5px' : '20px',
+              borderTop: isMainAdmin ? 'none' : '1px solid #374151',
+              paddingTop: isMainAdmin ? '0' : '15px'
+            }}>
               <NavLink
                 to="/admin/church-settings"
                 onMouseEnter={() => setHoveredItem('church-settings')}

@@ -1,4 +1,4 @@
-require('dotenv').config({ path: '../.env' }); // Assurez-vous que le chemin vers .env est correct
+require('dotenv').config({ path: '../.env' });
 const nodemailer = require('nodemailer');
 
 const user = process.env.NODEMAILER_EMAIL;
@@ -16,4 +16,115 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-module.exports = { transporter };
+/**
+ * Envoie un email
+ * @param {Object} options - Options de l'email
+ * @param {string} options.to - Destinataire
+ * @param {string} options.subject - Sujet
+ * @param {string} options.html - Contenu HTML
+ * @param {string} [options.text] - Contenu texte (optionnel)
+ */
+async function sendEmail({ to, subject, html, text }) {
+  try {
+    const info = await transporter.sendMail({
+      from: `"MY EDEN X" <${user}>`,
+      to,
+      subject,
+      html,
+      text: text || html.replace(/<[^>]*>/g, '')
+    });
+    console.log('Email sent:', info.messageId);
+    return info;
+  } catch (error) {
+    console.error('Error sending email:', error);
+    throw error;
+  }
+}
+
+/**
+ * Génère le contenu HTML de l'email d'invitation admin
+ */
+function generateAdminInvitationEmail({ churchName, email, tempPassword, inviterName, permissions }) {
+  const permissionsText = permissions.includes('all')
+    ? 'Accès complet à tous les modules'
+    : `Accès aux modules: ${permissions.map(p => {
+        const labels = {
+          events: 'Événements',
+          members: 'Membres',
+          roles: 'Rôles',
+          announcements: 'Annonces'
+        };
+        return labels[p] || p;
+      }).join(', ')}`;
+
+  const loginUrl = process.env.FRONTEND_BASE_URL + '/admin/login';
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Invitation - MY EDEN X</title>
+    </head>
+    <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1f2937;">
+      <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); border-radius: 16px 16px 0 0; padding: 40px 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 28px; font-weight: bold;">MY EDEN X</h1>
+          <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 16px;">Invitation à rejoindre l'équipe</p>
+        </div>
+
+        <!-- Content -->
+        <div style="background-color: #374151; padding: 40px 30px; border-radius: 0 0 16px 16px;">
+          <h2 style="color: #f3f4f6; margin: 0 0 20px; font-size: 22px;">Bonjour,</h2>
+
+          <p style="color: #d1d5db; line-height: 1.6; margin: 0 0 20px;">
+            <strong style="color: #a5b4fc;">${inviterName}</strong> vous invite à rejoindre l'équipe d'administration de <strong style="color: #a5b4fc;">${churchName}</strong> sur la plateforme MY EDEN X.
+          </p>
+
+          <!-- Credentials Box -->
+          <div style="background-color: #1f2937; border-radius: 12px; padding: 25px; margin: 25px 0; border-left: 4px solid #4f46e5;">
+            <h3 style="color: #f3f4f6; margin: 0 0 15px; font-size: 16px;">Vos identifiants de connexion :</h3>
+            <p style="color: #d1d5db; margin: 5px 0;">
+              <strong>Email :</strong> <span style="color: #a5b4fc;">${email}</span>
+            </p>
+            <p style="color: #d1d5db; margin: 5px 0;">
+              <strong>Mot de passe temporaire :</strong> <span style="color: #fbbf24; font-family: monospace;">${tempPassword}</span>
+            </p>
+          </div>
+
+          <!-- Permissions Box -->
+          <div style="background-color: #1f2937; border-radius: 12px; padding: 20px; margin: 25px 0;">
+            <h4 style="color: #f3f4f6; margin: 0 0 10px; font-size: 14px;">Vos permissions :</h4>
+            <p style="color: #10b981; margin: 0; font-size: 14px;">${permissionsText}</p>
+          </div>
+
+          <!-- CTA Button -->
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${loginUrl}" style="display: inline-block; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              Se connecter
+            </a>
+          </div>
+
+          <!-- Security Note -->
+          <div style="background-color: rgba(251, 191, 36, 0.1); border-radius: 8px; padding: 15px; margin-top: 25px; border: 1px solid rgba(251, 191, 36, 0.3);">
+            <p style="color: #fbbf24; margin: 0; font-size: 13px;">
+              <strong>Important :</strong> Pour des raisons de sécurité, nous vous recommandons de changer votre mot de passe dès votre première connexion via Paramètres > Changer le mot de passe.
+            </p>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align: center; padding: 20px;">
+          <p style="color: #6b7280; font-size: 12px; margin: 0;">
+            © ${new Date().getFullYear()} MY EDEN X - Plateforme de gestion d'église
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+module.exports = { transporter, sendEmail, generateAdminInvitationEmail };

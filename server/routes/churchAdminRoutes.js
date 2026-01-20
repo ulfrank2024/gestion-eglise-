@@ -1,31 +1,77 @@
 const express = require('express');
 const { supabaseAdmin } = require('../db/supabase');
-const { protect, isAdminChurch } = require('../middleware/auth');
+const { protect, isAdminChurch, canManageTeam } = require('../middleware/auth');
+const { logActivity, getActivityLogs, MODULES, ACTIONS } = require('../services/activityLogger');
+const { sendEmail, generateAdminInvitationEmail } = require('../services/mailer');
 
 const router = express.Router();
 
-// Routes pour la gestion des membres d'équipe d'église (protégées Admin d'Église)
+// ============================================
+// Routes pour la gestion de l'équipe d'église
+// ============================================
 
-// POST /api/church-admin/churches_v2/:churchId/users - Inviter un nouvel utilisateur à rejoindre l'équipe d'une église
-router.post('/churches_v2/:churchId/users', protect, isAdminChurch, async (req, res) => {
+// POST /api/church-admin/churches_v2/:churchId/users - Inviter un nouvel admin avec permissions
+router.post('/churches_v2/:churchId/users', protect, isAdminChurch, canManageTeam, async (req, res) => {
   const { churchId } = req.params;
-  const { email, role } = req.body;
+  const { email, role, permissions, full_name } = req.body;
 
   if (req.user.church_id !== churchId) {
     return res.status(403).json({ error: 'Forbidden: You can only manage users for your own church.' });
   }
 
   try {
+    // Vérifier si l'utilisateur existe déjà dans Supabase Auth
     const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserByEmail(email);
 
     let userId;
-    if (userError && userError.message === 'User not found') {
-        return res.status(404).json({ error: 'User with this email not found in the system. Please ensure the user exists before inviting them.' });
-    } else if (userError) {
-        throw userError;
-    }
-    userId = userData.user.id;
+    let isNewUser = false;
 
+    if (userError && userError.message === 'User not found') {
+      // Créer un nouvel utilisateur avec un mot de passe temporaire
+      const tempPassword = Math.random().toString(36).slice(-12) + 'A1!';
+      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password: tempPassword,
+        email_confirm: true
+      });
+
+      if (createError) throw createError;
+      userId = newUser.user.id;
+      isNewUser = true;
+
+      // Envoyer un email d'invitation avec le mot de passe temporaire
+      try {
+        // Récupérer les infos de l'église pour l'email
+        const { data: churchData } = await supabaseAdmin
+          .from('churches_v2')
+          .select('name')
+          .eq('id', churchId)
+          .single();
+
+        const emailContent = generateAdminInvitationEmail({
+          churchName: churchData?.name || 'Votre église',
+          email,
+          tempPassword,
+          inviterName: req.user.full_name || req.user.email,
+          permissions: permissions || ['all']
+        });
+
+        await sendEmail({
+          to: email,
+          subject: `Invitation à rejoindre l'équipe admin - ${churchData?.name || 'MY EDEN X'}`,
+          html: emailContent
+        });
+      } catch (emailError) {
+        console.error('Error sending invitation email:', emailError);
+        // Continue même si l'email échoue
+      }
+    } else if (userError) {
+      throw userError;
+    } else {
+      userId = userData.user.id;
+    }
+
+    // Vérifier si l'utilisateur est déjà associé à cette église
     const { data: existingChurchUser, error: existingChurchUserError } = await supabaseAdmin
       .from('church_users_v2')
       .select('id')
@@ -34,19 +80,43 @@ router.post('/churches_v2/:churchId/users', protect, isAdminChurch, async (req, 
       .single();
 
     if (existingChurchUserError && existingChurchUserError.code !== 'PGRST116') {
-        throw existingChurchUserError;
+      throw existingChurchUserError;
     }
     if (existingChurchUser) {
       return res.status(409).json({ error: 'User is already associated with this church.' });
     }
 
+    // Ajouter l'utilisateur à l'équipe avec ses permissions
     const { data, error } = await supabaseAdmin
       .from('church_users_v2')
-      .insert([{ church_id: churchId, user_id: userId, role: role || 'member' }])
+      .insert([{
+        church_id: churchId,
+        user_id: userId,
+        role: role || 'church_admin',
+        permissions: permissions || ['all'],
+        is_main_admin: false,
+        full_name: full_name || email.split('@')[0]
+      }])
       .select();
 
     if (error) throw error;
-    res.status(201).json(data[0]);
+
+    // Logger l'activité
+    await logActivity({
+      churchId,
+      userId: req.user.id,
+      userName: req.user.full_name,
+      userEmail: req.user.email,
+      module: MODULES.TEAM,
+      action: ACTIONS.INVITE,
+      entityType: 'team_member',
+      entityId: data[0].id,
+      entityName: email,
+      details: { permissions, role, isNewUser },
+      req
+    });
+
+    res.status(201).json({ ...data[0], isNewUser });
 
   } catch (error) {
     console.error('Error managing church user:', error);
@@ -54,7 +124,7 @@ router.post('/churches_v2/:churchId/users', protect, isAdminChurch, async (req, 
   }
 });
 
-// GET /api/church-admin/churches_v2/:churchId/users - Lister les utilisateurs associés à une église
+// GET /api/church-admin/churches_v2/:churchId/users - Lister les membres de l'équipe
 router.get('/churches_v2/:churchId/users', protect, isAdminChurch, async (req, res) => {
   const { churchId } = req.params;
 
@@ -63,33 +133,66 @@ router.get('/churches_v2/:churchId/users', protect, isAdminChurch, async (req, r
   }
 
   try {
-    const { data, error } = await supabaseAdmin
+    // Récupérer les users avec leurs emails depuis auth.users
+    const { data: churchUsers, error } = await supabaseAdmin
       .from('church_users_v2')
       .select('*')
       .eq('church_id', churchId)
+      .order('is_main_admin', { ascending: false })
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    res.status(200).json(data);
+
+    // Récupérer les emails des utilisateurs
+    const usersWithEmails = await Promise.all(churchUsers.map(async (cu) => {
+      try {
+        const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(cu.user_id);
+        return {
+          ...cu,
+          auth_users: { email: authUser?.user?.email || 'N/A' }
+        };
+      } catch (e) {
+        return { ...cu, auth_users: { email: 'N/A' } };
+      }
+    }));
+
+    res.status(200).json(usersWithEmails);
   } catch (error) {
     console.error('Error fetching church users:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// PUT /api/church-admin/churches_v2/:churchId/users/:userId - Modifier le rôle d'un utilisateur au sein de l'église
-router.put('/churches_v2/:churchId/users/:userId', protect, isAdminChurch, async (req, res) => {
+// PUT /api/church-admin/churches_v2/:churchId/users/:userId - Modifier les permissions d'un admin
+router.put('/churches_v2/:churchId/users/:userId', protect, isAdminChurch, canManageTeam, async (req, res) => {
   const { churchId, userId } = req.params;
-  const { role } = req.body;
+  const { role, permissions, full_name } = req.body;
 
   if (req.user.church_id !== churchId) {
     return res.status(403).json({ error: 'Forbidden: You can only manage users for your own church.' });
   }
 
+  // Empêcher de modifier l'admin principal
+  const { data: targetUser } = await supabaseAdmin
+    .from('church_users_v2')
+    .select('is_main_admin, full_name')
+    .eq('church_id', churchId)
+    .eq('user_id', userId)
+    .single();
+
+  if (targetUser?.is_main_admin) {
+    return res.status(403).json({ error: 'Cannot modify the main administrator.' });
+  }
+
   try {
+    const updateData = { updated_at: new Date() };
+    if (role) updateData.role = role;
+    if (permissions) updateData.permissions = permissions;
+    if (full_name) updateData.full_name = full_name;
+
     const { data, error } = await supabaseAdmin
       .from('church_users_v2')
-      .update({ role, updated_at: new Date() })
+      .update(updateData)
       .eq('church_id', churchId)
       .eq('user_id', userId)
       .select();
@@ -98,19 +201,47 @@ router.put('/churches_v2/:churchId/users/:userId', protect, isAdminChurch, async
     if (!data || data.length === 0) {
       return res.status(404).json({ error: 'User not found in this church.' });
     }
+
+    // Logger l'activité
+    await logActivity({
+      churchId,
+      userId: req.user.id,
+      userName: req.user.full_name,
+      userEmail: req.user.email,
+      module: MODULES.TEAM,
+      action: ACTIONS.UPDATE,
+      entityType: 'team_member',
+      entityId: data[0].id,
+      entityName: targetUser?.full_name || 'Unknown',
+      details: { permissions, role },
+      req
+    });
+
     res.status(200).json(data[0]);
   } catch (error) {
-    console.error('Error updating church user role:', error);
+    console.error('Error updating church user:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// DELETE /api/church-admin/churches_v2/:churchId/users/:userId - Retirer un utilisateur de l'équipe d'une église
-router.delete('/churches_v2/:churchId/users/:userId', protect, isAdminChurch, async (req, res) => {
+// DELETE /api/church-admin/churches_v2/:churchId/users/:userId - Retirer un admin de l'équipe
+router.delete('/churches_v2/:churchId/users/:userId', protect, isAdminChurch, canManageTeam, async (req, res) => {
   const { churchId, userId } = req.params;
 
   if (req.user.church_id !== churchId) {
     return res.status(403).json({ error: 'Forbidden: You can only manage users for your own church.' });
+  }
+
+  // Empêcher de supprimer l'admin principal
+  const { data: targetUser } = await supabaseAdmin
+    .from('church_users_v2')
+    .select('is_main_admin, full_name')
+    .eq('church_id', churchId)
+    .eq('user_id', userId)
+    .single();
+
+  if (targetUser?.is_main_admin) {
+    return res.status(403).json({ error: 'Cannot remove the main administrator.' });
   }
 
   try {
@@ -121,6 +252,20 @@ router.delete('/churches_v2/:churchId/users/:userId', protect, isAdminChurch, as
       .eq('user_id', userId);
 
     if (error) throw error;
+
+    // Logger l'activité
+    await logActivity({
+      churchId,
+      userId: req.user.id,
+      userName: req.user.full_name,
+      userEmail: req.user.email,
+      module: MODULES.TEAM,
+      action: ACTIONS.DELETE,
+      entityType: 'team_member',
+      entityName: targetUser?.full_name || 'Unknown',
+      req
+    });
+
     res.status(204).send();
   } catch (error) {
     console.error('Error deleting church user:', error);
@@ -128,7 +273,11 @@ router.delete('/churches_v2/:churchId/users/:userId', protect, isAdminChurch, as
   }
 });
 
-// PUT /api/church-admin/churches_v2/:churchId/settings - Mettre à jour les informations de l'église (Admin d'Église)
+// ============================================
+// Routes pour les paramètres de l'église
+// ============================================
+
+// PUT /api/church-admin/churches_v2/:churchId/settings - Mettre à jour les paramètres
 router.put('/churches_v2/:churchId/settings', protect, isAdminChurch, async (req, res) => {
   const { churchId } = req.params;
   const { name, subdomain, logo_url, location, email, phone } = req.body;
@@ -148,6 +297,22 @@ router.put('/churches_v2/:churchId/settings', protect, isAdminChurch, async (req
     if (!data || data.length === 0) {
       return res.status(404).json({ error: 'Church not found.' });
     }
+
+    // Logger l'activité
+    await logActivity({
+      churchId,
+      userId: req.user.id,
+      userName: req.user.full_name,
+      userEmail: req.user.email,
+      module: MODULES.SETTINGS,
+      action: ACTIONS.UPDATE,
+      entityType: 'church',
+      entityId: churchId,
+      entityName: name,
+      details: { updated_fields: Object.keys(req.body) },
+      req
+    });
+
     res.status(200).json(data[0]);
   } catch (error) {
     console.error('Error updating church settings:', error);
@@ -155,18 +320,13 @@ router.put('/churches_v2/:churchId/settings', protect, isAdminChurch, async (req
   }
 });
 
-// GET /api/church-admin/churches_v2/:churchId/settings - Obtenir les informations de l'église (Admin d'Église)
+// GET /api/church-admin/churches_v2/:churchId/settings - Obtenir les paramètres
 router.get('/churches_v2/:churchId/settings', protect, isAdminChurch, async (req, res) => {
   const { churchId } = req.params;
 
-  // Désactiver le cache pour cette route
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
-
-  console.log('=== /api/church-admin/churches_v2/:churchId/settings ===');
-  console.log('Requested churchId:', churchId);
-  console.log('User church_id:', req.user.church_id);
 
   if (req.user.church_id !== churchId) {
     return res.status(403).json({ error: 'Forbidden: You can only view settings for your own church.' });
@@ -179,17 +339,87 @@ router.get('/churches_v2/:churchId/settings', protect, isAdminChurch, async (req
       .eq('id', churchId)
       .single();
 
-    console.log('Church data:', data);
-    if (error) {
-      console.error('Supabase error:', error);
-      throw error;
-    }
+    if (error) throw error;
     if (!data) {
       return res.status(404).json({ error: 'Church not found.' });
     }
     res.status(200).json(data);
   } catch (error) {
     console.error('Error fetching church settings:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================
+// Routes pour le journal d'activités
+// ============================================
+
+// GET /api/church-admin/churches_v2/:churchId/activity-logs - Obtenir les logs d'activité
+router.get('/churches_v2/:churchId/activity-logs', protect, isAdminChurch, async (req, res) => {
+  const { churchId } = req.params;
+  const { limit = 50, offset = 0, module, userId } = req.query;
+
+  if (req.user.church_id !== churchId) {
+    return res.status(403).json({ error: 'Forbidden: You can only view activity logs for your own church.' });
+  }
+
+  // Seul l'admin principal peut voir tous les logs
+  if (!req.user.is_main_admin) {
+    return res.status(403).json({ error: 'Only the main administrator can view activity logs.' });
+  }
+
+  try {
+    const logs = await getActivityLogs(churchId, {
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      module: module || null,
+      userId: userId || null
+    });
+
+    res.status(200).json(logs);
+  } catch (error) {
+    console.error('Error fetching activity logs:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT /api/church-admin/profile - Mettre à jour le profil admin
+router.put('/profile', protect, isAdminChurch, async (req, res) => {
+  const { full_name } = req.body;
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('church_users_v2')
+      .update({ full_name, updated_at: new Date() })
+      .eq('user_id', req.user.id)
+      .eq('church_id', req.user.church_id)
+      .select();
+
+    if (error) throw error;
+    res.status(200).json(data[0]);
+  } catch (error) {
+    console.error('Error updating admin profile:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/church-admin/profile - Obtenir le profil admin
+router.get('/profile', protect, isAdminChurch, async (req, res) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('church_users_v2')
+      .select('*')
+      .eq('user_id', req.user.id)
+      .eq('church_id', req.user.church_id)
+      .single();
+
+    if (error) throw error;
+    res.status(200).json({
+      ...data,
+      email: req.user.email
+    });
+  } catch (error) {
+    console.error('Error fetching admin profile:', error);
     res.status(500).json({ error: error.message });
   }
 });

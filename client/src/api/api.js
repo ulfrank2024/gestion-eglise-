@@ -197,8 +197,28 @@ export const api = {
       const { data } = await apiClient.put(`/church-admin/churches_v2/${churchId}/users/${userId}`, { role: newRole });
       return data;
     },
+    updateChurchUser: async (churchId, userId, userData) => {
+      const { data } = await apiClient.put(`/church-admin/churches_v2/${churchId}/users/${userId}`, userData);
+      return data;
+    },
     removeChurchUser: async (churchId, userId) => {
       await apiClient.delete(`/church-admin/churches_v2/${churchId}/users/${userId}`);
+    },
+
+    // --- Activity Logs ---
+    getActivityLogs: async (churchId, params = {}) => {
+      const { data } = await apiClient.get(`/church-admin/churches_v2/${churchId}/activity-logs`, { params });
+      return data;
+    },
+
+    // --- Admin Profile ---
+    getAdminProfile: async () => {
+      const { data } = await apiClient.get('/church-admin/profile');
+      return data;
+    },
+    updateAdminProfile: async (profileData) => {
+      const { data } = await apiClient.put('/church-admin/profile', profileData);
+      return data;
     },
 
     // --- Members ---

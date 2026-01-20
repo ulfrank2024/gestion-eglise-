@@ -2047,3 +2047,93 @@ api.member.getDashboard, getProfile, updateProfile, getEvents, getRoles, getNoti
 - ✅ Paramètres église complets avec profil admin
 - ✅ Membres peuvent uploader leur photo de profil
 - ✅ Thème dark cohérent sur toutes les pages
+
+---
+
+### 2026-01-20 - Système de permissions par module et journal d'activités
+
+**Contexte:**
+- L'admin principal (pasteur) peut inviter des sous-admins avec des permissions limitées
+- Un sous-admin peut gérer uniquement les modules pour lesquels il a les permissions
+- Toutes les actions des admins sont tracées dans un journal d'activités
+
+**Base de données - Nouvelles colonnes et table:**
+
+1. **Modification de `church_users_v2`:**
+   - `permissions` (JSONB) - Modules autorisés: `["all"]`, `["events"]`, `["members"]`, `["events", "members"]`
+   - `is_main_admin` (BOOLEAN) - `true` pour l'admin principal (pasteur)
+   - `full_name` (VARCHAR) - Nom complet de l'admin
+
+2. **Nouvelle table `activity_logs_v2`:**
+   - Enregistre toutes les actions des admins
+   - Champs: `user_id`, `user_name`, `module`, `action`, `entity_type`, `entity_id`, `entity_name`, `details`
+   - Permet de voir qui a fait quoi et quand
+
+**Script SQL:** `/server/db/add_permissions_and_activity_logs.sql`
+
+**Backend - Modifications:**
+
+1. **Middleware `auth.js`:**
+   - Ajout de `hasModulePermission(module)` - vérifie si l'utilisateur a accès à un module
+   - Ajout de `canManageTeam` - seul l'admin principal peut gérer l'équipe
+   - `req.user` contient maintenant `permissions`, `is_main_admin`, `full_name`
+
+2. **Route `/api/auth/me`:**
+   - Retourne maintenant `permissions`, `is_main_admin`, `full_name`
+
+3. **Service `activityLogger.js`:**
+   - `logActivity()` - enregistre une activité
+   - `getActivityLogs()` - récupère les logs avec filtres
+   - Constantes `MODULES` et `ACTIONS` pour la cohérence
+
+4. **Routes `churchAdminRoutes.js`:**
+   - `POST /users` - Invite avec permissions + envoi email avec identifiants
+   - `PUT /users/:userId` - Modifier les permissions d'un admin
+   - `GET /activity-logs` - Récupérer les logs (admin principal uniquement)
+   - Toutes les actions sont loggées automatiquement
+
+5. **Service `mailer.js`:**
+   - `generateAdminInvitationEmail()` - Email professionnel avec identifiants temporaires
+
+**Frontend - Modifications:**
+
+1. **AdminLayout.jsx:**
+   - Sidebar dynamique selon les permissions
+   - Seul l'admin principal voit "Membres de l'équipe"
+   - Les boutons de modules affichent uniquement les modules autorisés
+   - Message si aucun module autorisé
+
+2. **AdminChurchUsersPage.jsx:**
+   - Formulaire d'invitation avec sélection de permissions
+   - Tableau avec badges de permissions colorés
+   - Édition inline des permissions
+   - Admin principal marqué avec étoile dorée
+   - Protection de l'admin principal (non modifiable/supprimable)
+
+3. **API `api.js`:**
+   - `updateChurchUser()` - Modifier permissions
+   - `getActivityLogs()` - Récupérer les logs
+   - `getAdminProfile()` / `updateAdminProfile()` - Profil admin
+
+**Traductions ajoutées:**
+- `permissions`, `full_access`, `permissions_hint`
+- `main_admin`, `protected`, `edit_permissions`
+- `team_permissions_note`, `only_main_admin_can_manage_team`
+- `activity_logs`, `recent_activities`, `activity_*`
+
+**Flux d'invitation d'un sous-admin:**
+1. Admin principal remplit email, nom, sélectionne les permissions
+2. Si l'email n'existe pas → création automatique avec mot de passe temporaire
+3. Email d'invitation envoyé avec identifiants et permissions
+4. Sous-admin se connecte et ne voit que les modules autorisés
+
+**Résultat:**
+- ✅ Admin principal peut déléguer la gestion à des sous-admins
+- ✅ Permissions granulaires par module (Événements, Membres)
+- ✅ Interface intuitive pour gérer les permissions
+- ✅ Journal d'activités pour tracer les actions
+- ✅ Email d'invitation professionnel avec identifiants
+- ✅ Sidebar s'adapte aux permissions de l'utilisateur
+
+**Prochaine étape:**
+- Exécuter le script SQL `/server/db/add_permissions_and_activity_logs.sql` dans Supabase
