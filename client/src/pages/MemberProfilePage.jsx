@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useOutletContext } from 'react-router-dom';
 import { api } from '../api/api';
+import { supabase } from '../supabaseClient';
 import {
   MdPerson, MdEmail, MdPhone, MdLocationOn, MdCake,
-  MdEdit, MdSave, MdClose, MdCheck
+  MdEdit, MdSave, MdClose, MdCheck, MdCameraAlt
 } from 'react-icons/md';
 
 function MemberProfilePage() {
@@ -18,12 +19,14 @@ function MemberProfilePage() {
   const [success, setSuccess] = useState('');
   const [editing, setEditing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   const [formData, setFormData] = useState({
     full_name: '',
     phone: '',
     address: '',
-    date_of_birth: ''
+    date_of_birth: '',
+    profile_photo_url: ''
   });
 
   useEffect(() => {
@@ -38,13 +41,54 @@ function MemberProfilePage() {
         full_name: data.full_name || '',
         phone: data.phone || '',
         address: data.address || '',
-        date_of_birth: data.date_of_birth || ''
+        date_of_birth: data.date_of_birth || '',
+        profile_photo_url: data.profile_photo_url || ''
       });
     } catch (err) {
       console.error('Error fetching profile:', err);
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploadingPhoto(true);
+    setError('');
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `member-${profile.id}-${Date.now()}.${fileExt}`;
+      const filePath = `member-photos/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('logos')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('logos')
+        .getPublicUrl(filePath);
+
+      // Update formData with new photo URL
+      setFormData(prev => ({ ...prev, profile_photo_url: publicUrl }));
+
+      // Save immediately if not in edit mode
+      if (!editing) {
+        await api.member.updateProfile({ profile_photo_url: publicUrl });
+        setProfile(prev => ({ ...prev, profile_photo_url: publicUrl }));
+        setSuccess(t('profile_updated_success'));
+        setTimeout(() => setSuccess(''), 3000);
+      }
+    } catch (err) {
+      console.error('Photo upload error:', err);
+      setError(t('error_uploading_image') || 'Erreur lors du téléchargement de la photo');
+    } finally {
+      setUploadingPhoto(false);
     }
   };
 
@@ -71,7 +115,8 @@ function MemberProfilePage() {
       full_name: profile.full_name || '',
       phone: profile.phone || '',
       address: profile.address || '',
-      date_of_birth: profile.date_of_birth || ''
+      date_of_birth: profile.date_of_birth || '',
+      profile_photo_url: profile.profile_photo_url || ''
     });
     setEditing(false);
     setError('');
@@ -80,6 +125,8 @@ function MemberProfilePage() {
   if (loading) {
     return <div className="text-gray-300">{t('loading')}...</div>;
   }
+
+  const photoUrl = formData.profile_photo_url || profile?.profile_photo_url;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -119,9 +166,37 @@ function MemberProfilePage() {
         {/* Header with avatar */}
         <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
           <div className="flex items-center gap-4">
-            <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center text-4xl text-white font-bold">
-              {profile?.full_name?.charAt(0)?.toUpperCase() || 'M'}
+            {/* Photo Upload */}
+            <div className="relative group">
+              {photoUrl ? (
+                <img
+                  src={photoUrl}
+                  alt={profile?.full_name}
+                  className="w-24 h-24 rounded-full object-cover border-4 border-white/20"
+                />
+              ) : (
+                <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center text-4xl text-white font-bold border-4 border-white/20">
+                  {profile?.full_name?.charAt(0)?.toUpperCase() || 'M'}
+                </div>
+              )}
+
+              {/* Upload overlay */}
+              <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  disabled={uploadingPhoto}
+                  className="hidden"
+                />
+                {uploadingPhoto ? (
+                  <div className="text-white text-xs">{t('loading')}...</div>
+                ) : (
+                  <MdCameraAlt className="text-white text-2xl" />
+                )}
+              </label>
             </div>
+
             <div>
               <h2 className="text-xl font-bold text-white">{profile?.full_name}</h2>
               <p className="text-indigo-100">{profile?.email}</p>
@@ -133,6 +208,12 @@ function MemberProfilePage() {
               </p>
             </div>
           </div>
+
+          {/* Photo upload hint */}
+          <p className="text-indigo-200 text-xs mt-4 flex items-center gap-1">
+            <MdCameraAlt size={14} />
+            {t('click_photo_to_change') || 'Survolez la photo pour la modifier'}
+          </p>
         </div>
 
         {/* Form */}

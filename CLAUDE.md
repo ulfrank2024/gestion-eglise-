@@ -1982,3 +1982,68 @@ api.member.getDashboard, getProfile, updateProfile, getEvents, getRoles, getNoti
 
 **Prochaine étape:**
 - Exécuter le script SQL `/server/db/add_members_module_tables.sql` dans Supabase
+
+---
+
+### 2026-01-20 - Refonte des pages Admin et ajout upload photo profil membre
+
+**Contexte:**
+- Demande d'amélioration de la section "Rapport et statistiques"
+- Vérification de la nécessité de "Membres de l'équipe"
+- Complétion de "Paramètres de l'église" avec profil admin
+- Ajout de la fonctionnalité upload photo profil pour les membres
+
+**Modifications apportées:**
+
+1. **AdminStatisticsPage.jsx** - Refonte complète
+   - Suppression des données MOCK (400 membres, 300 guests)
+   - Ajout de vraies statistiques basées sur les événements
+   - 4 cartes de stats: Total événements, Total participants, Total check-ins, Taux de présence moyen
+   - Graphique en barres (participants par événement)
+   - Liste des Top 5 événements
+   - Tableau complet avec taux de présence par événement
+   - Vue détaillée des statistiques par événement
+   - Thème dark cohérent
+
+2. **AdminChurchUsersPage.jsx** - Modernisation
+   - Thème dark appliqué
+   - Design amélioré avec icônes Material Design
+   - Note explicative: cette section gère les administrateurs (pas les membres/chrétiens)
+   - Pour gérer les membres, utiliser le module "Membres"
+
+3. **AdminChurchSettingsPage.jsx** - Refonte complète avec 3 sections
+   - **Section 1: Informations de l'église**
+     - Nom de l'église, Subdomain
+     - Upload du logo (Supabase Storage)
+     - Localisation, Email de contact, Téléphone
+   - **Section 2: Profil Administrateur**
+     - Nom complet (éditable)
+     - Email (lecture seule)
+   - **Section 3: Changer le mot de passe**
+     - Nouveau mot de passe avec confirmation
+     - Toggle visibilité mot de passe
+     - Utilise `supabase.auth.updateUser()` pour la mise à jour
+
+4. **MemberProfilePage.jsx** - Upload photo de profil
+   - Photo avec overlay au survol (icône caméra)
+   - Upload vers Supabase Storage (`logos/member-photos/`)
+   - Sauvegarde immédiate si pas en mode édition
+   - Indication textuelle pour guider l'utilisateur
+
+**Traductions ajoutées:**
+- `admin_profile`, `change_password`, `new_password`, `confirm_password`
+- `password_mismatch`, `password_changed_success`, `error_changing_password`
+- `show_password`, `hide_password`, `click_photo_to_change`
+
+**Fichiers modifiés:**
+- `/client/src/pages/AdminStatisticsPage.jsx`
+- `/client/src/pages/AdminChurchUsersPage.jsx`
+- `/client/src/pages/AdminChurchSettingsPage.jsx`
+- `/client/src/pages/MemberProfilePage.jsx`
+
+**Résultat:**
+- ✅ Statistiques basées sur des données réelles
+- ✅ Page équipe clarifiée (pour admins, pas membres)
+- ✅ Paramètres église complets avec profil admin
+- ✅ Membres peuvent uploader leur photo de profil
+- ✅ Thème dark cohérent sur toutes les pages

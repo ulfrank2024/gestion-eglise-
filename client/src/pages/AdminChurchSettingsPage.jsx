@@ -1,43 +1,97 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api } from '../api/api'; // Utiliser notre objet api
-import { useNavigate } from 'react-router-dom'; // Pour la redirection
+import { api } from '../api/api';
+import { supabase } from '../supabaseClient';
+import { useNavigate } from 'react-router-dom';
+import {
+  MdSettings, MdChurch, MdPerson, MdEmail, MdPhone, MdLocationOn,
+  MdImage, MdLock, MdSave, MdCheck, MdClose, MdVisibility, MdVisibilityOff
+} from 'react-icons/md';
 
 function AdminChurchSettingsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  // Church settings state
   const [churchSettings, setChurchSettings] = useState({
     name: '',
     subdomain: '',
     logo_url: '',
+    location: '',
+    contact_email: '',
+    contact_phone: '',
   });
+
+  // Admin profile state
+  const [adminProfile, setAdminProfile] = useState({
+    email: '',
+    full_name: '',
+  });
+
+  // Password change state
+  const [passwordData, setPasswordData] = useState({
+    current_password: '',
+    new_password: '',
+    confirm_password: '',
+  });
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  });
+
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState(null);
   const [churchId, setChurchId] = useState(null);
+
+  // Messages
+  const [churchSuccess, setChurchSuccess] = useState('');
+  const [churchError, setChurchError] = useState('');
+  const [profileSuccess, setProfileSuccess] = useState('');
+  const [profileError, setProfileError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
+  // Submitting states
+  const [savingChurch, setSavingChurch] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   useEffect(() => {
     const fetchSettings = async () => {
       try {
         setLoading(true);
 
-        // Récupérer les infos utilisateur via l'API (church_id est dans la DB, pas dans le token JWT)
         const userInfo = await api.auth.me();
         const currentChurchId = userInfo.church_id;
 
         if (!currentChurchId) {
-          setError(t('error_loading_user_data'));
+          setChurchError(t('error_loading_user_data'));
           setLoading(false);
           return;
         }
         setChurchId(currentChurchId);
 
-        const data = await api.admin.getChurchDetails(currentChurchId);
-        setChurchSettings(data);
+        // Fetch church settings
+        const churchData = await api.admin.getChurchDetails(currentChurchId);
+        setChurchSettings({
+          name: churchData.name || '',
+          subdomain: churchData.subdomain || '',
+          logo_url: churchData.logo_url || '',
+          location: churchData.location || '',
+          contact_email: churchData.contact_email || '',
+          contact_phone: churchData.contact_phone || '',
+        });
+
+        // Set admin profile (email from auth)
+        setAdminProfile({
+          email: userInfo.email || '',
+          full_name: userInfo.full_name || '',
+        });
 
       } catch (err) {
-        console.error('Error fetching church settings:', err);
-        setError(err.response?.data?.error || err.message || t('error_fetching_church_settings'));
+        console.error('Error fetching settings:', err);
+        setChurchError(err.response?.data?.error || err.message || t('error_fetching_church_settings'));
       } finally {
         setLoading(false);
       }
@@ -46,74 +100,428 @@ function AdminChurchSettingsPage() {
     fetchSettings();
   }, [t, navigate]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setChurchSettings((prev) => ({ ...prev, [name]: value }));
+  // Handle logo upload
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploadingLogo(true);
+    setChurchError('');
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `church-${churchId}-${Date.now()}.${fileExt}`;
+      const filePath = `church-logos/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('logos')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('logos')
+        .getPublicUrl(filePath);
+
+      setChurchSettings(prev => ({ ...prev, logo_url: publicUrl }));
+    } catch (err) {
+      console.error('Logo upload error:', err);
+      setChurchError(t('error_uploading_image'));
+    } finally {
+      setUploadingLogo(false);
+    }
   };
 
-  const handleSubmit = async (e) => {
+  // Save church settings
+  const handleChurchSubmit = async (e) => {
     e.preventDefault();
-    setSuccessMessage(null);
-    setError(null);
-    if (!churchId) {
-        setError(t('error_church_id_missing'));
-        return;
-    }
+    setSavingChurch(true);
+    setChurchSuccess('');
+    setChurchError('');
 
     try {
       await api.admin.updateChurchSettings(churchId, churchSettings);
-      setSuccessMessage(t('church_settings_updated_successfully'));
+      setChurchSuccess(t('church_settings_updated_successfully'));
     } catch (err) {
       console.error('Error updating church settings:', err);
-      setError(err.response?.data?.error || err.message || t('error_updating_church_settings'));
+      setChurchError(err.response?.data?.error || err.message || t('error_updating_church_settings'));
+    } finally {
+      setSavingChurch(false);
     }
   };
 
-  if (loading) return <div>{t('loading')}...</div>;
-  if (error) return <div>{t('error')}: {error}</div>;
+  // Save admin profile
+  const handleProfileSubmit = async (e) => {
+    e.preventDefault();
+    setSavingProfile(true);
+    setProfileSuccess('');
+    setProfileError('');
+
+    try {
+      // Update user metadata in Supabase Auth
+      const { error } = await supabase.auth.updateUser({
+        data: { full_name: adminProfile.full_name }
+      });
+
+      if (error) throw error;
+      setProfileSuccess(t('profile_updated_success'));
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      setProfileError(err.message || t('error_updating_profile') || 'Erreur lors de la mise à jour du profil');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  // Change password
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    setSavingPassword(true);
+    setPasswordSuccess('');
+    setPasswordError('');
+
+    // Validate passwords match
+    if (passwordData.new_password !== passwordData.confirm_password) {
+      setPasswordError(t('passwords_dont_match'));
+      setSavingPassword(false);
+      return;
+    }
+
+    // Validate password length
+    if (passwordData.new_password.length < 6) {
+      setPasswordError(t('password_too_short'));
+      setSavingPassword(false);
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: passwordData.new_password
+      });
+
+      if (error) throw error;
+
+      setPasswordSuccess(t('password_changed_success'));
+      setPasswordData({
+        current_password: '',
+        new_password: '',
+        confirm_password: '',
+      });
+    } catch (err) {
+      console.error('Error changing password:', err);
+      setPasswordError(err.message || t('error_changing_password') || 'Erreur lors du changement de mot de passe');
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-gray-300">{t('loading')}...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="admin-church-settings-page">
-      <h2>{t('church_settings')}</h2>
-      {successMessage && <div className="alert alert-success">{successMessage}</div>}
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="name">{t('super_admin_dashboard.church_name')}</label>
-          <input
-            type="text"
-            className="form-control"
-            id="name"
-            name="name"
-            value={churchSettings.name}
-            onChange={handleChange}
-            required
-          />
+    <div className="space-y-6 max-w-4xl">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <MdSettings className="text-3xl text-indigo-400" />
+        <h1 className="text-2xl font-bold text-white">{t('church_settings')}</h1>
+      </div>
+
+      {/* Church Settings Section */}
+      <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-3">
+          <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+            <MdChurch />
+            {t('church_information') || 'Informations de l\'église'}
+          </h2>
         </div>
-        <div className="form-group">
-          <label htmlFor="subdomain">{t('super_admin_dashboard.subdomain')}</label>
-          <input
-            type="text"
-            className="form-control"
-            id="subdomain"
-            name="subdomain"
-            value={churchSettings.subdomain}
-            onChange={handleChange}
-            required
-          />
+
+        <form onSubmit={handleChurchSubmit} className="p-5 space-y-4">
+          {/* Logo */}
+          <div>
+            <label className="block text-gray-300 text-sm mb-2 flex items-center gap-2">
+              <MdImage className="text-gray-400" />
+              Logo
+            </label>
+            <div className="flex items-center gap-4">
+              {churchSettings.logo_url && (
+                <img
+                  src={churchSettings.logo_url}
+                  alt="Church logo"
+                  className="w-20 h-20 rounded-full object-cover border-2 border-gray-600"
+                />
+              )}
+              <div className="flex-1">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoUpload}
+                  disabled={uploadingLogo}
+                  className="block w-full text-sm text-gray-400
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-lg file:border-0
+                    file:text-sm file:font-medium
+                    file:bg-indigo-600 file:text-white
+                    hover:file:bg-indigo-700
+                    file:cursor-pointer file:transition-colors
+                    disabled:opacity-50"
+                />
+                {uploadingLogo && <p className="text-xs text-gray-500 mt-1">{t('loading')}...</p>}
+              </div>
+            </div>
+          </div>
+
+          {/* Name & Subdomain */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-gray-300 text-sm mb-1">
+                {t('super_admin_dashboard.church_name')} *
+              </label>
+              <input
+                type="text"
+                value={churchSettings.name}
+                onChange={(e) => setChurchSettings(prev => ({ ...prev, name: e.target.value }))}
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-gray-300 text-sm mb-1">
+                {t('super_admin_dashboard.subdomain')}
+              </label>
+              <input
+                type="text"
+                value={churchSettings.subdomain}
+                onChange={(e) => setChurchSettings(prev => ({ ...prev, subdomain: e.target.value }))}
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+          </div>
+
+          {/* Location */}
+          <div>
+            <label className="block text-gray-300 text-sm mb-1 flex items-center gap-2">
+              <MdLocationOn className="text-gray-400" />
+              {t('super_admin_dashboard.location')}
+            </label>
+            <input
+              type="text"
+              value={churchSettings.location}
+              onChange={(e) => setChurchSettings(prev => ({ ...prev, location: e.target.value }))}
+              className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="123 Rue de l'Église, Ville"
+            />
+          </div>
+
+          {/* Contact Email & Phone */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-gray-300 text-sm mb-1 flex items-center gap-2">
+                <MdEmail className="text-gray-400" />
+                {t('super_admin_dashboard.email')}
+              </label>
+              <input
+                type="email"
+                value={churchSettings.contact_email}
+                onChange={(e) => setChurchSettings(prev => ({ ...prev, contact_email: e.target.value }))}
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="contact@eglise.com"
+              />
+            </div>
+            <div>
+              <label className="block text-gray-300 text-sm mb-1 flex items-center gap-2">
+                <MdPhone className="text-gray-400" />
+                {t('super_admin_dashboard.phone')}
+              </label>
+              <input
+                type="tel"
+                value={churchSettings.contact_phone}
+                onChange={(e) => setChurchSettings(prev => ({ ...prev, contact_phone: e.target.value }))}
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="+1 234 567 890"
+              />
+            </div>
+          </div>
+
+          {/* Messages */}
+          {churchError && (
+            <div className="p-3 bg-red-900/30 border border-red-700 rounded-lg text-red-400 text-sm flex items-center gap-2">
+              <MdClose size={16} />
+              {churchError}
+            </div>
+          )}
+          {churchSuccess && (
+            <div className="p-3 bg-green-900/30 border border-green-700 rounded-lg text-green-400 text-sm flex items-center gap-2">
+              <MdCheck size={16} />
+              {churchSuccess}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={savingChurch}
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all disabled:opacity-50"
+          >
+            <MdSave />
+            {savingChurch ? t('saving') : t('save')}
+          </button>
+        </form>
+      </div>
+
+      {/* Admin Profile Section */}
+      <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+        <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-5 py-3">
+          <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+            <MdPerson />
+            {t('admin_profile') || 'Profil administrateur'}
+          </h2>
         </div>
-        <div className="form-group">
-          <label htmlFor="logo_url">{t('logo_url')}</label>
-          <input
-            type="text"
-            className="form-control"
-            id="logo_url"
-            name="logo_url"
-            value={churchSettings.logo_url}
-            onChange={handleChange}
-          />
+
+        <form onSubmit={handleProfileSubmit} className="p-5 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-gray-300 text-sm mb-1 flex items-center gap-2">
+                <MdPerson className="text-gray-400" />
+                {t('full_name')}
+              </label>
+              <input
+                type="text"
+                value={adminProfile.full_name}
+                onChange={(e) => setAdminProfile(prev => ({ ...prev, full_name: e.target.value }))}
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
+                placeholder="Votre nom complet"
+              />
+            </div>
+            <div>
+              <label className="block text-gray-300 text-sm mb-1 flex items-center gap-2">
+                <MdEmail className="text-gray-400" />
+                {t('email')}
+              </label>
+              <input
+                type="email"
+                value={adminProfile.email}
+                disabled
+                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-400 cursor-not-allowed"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                {t('email_cannot_be_changed') || 'L\'email ne peut pas être modifié'}
+              </p>
+            </div>
+          </div>
+
+          {/* Messages */}
+          {profileError && (
+            <div className="p-3 bg-red-900/30 border border-red-700 rounded-lg text-red-400 text-sm flex items-center gap-2">
+              <MdClose size={16} />
+              {profileError}
+            </div>
+          )}
+          {profileSuccess && (
+            <div className="p-3 bg-green-900/30 border border-green-700 rounded-lg text-green-400 text-sm flex items-center gap-2">
+              <MdCheck size={16} />
+              {profileSuccess}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={savingProfile}
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50"
+          >
+            <MdSave />
+            {savingProfile ? t('saving') : t('update_profile')}
+          </button>
+        </form>
+      </div>
+
+      {/* Change Password Section */}
+      <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+        <div className="bg-gradient-to-r from-amber-600 to-orange-600 px-5 py-3">
+          <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+            <MdLock />
+            {t('change_password')}
+          </h2>
         </div>
-        <button type="submit" className="btn btn-primary">{t('update_settings')}</button>
-      </form>
+
+        <form onSubmit={handlePasswordSubmit} className="p-5 space-y-4">
+          {/* New Password */}
+          <div>
+            <label className="block text-gray-300 text-sm mb-1">
+              {t('new_password')}
+            </label>
+            <div className="relative">
+              <input
+                type={showPasswords.new ? 'text' : 'password'}
+                value={passwordData.new_password}
+                onChange={(e) => setPasswordData(prev => ({ ...prev, new_password: e.target.value }))}
+                className="w-full px-4 py-3 pr-12 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                placeholder="••••••••"
+                minLength={6}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPasswords(prev => ({ ...prev, new: !prev.new }))}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300"
+              >
+                {showPasswords.new ? <MdVisibilityOff size={20} /> : <MdVisibility size={20} />}
+              </button>
+            </div>
+          </div>
+
+          {/* Confirm Password */}
+          <div>
+            <label className="block text-gray-300 text-sm mb-1">
+              {t('confirm_new_password')}
+            </label>
+            <div className="relative">
+              <input
+                type={showPasswords.confirm ? 'text' : 'password'}
+                value={passwordData.confirm_password}
+                onChange={(e) => setPasswordData(prev => ({ ...prev, confirm_password: e.target.value }))}
+                className="w-full px-4 py-3 pr-12 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                placeholder="••••••••"
+                minLength={6}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPasswords(prev => ({ ...prev, confirm: !prev.confirm }))}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300"
+              >
+                {showPasswords.confirm ? <MdVisibilityOff size={20} /> : <MdVisibility size={20} />}
+              </button>
+            </div>
+          </div>
+
+          {/* Messages */}
+          {passwordError && (
+            <div className="p-3 bg-red-900/30 border border-red-700 rounded-lg text-red-400 text-sm flex items-center gap-2">
+              <MdClose size={16} />
+              {passwordError}
+            </div>
+          )}
+          {passwordSuccess && (
+            <div className="p-3 bg-green-900/30 border border-green-700 rounded-lg text-green-400 text-sm flex items-center gap-2">
+              <MdCheck size={16} />
+              {passwordSuccess}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={savingPassword}
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-lg hover:from-amber-700 hover:to-orange-700 transition-all disabled:opacity-50"
+          >
+            <MdLock />
+            {savingPassword ? t('saving') : t('change_password')}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
