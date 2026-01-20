@@ -200,6 +200,109 @@ export const api = {
     removeChurchUser: async (churchId, userId) => {
       await apiClient.delete(`/church-admin/churches_v2/${churchId}/users/${userId}`);
     },
+
+    // --- Members ---
+    getMembers: async (params = {}) => {
+      const { data } = await apiClient.get('/admin/members', { params });
+      return data;
+    },
+    getMember: async (memberId) => {
+      const { data } = await apiClient.get(`/admin/members/${memberId}`);
+      return data;
+    },
+    createMember: async (memberData) => {
+      const { data } = await apiClient.post('/admin/members', memberData);
+      return data;
+    },
+    updateMember: async (memberId, memberData) => {
+      const { data } = await apiClient.put(`/admin/members/${memberId}`, memberData);
+      return data;
+    },
+    archiveMember: async (memberId, isArchived) => {
+      const { data } = await apiClient.put(`/admin/members/${memberId}/archive`, { is_archived: isArchived });
+      return data;
+    },
+    deleteMember: async (memberId) => {
+      await apiClient.delete(`/admin/members/${memberId}`);
+    },
+    getMemberStatistics: async () => {
+      const { data } = await apiClient.get('/admin/members/statistics');
+      return data;
+    },
+
+    // --- Roles ---
+    getRoles: async () => {
+      const { data } = await apiClient.get('/admin/roles');
+      return data;
+    },
+    getRole: async (roleId) => {
+      const { data } = await apiClient.get(`/admin/roles/${roleId}`);
+      return data;
+    },
+    createRole: async (roleData) => {
+      const { data } = await apiClient.post('/admin/roles', roleData);
+      return data;
+    },
+    updateRole: async (roleId, roleData) => {
+      const { data } = await apiClient.put(`/admin/roles/${roleId}`, roleData);
+      return data;
+    },
+    deleteRole: async (roleId) => {
+      await apiClient.delete(`/admin/roles/${roleId}`);
+    },
+    assignRole: async (roleId, memberId) => {
+      const { data } = await apiClient.post(`/admin/roles/${roleId}/assign/${memberId}`);
+      return data;
+    },
+    unassignRole: async (roleId, memberId) => {
+      await apiClient.delete(`/admin/roles/${roleId}/unassign/${memberId}`);
+    },
+
+    // --- Member Invitations ---
+    getMemberInvitations: async () => {
+      const { data } = await apiClient.get('/admin/member-invitations');
+      return data;
+    },
+    inviteMember: async (inviteData) => {
+      const { data } = await apiClient.post('/admin/member-invitations/invite', inviteData);
+      return data;
+    },
+    getPublicRegistrationLink: async () => {
+      const { data } = await apiClient.get('/admin/member-invitations/public-link');
+      return data;
+    },
+    regeneratePublicLink: async () => {
+      const { data } = await apiClient.put('/admin/member-invitations/public-link/regenerate');
+      return data;
+    },
+    deleteMemberInvitation: async (invitationId) => {
+      await apiClient.delete(`/admin/member-invitations/${invitationId}`);
+    },
+
+    // --- Announcements ---
+    getAnnouncements: async (params = {}) => {
+      const { data } = await apiClient.get('/admin/announcements', { params });
+      return data;
+    },
+    getAnnouncement: async (announcementId) => {
+      const { data } = await apiClient.get(`/admin/announcements/${announcementId}`);
+      return data;
+    },
+    createAnnouncement: async (announcementData) => {
+      const { data } = await apiClient.post('/admin/announcements', announcementData);
+      return data;
+    },
+    updateAnnouncement: async (announcementId, announcementData) => {
+      const { data } = await apiClient.put(`/admin/announcements/${announcementId}`, announcementData);
+      return data;
+    },
+    publishAnnouncement: async (announcementId, isPublished) => {
+      const { data } = await apiClient.put(`/admin/announcements/${announcementId}/publish`, { is_published: isPublished });
+      return data;
+    },
+    deleteAnnouncement: async (announcementId) => {
+      await apiClient.delete(`/admin/announcements/${announcementId}`);
+    },
   },
 
   public: {
@@ -221,6 +324,57 @@ export const api = {
     },
     registerChurch: async (registrationData) => {
       const { data } = await apiClient.post('/public/churches/register', registrationData);
+      return data;
+    },
+    // --- Member Registration ---
+    validateMemberInvitation: async (churchId, token) => {
+      const { data } = await apiClient.get(`/public/${churchId}/join/validate-token/${token}`);
+      return data;
+    },
+    validatePublicRegistrationLink: async (churchId, ref) => {
+      const { data } = await apiClient.get(`/public/${churchId}/join/validate-link`, { params: { ref } });
+      return data;
+    },
+    registerMember: async (churchId, memberData) => {
+      const { data } = await apiClient.post(`/public/${churchId}/members/register`, memberData);
+      return data;
+    },
+  },
+
+  member: {
+    // Dashboard membre
+    getDashboard: async () => {
+      const { data } = await apiClient.get('/member/dashboard');
+      return data;
+    },
+    getProfile: async () => {
+      const { data } = await apiClient.get('/member/profile');
+      return data;
+    },
+    updateProfile: async (profileData) => {
+      const { data } = await apiClient.put('/member/profile', profileData);
+      return data;
+    },
+    getEvents: async () => {
+      const { data } = await apiClient.get('/member/events');
+      return data;
+    },
+    getRoles: async () => {
+      const { data } = await apiClient.get('/member/roles');
+      return data;
+    },
+    getNotifications: async () => {
+      const { data } = await apiClient.get('/member/notifications');
+      return data;
+    },
+    markNotificationRead: async (notificationId) => {
+      await apiClient.put(`/member/notifications/${notificationId}/read`);
+    },
+    markAllNotificationsRead: async () => {
+      await apiClient.put('/member/notifications/read-all');
+    },
+    getAnnouncements: async () => {
+      const { data } = await apiClient.get('/member/announcements');
       return data;
     },
   },

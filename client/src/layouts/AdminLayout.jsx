@@ -2,7 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import defaultLogo from '../assets/logo_eden.png';
-import { MdEvent, MdLeaderboard, MdExpandMore, MdExpandLess, MdSettings, MdGroupAdd, MdHistory, MdLogout, MdDashboard, MdPeople } from 'react-icons/md';
+import {
+  MdEvent, MdLeaderboard, MdExpandMore, MdExpandLess, MdSettings,
+  MdGroupAdd, MdHistory, MdLogout, MdDashboard, MdPeople,
+  MdPersonAdd, MdBadge, MdAnnouncement, MdMail
+} from 'react-icons/md';
 import { api } from '../api/api';
 import { supabase } from '../supabaseClient';
 
@@ -16,8 +20,12 @@ function AdminLayout() {
   const [error, setError] = useState('');
   const hasRun = useRef(false);
 
+  // État pour le module actif (events ou members)
+  const [activeModule, setActiveModule] = useState('events');
+
   const [openSections, setOpenSections] = useState({
-    churchManagement: true,
+    events: true,
+    members: true,
     reportsAndStats: false,
   });
 
@@ -25,15 +33,12 @@ function AdminLayout() {
     if (hasRun.current) return;
     hasRun.current = true;
 
-    // Éviter les appels multiples pendant le chargement
     let isCancelled = false;
 
     const fetchAuthInfoAndChurchDetails = async () => {
       console.log('=== AdminLayout: Starting authentication check (once) ===');
 
       try {
-        // Vérifier l'authentification via l'API backend (plus fiable que supabase.auth.getSession)
-        // Le backend vérifie le token JWT et récupère church_id/role depuis la DB
         const userInfo = await api.auth.me();
 
         if (isCancelled) {
@@ -56,7 +61,6 @@ function AdminLayout() {
         setUserRole(currentUserRole);
         setChurchId(currentChurchId);
 
-        // Récupérer les détails de l'église (non bloquant)
         try {
           const details = await api.admin.getChurchDetails(currentChurchId);
           if (!isCancelled) {
@@ -83,7 +87,6 @@ function AdminLayout() {
         });
 
         if (err.response?.status === 401 || err.response?.status === 403) {
-          // Token invalide ou expiré
           console.log('=== AdminLayout: 401/403 error, clearing token and redirecting ===');
           localStorage.removeItem('supabase.auth.token');
           navigate('/admin/login');
@@ -99,7 +102,6 @@ function AdminLayout() {
 
     fetchAuthInfoAndChurchDetails();
 
-    // Cleanup function pour éviter les mises à jour d'état sur un composant démonté
     return () => {
       isCancelled = true;
     };
@@ -170,6 +172,24 @@ function AdminLayout() {
     };
   };
 
+  const getModuleButtonStyle = (module) => ({
+    flex: 1,
+    padding: '10px 8px',
+    cursor: 'pointer',
+    backgroundColor: activeModule === module ? '#4f46e5' : '#374151',
+    color: '#fff',
+    border: 'none',
+    borderRadius: activeModule === module ? '6px' : '4px',
+    fontSize: '12px',
+    fontWeight: activeModule === module ? 'bold' : 'normal',
+    transition: 'all 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '6px',
+    boxShadow: activeModule === module ? '0 2px 8px rgba(79, 70, 229, 0.4)' : 'none',
+  });
+
   const iconStyle = { marginRight: '10px' };
   const toggleIconStyle = { marginLeft: 'auto', fontSize: '1.2em', color: '#f3f4f6' };
 
@@ -224,7 +244,7 @@ function AdminLayout() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#111827' }}>
       <nav style={{
-        width: '260px',
+        width: '280px',
         background: '#1f2937',
         padding: '20px',
         display: 'flex',
@@ -243,8 +263,8 @@ function AdminLayout() {
               src={churchDetails?.logo_url || defaultLogo}
               alt={churchDetails?.name || 'MY EDEN X'}
               style={{
-                width: '80px',
-                height: '80px',
+                width: '70px',
+                height: '70px',
                 display: 'block',
                 borderRadius: '50%',
                 objectFit: 'cover',
@@ -254,134 +274,235 @@ function AdminLayout() {
             />
             <h3 style={{
               color: '#f3f4f6',
-              marginTop: '12px',
-              marginBottom: '5px',
-              fontSize: '16px',
+              marginTop: '10px',
+              marginBottom: '3px',
+              fontSize: '14px',
               fontWeight: 'bold'
             }}>
               {churchDetails?.name || 'MY EDEN X'}
             </h3>
-            <p style={{ color: '#9ca3af', fontSize: '12px' }}>
+            <p style={{ color: '#9ca3af', fontSize: '11px' }}>
               {t('church_management_platform')}
             </p>
           </div>
 
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {/* Section Gestion de l'Église */}
-            <li style={{ marginBottom: '10px' }}>
-              <div
-                onClick={() => toggleSection('churchManagement')}
-                style={{ ...getLinkStyle({ itemName: 'churchManagement', isParent: true }), cursor: 'pointer' }}
-              >
-                <MdEvent style={iconStyle} />
-                {t('church_management')}
-                {openSections.churchManagement ? (
-                  <MdExpandLess style={toggleIconStyle} />
-                ) : (
-                  <MdExpandMore style={toggleIconStyle} />
-                )}
-              </div>
-              {openSections.churchManagement && (
-                <ul style={{ listStyle: 'none', paddingLeft: '20px', marginTop: '5px' }}>
-                  <li style={{ marginBottom: '5px' }}>
-                    <NavLink
-                      to="/admin/dashboard"
-                      onMouseEnter={() => setHoveredItem('dashboard')}
-                      onMouseLeave={() => setHoveredItem(null)}
-                      style={({ isActive }) => getLinkStyle({ isActive, itemName: 'dashboard' })}
-                    >
-                      <MdDashboard style={iconStyle} />
-                      {t('dashboard')}
-                    </NavLink>
-                  </li>
-                  <li style={{ marginBottom: '5px' }}>
-                    <NavLink
-                      to="/admin/events"
-                      onMouseEnter={() => setHoveredItem('events')}
-                      onMouseLeave={() => setHoveredItem(null)}
-                      style={({ isActive }) => getLinkStyle({ isActive, itemName: 'events' })}
-                    >
-                      <MdEvent style={iconStyle} />
-                      {t('events')}
-                    </NavLink>
-                  </li>
-                  <li style={{ marginBottom: '5px' }}>
-                    <NavLink
-                      to="/admin/all-attendees"
-                      onMouseEnter={() => setHoveredItem('all-attendees')}
-                      onMouseLeave={() => setHoveredItem(null)}
-                      style={({ isActive }) => getLinkStyle({ isActive, itemName: 'all-attendees' })}
-                    >
-                      <MdPeople style={iconStyle} />
-                      {t('all_attendees')}
-                    </NavLink>
-                  </li>
-                  <li style={{ marginBottom: '5px' }}>
-                    <NavLink
-                      to="/admin/church-users"
-                      onMouseEnter={() => setHoveredItem('church-users')}
-                      onMouseLeave={() => setHoveredItem(null)}
-                      style={({ isActive }) => getLinkStyle({ isActive, itemName: 'church-users' })}
-                    >
-                      <MdGroupAdd style={iconStyle} />
-                      {t('team_members')}
-                    </NavLink>
-                  </li>
-                  <li style={{ marginBottom: '5px' }}>
-                    <NavLink
-                      to="/admin/church-settings"
-                      onMouseEnter={() => setHoveredItem('church-settings')}
-                      onMouseLeave={() => setHoveredItem(null)}
-                      style={({ isActive }) => getLinkStyle({ isActive, itemName: 'church-settings' })}
-                    >
-                      <MdSettings style={iconStyle} />
-                      {t('church_settings')}
-                    </NavLink>
-                  </li>
-                </ul>
-              )}
-            </li>
+          {/* Sélecteur de Module */}
+          <div style={{
+            marginBottom: '20px',
+            padding: '4px',
+            backgroundColor: '#111827',
+            borderRadius: '8px',
+            display: 'flex',
+            gap: '4px'
+          }}>
+            <button
+              onClick={() => setActiveModule('events')}
+              style={getModuleButtonStyle('events')}
+            >
+              <MdEvent size={16} />
+              {t('events_module') || 'Événements'}
+            </button>
+            <button
+              onClick={() => setActiveModule('members')}
+              style={getModuleButtonStyle('members')}
+            >
+              <MdPeople size={16} />
+              {t('members_module') || 'Membres'}
+            </button>
+          </div>
 
-            {/* Section Rapports et Statistiques */}
-            <li style={{ marginBottom: '10px' }}>
-              <div
-                onClick={() => toggleSection('reportsAndStats')}
-                style={{ ...getLinkStyle({ itemName: 'reportsAndStats', isParent: true }), cursor: 'pointer' }}
+          <ul style={{ listStyle: 'none', padding: 0 }}>
+            {/* Module Événements */}
+            {activeModule === 'events' && (
+              <>
+                {/* Section Gestion des Événements */}
+                <li style={{ marginBottom: '10px' }}>
+                  <div
+                    onClick={() => toggleSection('events')}
+                    style={{ ...getLinkStyle({ itemName: 'events', isParent: true }), cursor: 'pointer' }}
+                  >
+                    <MdEvent style={iconStyle} />
+                    {t('event_management') || 'Gestion Événements'}
+                    {openSections.events ? (
+                      <MdExpandLess style={toggleIconStyle} />
+                    ) : (
+                      <MdExpandMore style={toggleIconStyle} />
+                    )}
+                  </div>
+                  {openSections.events && (
+                    <ul style={{ listStyle: 'none', paddingLeft: '20px', marginTop: '5px' }}>
+                      <li style={{ marginBottom: '5px' }}>
+                        <NavLink
+                          to="/admin/dashboard"
+                          onMouseEnter={() => setHoveredItem('dashboard')}
+                          onMouseLeave={() => setHoveredItem(null)}
+                          style={({ isActive }) => getLinkStyle({ isActive, itemName: 'dashboard' })}
+                        >
+                          <MdDashboard style={iconStyle} />
+                          {t('dashboard')}
+                        </NavLink>
+                      </li>
+                      <li style={{ marginBottom: '5px' }}>
+                        <NavLink
+                          to="/admin/events"
+                          onMouseEnter={() => setHoveredItem('events')}
+                          onMouseLeave={() => setHoveredItem(null)}
+                          style={({ isActive }) => getLinkStyle({ isActive, itemName: 'events' })}
+                        >
+                          <MdEvent style={iconStyle} />
+                          {t('events')}
+                        </NavLink>
+                      </li>
+                      <li style={{ marginBottom: '5px' }}>
+                        <NavLink
+                          to="/admin/all-attendees"
+                          onMouseEnter={() => setHoveredItem('all-attendees')}
+                          onMouseLeave={() => setHoveredItem(null)}
+                          style={({ isActive }) => getLinkStyle({ isActive, itemName: 'all-attendees' })}
+                        >
+                          <MdPeople style={iconStyle} />
+                          {t('all_attendees')}
+                        </NavLink>
+                      </li>
+                    </ul>
+                  )}
+                </li>
+
+                {/* Section Rapports et Statistiques */}
+                <li style={{ marginBottom: '10px' }}>
+                  <div
+                    onClick={() => toggleSection('reportsAndStats')}
+                    style={{ ...getLinkStyle({ itemName: 'reportsAndStats', isParent: true }), cursor: 'pointer' }}
+                  >
+                    <MdLeaderboard style={iconStyle} />
+                    {t('reports_and_stats')}
+                    {openSections.reportsAndStats ? (
+                      <MdExpandLess style={toggleIconStyle} />
+                    ) : (
+                      <MdExpandMore style={toggleIconStyle} />
+                    )}
+                  </div>
+                  {openSections.reportsAndStats && (
+                    <ul style={{ listStyle: 'none', paddingLeft: '20px', marginTop: '5px' }}>
+                      <li style={{ marginBottom: '5px' }}>
+                        <NavLink
+                          to="/admin/statistics"
+                          onMouseEnter={() => setHoveredItem('statistics')}
+                          onMouseLeave={() => setHoveredItem(null)}
+                          style={({ isActive }) => getLinkStyle({ isActive, itemName: 'statistics' })}
+                        >
+                          <MdLeaderboard style={iconStyle} />
+                          {t('statistics')}
+                        </NavLink>
+                      </li>
+                      <li style={{ marginBottom: '5px' }}>
+                        <NavLink
+                          to="/admin/history"
+                          onMouseEnter={() => setHoveredItem('event-history')}
+                          onMouseLeave={() => setHoveredItem(null)}
+                          style={({ isActive }) => getLinkStyle({ isActive, itemName: 'event-history' })}
+                        >
+                          <MdHistory style={iconStyle} />
+                          {t('event_history')}
+                        </NavLink>
+                      </li>
+                    </ul>
+                  )}
+                </li>
+              </>
+            )}
+
+            {/* Module Membres */}
+            {activeModule === 'members' && (
+              <>
+                {/* Section Gestion des Membres */}
+                <li style={{ marginBottom: '10px' }}>
+                  <div
+                    onClick={() => toggleSection('members')}
+                    style={{ ...getLinkStyle({ itemName: 'members', isParent: true }), cursor: 'pointer' }}
+                  >
+                    <MdPeople style={iconStyle} />
+                    {t('member_management') || 'Gestion Membres'}
+                    {openSections.members ? (
+                      <MdExpandLess style={toggleIconStyle} />
+                    ) : (
+                      <MdExpandMore style={toggleIconStyle} />
+                    )}
+                  </div>
+                  {openSections.members && (
+                    <ul style={{ listStyle: 'none', paddingLeft: '20px', marginTop: '5px' }}>
+                      <li style={{ marginBottom: '5px' }}>
+                        <NavLink
+                          to="/admin/members"
+                          onMouseEnter={() => setHoveredItem('members-list')}
+                          onMouseLeave={() => setHoveredItem(null)}
+                          style={({ isActive }) => getLinkStyle({ isActive, itemName: 'members-list' })}
+                        >
+                          <MdPeople style={iconStyle} />
+                          {t('members') || 'Membres'}
+                        </NavLink>
+                      </li>
+                      <li style={{ marginBottom: '5px' }}>
+                        <NavLink
+                          to="/admin/roles"
+                          onMouseEnter={() => setHoveredItem('roles')}
+                          onMouseLeave={() => setHoveredItem(null)}
+                          style={({ isActive }) => getLinkStyle({ isActive, itemName: 'roles' })}
+                        >
+                          <MdBadge style={iconStyle} />
+                          {t('roles') || 'Rôles'}
+                        </NavLink>
+                      </li>
+                      <li style={{ marginBottom: '5px' }}>
+                        <NavLink
+                          to="/admin/member-invitations"
+                          onMouseEnter={() => setHoveredItem('invitations')}
+                          onMouseLeave={() => setHoveredItem(null)}
+                          style={({ isActive }) => getLinkStyle({ isActive, itemName: 'invitations' })}
+                        >
+                          <MdMail style={iconStyle} />
+                          {t('invitations') || 'Invitations'}
+                        </NavLink>
+                      </li>
+                      <li style={{ marginBottom: '5px' }}>
+                        <NavLink
+                          to="/admin/announcements"
+                          onMouseEnter={() => setHoveredItem('announcements')}
+                          onMouseLeave={() => setHoveredItem(null)}
+                          style={({ isActive }) => getLinkStyle({ isActive, itemName: 'announcements' })}
+                        >
+                          <MdAnnouncement style={iconStyle} />
+                          {t('announcements') || 'Annonces'}
+                        </NavLink>
+                      </li>
+                    </ul>
+                  )}
+                </li>
+              </>
+            )}
+
+            {/* Section commune : Paramètres */}
+            <li style={{ marginTop: '20px', borderTop: '1px solid #374151', paddingTop: '15px' }}>
+              <NavLink
+                to="/admin/church-users"
+                onMouseEnter={() => setHoveredItem('church-users')}
+                onMouseLeave={() => setHoveredItem(null)}
+                style={({ isActive }) => getLinkStyle({ isActive, itemName: 'church-users' })}
               >
-                <MdLeaderboard style={iconStyle} />
-                {t('reports_and_stats')}
-                {openSections.reportsAndStats ? (
-                  <MdExpandLess style={toggleIconStyle} />
-                ) : (
-                  <MdExpandMore style={toggleIconStyle} />
-                )}
-              </div>
-              {openSections.reportsAndStats && (
-                <ul style={{ listStyle: 'none', paddingLeft: '20px', marginTop: '5px' }}>
-                  <li style={{ marginBottom: '5px' }}>
-                    <NavLink
-                      to="/admin/statistics"
-                      onMouseEnter={() => setHoveredItem('statistics')}
-                      onMouseLeave={() => setHoveredItem(null)}
-                      style={({ isActive }) => getLinkStyle({ isActive, itemName: 'statistics' })}
-                    >
-                      <MdLeaderboard style={iconStyle} />
-                      {t('statistics')}
-                    </NavLink>
-                  </li>
-                  <li style={{ marginBottom: '5px' }}>
-                    <NavLink
-                      to="/admin/history"
-                      onMouseEnter={() => setHoveredItem('event-history')}
-                      onMouseLeave={() => setHoveredItem(null)}
-                      style={({ isActive }) => getLinkStyle({ isActive, itemName: 'event-history' })}
-                    >
-                      <MdHistory style={iconStyle} />
-                      {t('event_history')}
-                    </NavLink>
-                  </li>
-                </ul>
-              )}
+                <MdGroupAdd style={iconStyle} />
+                {t('team_members')}
+              </NavLink>
+            </li>
+            <li style={{ marginBottom: '5px' }}>
+              <NavLink
+                to="/admin/church-settings"
+                onMouseEnter={() => setHoveredItem('church-settings')}
+                onMouseLeave={() => setHoveredItem(null)}
+                style={({ isActive }) => getLinkStyle({ isActive, itemName: 'church-settings' })}
+              >
+                <MdSettings style={iconStyle} />
+                {t('church_settings')}
+              </NavLink>
             </li>
           </ul>
         </div>

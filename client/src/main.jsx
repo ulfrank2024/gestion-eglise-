@@ -23,6 +23,23 @@ import AdminAllChurchesPage from './pages/AdminAllChurchesPage'; // Nouvelle pag
 import AdminChurchSettingsPage from './pages/AdminChurchSettingsPage'; // Nouvelle page pour les paramètres de l'église
 import AdminChurchUsersPage from './pages/AdminChurchUsersPage'; // Nouvelle page pour la gestion des utilisateurs de l'église
 
+// Admin Pages - Module Membres
+import AdminMembersListPage from './pages/AdminMembersListPage';
+import AdminRolesPage from './pages/AdminRolesPage';
+import AdminMemberInvitationsPage from './pages/AdminMemberInvitationsPage';
+import AdminAnnouncementsPage from './pages/AdminAnnouncementsPage';
+
+// Member Pages
+import MemberRegistrationPage from './pages/MemberRegistrationPage';
+import MemberLayout from './layouts/MemberLayout';
+import MemberLoginPage from './pages/MemberLoginPage';
+import MemberDashboardPage from './pages/MemberDashboardPage';
+import MemberProfilePage from './pages/MemberProfilePage';
+import MemberEventsPage from './pages/MemberEventsPage';
+import MemberRolesPage from './pages/MemberRolesPage';
+import MemberNotificationsPage from './pages/MemberNotificationsPage';
+import MemberAnnouncementsPage from './pages/MemberAnnouncementsPage';
+
 // Super Admin Pages
 import SuperAdminLayout from './layouts/SuperAdminLayout';
 import SuperAdminLoginPage from './pages/SuperAdminLoginPage';
@@ -67,6 +84,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="churches" element={<AdminAllChurchesPage />} /> {/* Nouvelle route pour la gestion des églises */}
             <Route path="church-settings" element={<AdminChurchSettingsPage />} /> {/* Nouvelle route pour les paramètres de l'église */}
             <Route path="church-users" element={<AdminChurchUsersPage />} /> {/* Nouvelle route pour la gestion des utilisateurs de l'église */}
+            {/* Module Membres */}
+            <Route path="members" element={<AdminMembersListPage />} />
+            <Route path="roles" element={<AdminRolesPage />} />
+            <Route path="member-invitations" element={<AdminMemberInvitationsPage />} />
+            <Route path="announcements" element={<AdminAnnouncementsPage />} />
           </Route>
 
           {/* Super Admin Routes with Layout */}
@@ -79,6 +101,24 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="statistics" element={<SuperAdminStatisticsPage />} />
             <Route path="churches/:churchId" element={<SuperAdminChurchDetailPage />} />
           </Route>
+
+          {/* Member Login - No Layout */}
+          <Route path="/member/login" element={<MemberLoginPage />} />
+
+          {/* Member Dashboard Routes with Layout */}
+          <Route path="/member" element={<MemberLayout />}>
+            <Route index element={<MemberDashboardPage />} />
+            <Route path="dashboard" element={<MemberDashboardPage />} />
+            <Route path="profile" element={<MemberProfilePage />} />
+            <Route path="events" element={<MemberEventsPage />} />
+            <Route path="roles" element={<MemberRolesPage />} />
+            <Route path="notifications" element={<MemberNotificationsPage />} />
+            <Route path="announcements" element={<MemberAnnouncementsPage />} />
+          </Route>
+
+          {/* Member Registration - Public (must be before /:churchId routes) */}
+          <Route path="/:churchId/join" element={<MemberRegistrationPage />} />
+          <Route path="/:churchId/join/:token" element={<MemberRegistrationPage />} />
 
           {/* Public Routes - MUST be after admin/super-admin routes to avoid capturing /admin as /:churchId */}
           <Route path="/:churchId" element={<PublicLayout />}>

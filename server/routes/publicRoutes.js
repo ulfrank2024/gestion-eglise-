@@ -523,4 +523,324 @@ router.post('/churches/register', async (req, res) => {
     }
 });
 
+// ============================================
+// Routes d'inscription des membres
+// ============================================
+
+// GET /api/public/:churchId/join/validate-token/:token - Valider un token d'invitation membre
+router.get('/:churchId/join/validate-token/:token', async (req, res) => {
+    const { churchId, token } = req.params;
+
+    try {
+        // Vérifier l'église
+        const { data: church, error: churchError } = await supabaseAdmin
+            .from('churches_v2')
+            .select('id, name, logo_url')
+            .eq('subdomain', churchId)
+            .single();
+
+        if (churchError || !church) {
+            return res.status(404).json({ error: 'Church not found' });
+        }
+
+        // Vérifier le token d'invitation
+        const { data: invitation, error: invitationError } = await supabaseAdmin
+            .from('member_invitations_v2')
+            .select('*')
+            .eq('token', token)
+            .eq('church_id', church.id)
+            .is('used_at', null)
+            .gt('expires_at', new Date().toISOString())
+            .single();
+
+        if (invitationError || !invitation) {
+            return res.status(404).json({ error: 'Invalid or expired invitation' });
+        }
+
+        res.json({
+            valid: true,
+            church: {
+                id: church.id,
+                name: church.name,
+                logo_url: church.logo_url
+            },
+            invitation: {
+                email: invitation.email,
+                full_name: invitation.full_name
+            }
+        });
+    } catch (error) {
+        console.error('Error validating member invitation:', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// GET /api/public/:churchId/join/validate-link - Valider un lien public d'inscription
+router.get('/:churchId/join/validate-link', async (req, res) => {
+    const { churchId } = req.params;
+    const { ref } = req.query;
+
+    try {
+        // Vérifier l'église par subdomain
+        const { data: church, error: churchError } = await supabaseAdmin
+            .from('churches_v2')
+            .select('id, name, logo_url')
+            .eq('subdomain', churchId)
+            .single();
+
+        if (churchError || !church) {
+            return res.status(404).json({ error: 'Church not found' });
+        }
+
+        // Vérifier le lien public
+        const { data: link, error: linkError } = await supabaseAdmin
+            .from('public_registration_links_v2')
+            .select('*')
+            .eq('token', ref)
+            .eq('church_id', church.id)
+            .eq('is_active', true)
+            .single();
+
+        if (linkError || !link) {
+            return res.status(404).json({ error: 'Invalid or inactive registration link' });
+        }
+
+        // Vérifier l'expiration
+        if (link.expires_at && new Date(link.expires_at) < new Date()) {
+            return res.status(400).json({ error: 'Registration link has expired' });
+        }
+
+        // Vérifier le nombre d'utilisations
+        if (link.max_uses && link.current_uses >= link.max_uses) {
+            return res.status(400).json({ error: 'Registration link has reached maximum uses' });
+        }
+
+        res.json({
+            valid: true,
+            church: {
+                id: church.id,
+                name: church.name,
+                logo_url: church.logo_url
+            }
+        });
+    } catch (error) {
+        console.error('Error validating public registration link:', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// POST /api/public/:churchId/members/register - Inscription membre via lien public ou invitation
+router.post('/:churchId/members/register', async (req, res) => {
+    const { churchId } = req.params;
+    const { token, ref, full_name, email, phone, password, address, date_of_birth } = req.body;
+
+    console.log('=== MEMBER REGISTRATION START ===');
+    console.log('ChurchId (subdomain):', churchId);
+    console.log('Token:', token);
+    console.log('Ref:', ref);
+
+    if (!full_name || !email || !password) {
+        return res.status(400).json({ error: 'Name, email and password are required' });
+    }
+
+    try {
+        // Vérifier l'église par subdomain
+        const { data: church, error: churchError } = await supabaseAdmin
+            .from('churches_v2')
+            .select('id, name')
+            .eq('subdomain', churchId)
+            .single();
+
+        if (churchError || !church) {
+            console.error('Church not found for subdomain:', churchId);
+            return res.status(404).json({ error: 'Church not found' });
+        }
+
+        const churchDbId = church.id;
+        let invitationId = null;
+        let linkId = null;
+
+        // Vérifier le token ou le ref
+        if (token) {
+            // Invitation par email
+            const { data: invitation, error: invError } = await supabaseAdmin
+                .from('member_invitations_v2')
+                .select('*')
+                .eq('token', token)
+                .eq('church_id', churchDbId)
+                .is('used_at', null)
+                .gt('expires_at', new Date().toISOString())
+                .single();
+
+            if (invError || !invitation) {
+                return res.status(400).json({ error: 'Invalid or expired invitation' });
+            }
+            invitationId = invitation.id;
+        } else if (ref) {
+            // Lien public
+            const { data: link, error: linkError } = await supabaseAdmin
+                .from('public_registration_links_v2')
+                .select('*')
+                .eq('token', ref)
+                .eq('church_id', churchDbId)
+                .eq('is_active', true)
+                .single();
+
+            if (linkError || !link) {
+                return res.status(400).json({ error: 'Invalid registration link' });
+            }
+
+            if (link.expires_at && new Date(link.expires_at) < new Date()) {
+                return res.status(400).json({ error: 'Registration link has expired' });
+            }
+
+            if (link.max_uses && link.current_uses >= link.max_uses) {
+                return res.status(400).json({ error: 'Registration link has reached maximum uses' });
+            }
+
+            linkId = link.id;
+        } else {
+            return res.status(400).json({ error: 'Token or registration link required' });
+        }
+
+        // Vérifier si le membre existe déjà
+        const { data: existingMember } = await supabaseAdmin
+            .from('members_v2')
+            .select('id')
+            .eq('church_id', churchDbId)
+            .eq('email', email)
+            .single();
+
+        if (existingMember) {
+            return res.status(400).json({ error: 'A member with this email already exists' });
+        }
+
+        // Créer l'utilisateur Supabase Auth
+        let userId;
+        const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+        const existingUser = existingUsers?.users?.find(u => u.email === email);
+
+        if (existingUser) {
+            userId = existingUser.id;
+            // Mettre à jour les métadonnées
+            await supabaseAdmin.auth.admin.updateUserById(userId, {
+                password,
+                user_metadata: { full_name }
+            });
+        } else {
+            const { data: newUser, error: userError } = await supabaseAdmin.auth.admin.createUser({
+                email,
+                password,
+                user_metadata: { full_name },
+                email_confirm: true
+            });
+
+            if (userError) {
+                console.error('Error creating user:', userError);
+                throw new Error('Failed to create user account');
+            }
+            userId = newUser.user.id;
+        }
+
+        // Créer l'entrée membre
+        const { data: member, error: memberError } = await supabaseAdmin
+            .from('members_v2')
+            .insert({
+                church_id: churchDbId,
+                user_id: userId,
+                full_name,
+                email,
+                phone,
+                address,
+                date_of_birth,
+                joined_at: new Date().toISOString()
+            })
+            .select()
+            .single();
+
+        if (memberError) {
+            console.error('Error creating member:', memberError);
+            throw new Error('Failed to create member profile');
+        }
+
+        // Créer l'entrée dans church_users_v2 avec le rôle 'member'
+        const { error: roleError } = await supabaseAdmin
+            .from('church_users_v2')
+            .insert({
+                user_id: userId,
+                church_id: churchDbId,
+                role: 'member'
+            });
+
+        if (roleError && roleError.code !== '23505') { // Ignorer si existe déjà
+            console.error('Error assigning role:', roleError);
+        }
+
+        // Marquer l'invitation comme utilisée ou incrémenter le compteur du lien
+        if (invitationId) {
+            await supabaseAdmin
+                .from('member_invitations_v2')
+                .update({ used_at: new Date().toISOString() })
+                .eq('id', invitationId);
+        } else if (linkId) {
+            await supabaseAdmin
+                .from('public_registration_links_v2')
+                .update({ current_uses: supabaseAdmin.raw('current_uses + 1') })
+                .eq('id', linkId);
+        }
+
+        // Envoyer un email de bienvenue
+        const frontendUrl = process.env.FRONTEND_BASE_URL || 'http://localhost:3000';
+        const loginUrl = `${frontendUrl}/member/login`;
+
+        const welcomeEmailHtml = `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 10px; overflow: hidden;">
+          <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; padding: 30px; text-align: center;">
+            <h1 style="margin: 0; font-size: 24px;">Bienvenue chez ${church.name}!</h1>
+          </div>
+          <div style="padding: 25px;">
+            <p>Bonjour ${full_name},</p>
+            <p>Votre compte membre a été créé avec succès!</p>
+            <p>Vous pouvez maintenant vous connecter pour accéder à:</p>
+            <ul>
+              <li>Votre profil personnel</li>
+              <li>Les événements de l'église</li>
+              <li>Les annonces et notifications</li>
+            </ul>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${loginUrl}" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">Me connecter</a>
+            </div>
+            <p>Bienvenue dans notre communauté!</p>
+            <p><strong>L'équipe ${church.name}</strong></p>
+          </div>
+        </div>`;
+
+        try {
+            await transporter.sendMail({
+                from: process.env.NODEMAILER_EMAIL,
+                to: email,
+                subject: `Bienvenue chez ${church.name}!`,
+                html: welcomeEmailHtml
+            });
+        } catch (mailError) {
+            console.error('Error sending welcome email:', mailError);
+        }
+
+        console.log('=== MEMBER REGISTRATION SUCCESS ===');
+        res.status(201).json({
+            message: 'Member registered successfully',
+            member: {
+                id: member.id,
+                full_name: member.full_name,
+                email: member.email
+            }
+        });
+
+    } catch (error) {
+        console.error('=== MEMBER REGISTRATION ERROR ===');
+        console.error('Error:', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 module.exports = router;

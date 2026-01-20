@@ -20,14 +20,20 @@ app.use((req, res, next) => {
 });
 
 // Importer le middleware de protection et isSuperAdmin
-const { protect, isSuperAdmin, isSuperAdminOrChurchAdmin } = require('./middleware/auth');
+const { protect, isSuperAdmin, isSuperAdminOrChurchAdmin, isMember } = require('./middleware/auth');
 
 // Importer les routeurs
 const authRoutes = require('./routes/auth');
 const publicRoutes = require('./routes/publicRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const superAdminRoutes = require('./routes/superAdminRoutes');
-const churchAdminRoutes = require('./routes/churchAdminRoutes'); // Nouvelle importation
+const churchAdminRoutes = require('./routes/churchAdminRoutes');
+// Module Gestion des Membres
+const memberRoutes = require('./routes/memberRoutes');
+const roleRoutes = require('./routes/roleRoutes');
+const memberInvitationRoutes = require('./routes/memberInvitationRoutes');
+const announcementRoutes = require('./routes/announcementRoutes');
+const memberDashboardRoutes = require('./routes/memberDashboardRoutes');
 
 // Middleware
 const allowedOrigins = [
@@ -69,6 +75,12 @@ app.use('/api/public', publicRoutes);   // Routes publiques (détails d'événem
 app.use('/api/admin', protect, isSuperAdminOrChurchAdmin, adminRoutes); // Routes d'administration (CRUD événements, gestion participants)
 app.use('/api/super-admin', protect, isSuperAdmin, superAdminRoutes); // Routes Super-Admin
 app.use('/api/church-admin', protect, churchAdminRoutes); // Routes Admin d'Église
+// Routes du module Gestion des Membres
+app.use('/api/admin/members', memberRoutes); // CRUD membres
+app.use('/api/admin/roles', roleRoutes); // CRUD rôles
+app.use('/api/admin/member-invitations', memberInvitationRoutes); // Invitations membres
+app.use('/api/admin/announcements', announcementRoutes); // Annonces
+app.use('/api/member', memberDashboardRoutes); // Dashboard membre
 
 // Route de test
 app.get('/', (req, res) => {

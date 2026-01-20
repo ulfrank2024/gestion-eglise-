@@ -98,5 +98,32 @@ const isSuperAdminOrChurchAdmin = (req, res, next) => {
     return res.status(403).json({ error: 'Forbidden: Not authorized as Super-Admin or Church Admin' });
 };
 
+// Middleware pour vérifier si l'utilisateur est un Membre
+const isMember = async (req, res, next) => {
+    if (!req.user || !req.user.church_role || req.user.church_role !== 'member' || !req.user.church_id) {
+        return res.status(403).json({ error: 'Forbidden: Not a member' });
+    }
 
-module.exports = { protect, isSuperAdmin, isAdminChurch, isSuperAdminOrChurchAdmin };
+    try {
+        // Récupérer le member_id à partir de la table members_v2
+        const { data: memberData, error: memberError } = await supabaseAdmin
+            .from('members_v2')
+            .select('id')
+            .eq('user_id', req.user.id)
+            .eq('church_id', req.user.church_id)
+            .single();
+
+        if (memberError || !memberData) {
+            return res.status(403).json({ error: 'Member profile not found' });
+        }
+
+        req.user.member_id = memberData.id;
+        next();
+    } catch (error) {
+        console.error('Error in isMember middleware:', error);
+        return res.status(500).json({ error: 'Server error' });
+    }
+};
+
+
+module.exports = { protect, isSuperAdmin, isAdminChurch, isSuperAdminOrChurchAdmin, isMember };
