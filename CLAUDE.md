@@ -14,7 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Le pasteur se connecte et accède à un **dashboard avec des modules fonctionnels** :
 - 📅 **Événements** (✅ Développé) - Création d'événements, inscriptions, QR code check-in, emails
-- 👥 **Fidèles/Membres** (🔜 À développer) - Liste des membres, profils, historique
+- 👥 **Fidèles/Membres** (✅ Développé) - Liste des membres, rôles, invitations, annonces, dashboard membre
 - 💰 **Comptabilité** (🔜 À développer) - Dîmes, offrandes, dépenses, rapports financiers
 - 🙏 **Ministères** (🔜 À développer) - Groupes de service, équipes, assignation de rôles
 - 📊 **Statistiques** (🔜 À développer) - Tableaux de bord, analyses, tendances
@@ -1829,3 +1829,156 @@ Frontend → Backend (middleware protect vérifie le JWT)
 - ✅ Client voit les options sous forme radio/checkbox
 - ✅ Dashboard affiche correctement toutes les réponses
 - ✅ Support bilingue complet
+
+
+---
+
+### 2026-01-20 - Implémentation complète du Module Gestion des Membres
+
+**Contexte:**
+- Demande d'implémentation du module de gestion des membres/chrétiens
+- Architecture modulaire avec sidebar sélecteur Événements/Membres
+
+**Base de données - 7 nouvelles tables créées:**
+
+1. **members_v2** - Table des membres
+   - Champs: full_name, email, phone, address, date_of_birth, profile_photo_url
+   - Statut: is_active, is_archived
+   - Liaison: church_id, user_id
+
+2. **church_roles_v2** - Rôles personnalisés par église
+   - Champs bilingues: name_fr, name_en, description_fr, description_en
+   - Personnalisation: color, permissions (JSONB)
+
+3. **member_roles_v2** - Liaison membre-rôles (many-to-many)
+
+4. **member_invitations_v2** - Invitations par email avec token unique
+
+5. **notifications_v2** - Notifications pour les membres
+
+6. **announcements_v2** - Annonces de l'église (bilingues, avec expiration)
+
+7. **public_registration_links_v2** - Liens d'inscription publics avec compteur d'utilisation
+
+**Backend - Nouvelles routes:**
+
+| Fichier | Endpoints |
+|---------|-----------|
+| `memberRoutes.js` | CRUD membres, archivage, statistiques |
+| `roleRoutes.js` | CRUD rôles, assignation/retrait |
+| `memberInvitationRoutes.js` | Invitations email, lien public |
+| `announcementRoutes.js` | CRUD annonces, publish/unpublish |
+| `memberDashboardRoutes.js` | Dashboard, profil, événements, rôles, notifications |
+
+**Middleware - `auth.js`:**
+- Ajout de `isMember` pour protéger les routes du dashboard membre
+- Récupère automatiquement le `member_id` depuis `members_v2`
+
+**Frontend Admin - Nouvelles pages:**
+
+1. **AdminMembersListPage.jsx**
+   - Liste des membres avec recherche et filtres
+   - Cartes de statistiques (total, actifs, nouveaux, avec rôles)
+   - Modal d'ajout de membre
+
+2. **AdminRolesPage.jsx**
+   - Gestion des rôles personnalisés avec couleurs
+   - Compteur de membres par rôle
+
+3. **AdminMemberInvitationsPage.jsx**
+   - Invitation par email avec token unique
+   - Lien d'inscription public avec copie et régénération
+   - Liste des invitations en attente
+
+4. **AdminAnnouncementsPage.jsx**
+   - CRUD annonces bilingues
+   - Publication/dépublication
+   - Date d'expiration optionnelle
+
+**Frontend Admin - Sidebar modulaire:**
+- Sélecteur de module: "Événements" / "Membres"
+- Menu contextuel selon le module sélectionné
+- Sauvegarde du module actif en localStorage
+
+**Frontend Membre - Dashboard complet:**
+
+| Page | Description |
+|------|-------------|
+| `MemberLayout.jsx` | Layout avec sidebar responsive |
+| `MemberLoginPage.jsx` | Page de connexion membre |
+| `MemberDashboardPage.jsx` | Vue d'ensemble avec statistiques |
+| `MemberProfilePage.jsx` | Profil éditable |
+| `MemberEventsPage.jsx` | Événements de l'église |
+| `MemberRolesPage.jsx` | Rôles assignés |
+| `MemberNotificationsPage.jsx` | Notifications avec marquage lu |
+| `MemberAnnouncementsPage.jsx` | Annonces publiées |
+
+**Frontend Public - Inscription membre:**
+
+- `MemberRegistrationPage.jsx`
+  - Inscription via invitation email (token)
+  - Inscription via lien public (ref)
+  - Formulaire avec validation mot de passe
+
+**Routes ajoutées dans `main.jsx`:**
+```jsx
+// Member Login
+<Route path="/member/login" element={<MemberLoginPage />} />
+
+// Member Dashboard
+<Route path="/member" element={<MemberLayout />}>
+  <Route index element={<MemberDashboardPage />} />
+  <Route path="dashboard" element={<MemberDashboardPage />} />
+  <Route path="profile" element={<MemberProfilePage />} />
+  <Route path="events" element={<MemberEventsPage />} />
+  <Route path="roles" element={<MemberRolesPage />} />
+  <Route path="notifications" element={<MemberNotificationsPage />} />
+  <Route path="announcements" element={<MemberAnnouncementsPage />} />
+</Route>
+
+// Member Registration (public)
+<Route path="/:churchId/join" element={<MemberRegistrationPage />} />
+<Route path="/:churchId/join/:token" element={<MemberRegistrationPage />} />
+```
+
+**API ajoutée dans `api.js`:**
+```javascript
+// Admin - Membres
+api.admin.getMembers, createMember, updateMember, archiveMember, deleteMember, getMemberStatistics
+
+// Admin - Rôles
+api.admin.getRoles, createRole, updateRole, deleteRole, assignRole, unassignRole
+
+// Admin - Invitations
+api.admin.getMemberInvitations, inviteMember, getPublicRegistrationLink, regeneratePublicLink
+
+// Admin - Annonces
+api.admin.getAnnouncements, createAnnouncement, updateAnnouncement, publishAnnouncement
+
+// Public - Inscription
+api.public.validateMemberInvitation, validatePublicRegistrationLink, registerMember
+
+// Member - Dashboard
+api.member.getDashboard, getProfile, updateProfile, getEvents, getRoles, getNotifications, getAnnouncements
+```
+
+**Traductions i18n ajoutées:**
+- 80+ nouvelles clés en français et anglais
+- Modules: events_module, members_module
+- Membres: member_management, add_member, archive_member, etc.
+- Rôles: role_management, create_role, assign_role, etc.
+- Invitations: invite_member, public_registration_link, etc.
+- Annonces: announcements, create_announcement, publish, draft, etc.
+
+**Résultat:**
+- ✅ Module Membres 100% fonctionnel
+- ✅ Sidebar modulaire Événements/Membres
+- ✅ Dashboard membre complet
+- ✅ Système d'invitation (email + lien public)
+- ✅ Gestion des rôles personnalisés
+- ✅ Annonces avec publication/expiration
+- ✅ Design dark theme cohérent
+- ✅ Support bilingue FR/EN
+
+**Prochaine étape:**
+- Exécuter le script SQL `/server/db/add_members_module_tables.sql` dans Supabase
