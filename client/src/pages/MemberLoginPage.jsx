@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
 import defaultLogo from '../assets/logo_eden.png';
+import AlertMessage from '../components/AlertMessage';
+import { getErrorMessage } from '../utils/errorHandler';
 import { MdEmail, MdLock, MdLogin } from 'react-icons/md';
 
 function MemberLoginPage() {
@@ -43,7 +45,7 @@ function MemberLoginPage() {
       }
     } catch (err) {
       console.error('Login error:', err);
-      setError(err.response?.data?.error || t('login.error_invalid_credentials'));
+      setError(getErrorMessage(err, t));
     } finally {
       setLoading(false);
     }
@@ -70,11 +72,11 @@ function MemberLoginPage() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
-          {error && (
-            <div className="p-4 bg-red-900/30 border border-red-700 rounded-lg text-red-400 text-sm">
-              {error}
-            </div>
-          )}
+          <AlertMessage
+            type="error"
+            message={error}
+            onClose={() => setError('')}
+          />
 
           {/* Email */}
           <div>
@@ -106,6 +108,14 @@ function MemberLoginPage() {
               placeholder="••••••••"
               required
             />
+            <div className="mt-2 text-right">
+              <Link
+                to="/member/forgot-password"
+                className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
+              >
+                {t('forgot_password.title')} ?
+              </Link>
+            </div>
           </div>
 
           {/* Submit Button */}

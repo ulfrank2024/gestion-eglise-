@@ -13,6 +13,7 @@ import PublicLayout from './layouts/PublicLayout';
 
 // Admin Pages
 import AdminLoginPage from './pages/AdminLoginPage';
+import AdminForgotPasswordPage from './pages/AdminForgotPasswordPage';
 import AdminDashboardPage from './pages/AdminDashboardPage'; // Nouvelle page de dashboard
 import AdminEventsListPage from './pages/AdminEventsListPage'; // Ancienne AdminDashboardPage renommée
 import AdminEventNewPage from './pages/AdminEventNewPage';
@@ -34,6 +35,10 @@ import AdminAnnouncementsPage from './pages/AdminAnnouncementsPage';
 import MemberRegistrationPage from './pages/MemberRegistrationPage';
 import MemberLayout from './layouts/MemberLayout';
 import MemberLoginPage from './pages/MemberLoginPage';
+import MemberForgotPasswordPage from './pages/MemberForgotPasswordPage';
+
+// Password Reset (shared)
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import MemberDashboardPage from './pages/MemberDashboardPage';
 import MemberProfilePage from './pages/MemberProfilePage';
 import MemberEventsPage from './pages/MemberEventsPage';
@@ -66,6 +71,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Routes>
           {/* Admin Login - No Layout (MUST be before /:churchId to avoid conflict) */}
           <Route path="/admin/login" element={<AdminLoginPage />} />
+          <Route path="/admin/forgot-password" element={<AdminForgotPasswordPage />} />
+          <Route path="/admin/reset-password" element={<ResetPasswordPage />} />
 
           {/* Super Admin Login - No Layout */}
           <Route path="/super-admin/login" element={<SuperAdminLoginPage />} />
@@ -106,6 +113,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 
           {/* Member Login - No Layout */}
           <Route path="/member/login" element={<MemberLoginPage />} />
+          <Route path="/member/forgot-password" element={<MemberForgotPasswordPage />} />
+          <Route path="/member/reset-password" element={<ResetPasswordPage />} />
 
           {/* Member Dashboard Routes with Layout */}
           <Route path="/member" element={<MemberLayout />}>

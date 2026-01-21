@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../supabaseClient';
 import logo from '../assets/logo_eden.png';
@@ -123,6 +123,14 @@ function AdminLoginPage() {
                 className="block w-full px-3 py-3 mt-1 text-white bg-gray-700 placeholder-gray-400 border border-gray-600 rounded-md shadow-sm appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm"
                 placeholder={t('password')}
               />
+              <div className="mt-2 text-right">
+                <Link
+                  to="/admin/forgot-password"
+                  className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
+                >
+                  {t('forgot_password.title')} ?
+                </Link>
+              </div>
             </div>
             <AlertMessage
               type="error"

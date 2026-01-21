@@ -127,4 +127,100 @@ function generateAdminInvitationEmail({ churchName, email, tempPassword, inviter
   `;
 }
 
-module.exports = { transporter, sendEmail, generateAdminInvitationEmail };
+/**
+ * Génère le contenu HTML de l'email de réinitialisation de mot de passe
+ */
+function generatePasswordResetEmail({ resetUrl, userType = 'admin', language = 'fr' }) {
+  const isAdmin = userType === 'admin';
+  const isFrench = language === 'fr';
+
+  const texts = {
+    fr: {
+      title: 'Réinitialisation de mot de passe',
+      greeting: 'Bonjour,',
+      intro: isAdmin
+        ? 'Vous avez demandé la réinitialisation de votre mot de passe pour votre compte administrateur MY EDEN X.'
+        : 'Vous avez demandé la réinitialisation de votre mot de passe pour votre compte membre MY EDEN X.',
+      instruction: 'Cliquez sur le bouton ci-dessous pour créer un nouveau mot de passe :',
+      button: 'Réinitialiser mon mot de passe',
+      expiry: 'Ce lien expirera dans 1 heure.',
+      ignore: 'Si vous n\'avez pas demandé cette réinitialisation, vous pouvez ignorer cet email en toute sécurité.',
+      footer: 'Plateforme de gestion d\'église'
+    },
+    en: {
+      title: 'Password Reset',
+      greeting: 'Hello,',
+      intro: isAdmin
+        ? 'You have requested a password reset for your MY EDEN X administrator account.'
+        : 'You have requested a password reset for your MY EDEN X member account.',
+      instruction: 'Click the button below to create a new password:',
+      button: 'Reset my password',
+      expiry: 'This link will expire in 1 hour.',
+      ignore: 'If you did not request this reset, you can safely ignore this email.',
+      footer: 'Church Management Platform'
+    }
+  };
+
+  const t = texts[isFrench ? 'fr' : 'en'];
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${t.title} - MY EDEN X</title>
+    </head>
+    <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1f2937;">
+      <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); border-radius: 16px 16px 0 0; padding: 40px 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 28px; font-weight: bold;">MY EDEN X</h1>
+          <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 16px;">${t.title}</p>
+        </div>
+
+        <!-- Content -->
+        <div style="background-color: #374151; padding: 40px 30px; border-radius: 0 0 16px 16px;">
+          <h2 style="color: #f3f4f6; margin: 0 0 20px; font-size: 22px;">${t.greeting}</h2>
+
+          <p style="color: #d1d5db; line-height: 1.6; margin: 0 0 20px;">
+            ${t.intro}
+          </p>
+
+          <p style="color: #d1d5db; line-height: 1.6; margin: 0 0 25px;">
+            ${t.instruction}
+          </p>
+
+          <!-- CTA Button -->
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetUrl}" style="display: inline-block; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              ${t.button}
+            </a>
+          </div>
+
+          <!-- Expiry Note -->
+          <div style="background-color: #1f2937; border-radius: 8px; padding: 15px; margin: 25px 0; border-left: 4px solid #fbbf24;">
+            <p style="color: #fbbf24; margin: 0; font-size: 14px;">
+              <strong>⏱️ ${t.expiry}</strong>
+            </p>
+          </div>
+
+          <!-- Security Note -->
+          <p style="color: #9ca3af; font-size: 13px; margin-top: 20px;">
+            ${t.ignore}
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align: center; padding: 20px;">
+          <p style="color: #6b7280; font-size: 12px; margin: 0;">
+            © ${new Date().getFullYear()} MY EDEN X - ${t.footer}
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+module.exports = { transporter, sendEmail, generateAdminInvitationEmail, generatePasswordResetEmail };

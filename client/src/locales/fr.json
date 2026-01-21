@@ -508,6 +508,33 @@
     "error_email_already_registered": "Cet email est déjà enregistré.",
     "error_registration_closed": "Les inscriptions sont fermées pour cet événement.",
     "error_event_archived": "Cet événement est archivé.",
-    "error_already_registered_event": "Vous êtes déjà inscrit à cet événement."
+    "error_already_registered_event": "Vous êtes déjà inscrit à cet événement.",
+    "error_invalid_reset_token": "Le lien de réinitialisation est invalide ou a expiré.",
+    "error_reset_token_expired": "Le lien de réinitialisation a expiré. Veuillez en demander un nouveau.",
+
+    "forgot_password": {
+      "title": "Mot de passe oublié",
+      "member_title": "Réinitialisation membre",
+      "instruction": "Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe.",
+      "send_link": "Envoyer le lien",
+      "email_sent_title": "Email envoyé !",
+      "email_sent_message": "Si un compte existe avec cette adresse email, vous recevrez un lien de réinitialisation dans quelques minutes. Vérifiez également votre dossier spam.",
+      "back_to_login": "Retour à la connexion"
+    },
+
+    "reset_password": {
+      "title": "Nouveau mot de passe",
+      "instruction": "Choisissez un nouveau mot de passe pour votre compte.",
+      "new_password": "Nouveau mot de passe",
+      "confirm_password": "Confirmer le mot de passe",
+      "password_hint": "Minimum 6 caractères",
+      "submit": "Réinitialiser le mot de passe",
+      "success_title": "Mot de passe modifié !",
+      "success_message": "Votre mot de passe a été réinitialisé avec succès.",
+      "redirecting": "Redirection vers la page de connexion...",
+      "invalid_link_title": "Lien invalide",
+      "invalid_link": "Ce lien de réinitialisation est invalide ou a expiré.",
+      "request_new_link": "Demander un nouveau lien"
+    }
   }
 }

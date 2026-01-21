@@ -558,6 +558,33 @@
     "error_email_already_registered": "This email is already registered.",
     "error_registration_closed": "Registration is closed for this event.",
     "error_event_archived": "This event is archived.",
-    "error_already_registered_event": "You are already registered for this event."
+    "error_already_registered_event": "You are already registered for this event.",
+    "error_invalid_reset_token": "The reset link is invalid or has expired.",
+    "error_reset_token_expired": "The reset link has expired. Please request a new one.",
+
+    "forgot_password": {
+      "title": "Forgot Password",
+      "member_title": "Member Password Reset",
+      "instruction": "Enter your email address and we'll send you a link to reset your password.",
+      "send_link": "Send Reset Link",
+      "email_sent_title": "Email Sent!",
+      "email_sent_message": "If an account exists with this email address, you will receive a reset link in a few minutes. Also check your spam folder.",
+      "back_to_login": "Back to Login"
+    },
+
+    "reset_password": {
+      "title": "New Password",
+      "instruction": "Choose a new password for your account.",
+      "new_password": "New Password",
+      "confirm_password": "Confirm Password",
+      "password_hint": "Minimum 6 characters",
+      "submit": "Reset Password",
+      "success_title": "Password Changed!",
+      "success_message": "Your password has been reset successfully.",
+      "redirecting": "Redirecting to login page...",
+      "invalid_link_title": "Invalid Link",
+      "invalid_link": "This reset link is invalid or has expired.",
+      "request_new_link": "Request a New Link"
+    }
   }
 }

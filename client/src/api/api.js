@@ -71,6 +71,14 @@ export const api = {
       const { data } = await apiClient.get('/auth/me');
       return data;
     },
+    forgotPassword: async ({ email, userType, language }) => {
+      const { data } = await apiClient.post('/auth/forgot-password', { email, userType, language });
+      return data;
+    },
+    resetPassword: async ({ email, token, newPassword }) => {
+      const { data } = await apiClient.post('/auth/reset-password', { email, token, newPassword });
+      return data;
+    },
   },
   
   superAdmin: {
