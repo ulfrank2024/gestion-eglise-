@@ -580,17 +580,30 @@ function AdminLayout() {
             {/* Section commune : Paramètres */}
             {/* Membres de l'équipe - Visible uniquement pour l'admin principal */}
             {isMainAdmin && (
-              <li style={{ marginTop: '20px', borderTop: '1px solid #374151', paddingTop: '15px' }}>
-                <NavLink
-                  to="/admin/church-users"
-                  onMouseEnter={() => setHoveredItem('church-users')}
-                  onMouseLeave={() => setHoveredItem(null)}
-                  style={({ isActive }) => getLinkStyle({ isActive, itemName: 'church-users' })}
-                >
-                  <MdGroupAdd style={iconStyle} />
-                  {t('team_members')}
-                </NavLink>
-              </li>
+              <>
+                <li style={{ marginTop: '20px', borderTop: '1px solid #374151', paddingTop: '15px' }}>
+                  <NavLink
+                    to="/admin/church-users"
+                    onMouseEnter={() => setHoveredItem('church-users')}
+                    onMouseLeave={() => setHoveredItem(null)}
+                    style={({ isActive }) => getLinkStyle({ isActive, itemName: 'church-users' })}
+                  >
+                    <MdGroupAdd style={iconStyle} />
+                    {t('team_members')}
+                  </NavLink>
+                </li>
+                <li style={{ marginBottom: '5px' }}>
+                  <NavLink
+                    to="/admin/activity-logs"
+                    onMouseEnter={() => setHoveredItem('activity-logs')}
+                    onMouseLeave={() => setHoveredItem(null)}
+                    style={({ isActive }) => getLinkStyle({ isActive, itemName: 'activity-logs' })}
+                  >
+                    <MdHistory style={iconStyle} />
+                    {t('activity_logs') || 'Journaux d\'activité'}
+                  </NavLink>
+                </li>
+              </>
             )}
             <li style={{
               marginBottom: '5px',

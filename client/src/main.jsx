@@ -24,6 +24,7 @@ import AdminAllAttendeesPage from './pages/AdminAllAttendeesPage'; // Nouvelle p
 import AdminAllChurchesPage from './pages/AdminAllChurchesPage'; // Nouvelle page pour la gestion des églises par le Super-Admin
 import AdminChurchSettingsPage from './pages/AdminChurchSettingsPage'; // Nouvelle page pour les paramètres de l'église
 import AdminChurchUsersPage from './pages/AdminChurchUsersPage'; // Nouvelle page pour la gestion des utilisateurs de l'église
+import AdminActivityLogsPage from './pages/AdminActivityLogsPage'; // Page des journaux d'activité
 
 // Admin Pages - Module Membres
 import AdminMembersListPage from './pages/AdminMembersListPage';
@@ -93,6 +94,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="churches" element={<AdminAllChurchesPage />} /> {/* Nouvelle route pour la gestion des églises */}
             <Route path="church-settings" element={<AdminChurchSettingsPage />} /> {/* Nouvelle route pour les paramètres de l'église */}
             <Route path="church-users" element={<AdminChurchUsersPage />} /> {/* Nouvelle route pour la gestion des utilisateurs de l'église */}
+            <Route path="activity-logs" element={<AdminActivityLogsPage />} /> {/* Journaux d'activité */}
             {/* Module Membres */}
             <Route path="members" element={<AdminMembersListPage />} />
             <Route path="roles" element={<AdminRolesPage />} />
