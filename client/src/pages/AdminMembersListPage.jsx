@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
 import {
   MdPeople, MdAdd, MdSearch, MdArchive, MdUnarchive,
-  MdEdit, MdDelete, MdFilterList, MdPerson
+  MdEdit, MdDelete, MdFilterList, MdPerson, MdBadge, MdClose, MdCheck
 } from 'react-icons/md';
 
 function AdminMembersListPage() {
@@ -29,6 +29,12 @@ function AdminMembersListPage() {
     date_of_birth: ''
   });
   const [submitting, setSubmitting] = useState(false);
+
+  // États pour le modal d'assignation de rôles
+  const [showRolesModal, setShowRolesModal] = useState(false);
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [availableRoles, setAvailableRoles] = useState([]);
+  const [loadingRoles, setLoadingRoles] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -94,6 +100,74 @@ function AdminMembersListPage() {
       await api.admin.deleteMember(memberId);
       fetchData();
     } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  // Ouvrir le modal d'assignation de rôles
+  const openRolesModal = async (member) => {
+    setSelectedMember(member);
+    setShowRolesModal(true);
+    setLoadingRoles(true);
+    try {
+      const roles = await api.admin.getRoles();
+      setAvailableRoles(roles || []);
+    } catch (err) {
+      console.error('Error fetching roles:', err);
+      setError(err.message);
+    } finally {
+      setLoadingRoles(false);
+    }
+  };
+
+  // Vérifier si le membre a déjà un rôle
+  const memberHasRole = (member, roleId) => {
+    return member.member_roles_v2?.some(mr => mr.role_id === roleId);
+  };
+
+  // Assigner un rôle
+  const handleAssignRole = async (roleId) => {
+    if (!selectedMember) return;
+    try {
+      await api.admin.assignRole(roleId, selectedMember.id);
+      // Mettre à jour le membre localement
+      const updatedMembers = members.map(m => {
+        if (m.id === selectedMember.id) {
+          const role = availableRoles.find(r => r.id === roleId);
+          return {
+            ...m,
+            member_roles_v2: [...(m.member_roles_v2 || []), { id: Date.now(), role_id: roleId, church_roles_v2: role }]
+          };
+        }
+        return m;
+      });
+      setMembers(updatedMembers);
+      setSelectedMember(updatedMembers.find(m => m.id === selectedMember.id));
+    } catch (err) {
+      console.error('Error assigning role:', err);
+      setError(err.message);
+    }
+  };
+
+  // Retirer un rôle
+  const handleUnassignRole = async (roleId) => {
+    if (!selectedMember) return;
+    try {
+      await api.admin.unassignRole(roleId, selectedMember.id);
+      // Mettre à jour le membre localement
+      const updatedMembers = members.map(m => {
+        if (m.id === selectedMember.id) {
+          return {
+            ...m,
+            member_roles_v2: (m.member_roles_v2 || []).filter(mr => mr.role_id !== roleId)
+          };
+        }
+        return m;
+      });
+      setMembers(updatedMembers);
+      setSelectedMember(updatedMembers.find(m => m.id === selectedMember.id));
+    } catch (err) {
+      console.error('Error unassigning role:', err);
       setError(err.message);
     }
   };
@@ -283,11 +357,11 @@ function AdminMembersListPage() {
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-center gap-2">
                       <button
-                        onClick={() => navigate(`/admin/members/${member.id}`)}
-                        className="p-2 text-indigo-400 hover:text-indigo-300 hover:bg-gray-700 rounded-lg transition-colors"
-                        title={t('view_details') || 'Voir les détails'}
+                        onClick={() => openRolesModal(member)}
+                        className="p-2 text-purple-400 hover:text-purple-300 hover:bg-gray-700 rounded-lg transition-colors"
+                        title={t('manage_roles') || 'Gérer les rôles'}
                       >
-                        <MdEdit size={18} />
+                        <MdBadge size={18} />
                       </button>
                       <button
                         onClick={() => handleArchive(member.id, !member.is_archived)}
@@ -384,6 +458,107 @@ function AdminMembersListPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal d'assignation de rôles */}
+      {showRolesModal && selectedMember && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-xl border border-gray-700 w-full max-w-md mx-4">
+            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-4 rounded-t-xl flex items-center justify-between">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <MdBadge />
+                {t('manage_roles') || 'Gérer les rôles'}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowRolesModal(false);
+                  setSelectedMember(null);
+                }}
+                className="text-white/80 hover:text-white p-1"
+              >
+                <MdClose size={24} />
+              </button>
+            </div>
+
+            <div className="p-6">
+              {/* Info du membre */}
+              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-700">
+                {selectedMember.profile_photo_url ? (
+                  <img
+                    src={selectedMember.profile_photo_url}
+                    alt={selectedMember.full_name}
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-gray-600 flex items-center justify-center">
+                    <MdPerson className="text-gray-400 text-xl" />
+                  </div>
+                )}
+                <div>
+                  <p className="text-gray-100 font-medium">{selectedMember.full_name}</p>
+                  <p className="text-gray-400 text-sm">{selectedMember.email}</p>
+                </div>
+              </div>
+
+              {/* Liste des rôles */}
+              {loadingRoles ? (
+                <div className="text-center py-4 text-gray-400">
+                  {t('loading')}...
+                </div>
+              ) : availableRoles.length === 0 ? (
+                <div className="text-center py-4 text-gray-400">
+                  <MdBadge className="mx-auto text-4xl mb-2 opacity-50" />
+                  <p>{t('no_roles_available') || 'Aucun rôle disponible'}</p>
+                  <p className="text-sm mt-1">{t('create_roles_first') || 'Créez des rôles dans la section Rôles'}</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-gray-400 text-sm mb-3">
+                    {t('click_to_toggle_role') || 'Cliquez pour assigner ou retirer un rôle'}
+                  </p>
+                  {availableRoles.map((role) => {
+                    const hasRole = memberHasRole(selectedMember, role.id);
+                    return (
+                      <button
+                        key={role.id}
+                        onClick={() => hasRole ? handleUnassignRole(role.id) : handleAssignRole(role.id)}
+                        className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
+                          hasRole
+                            ? 'bg-gray-700 border-green-500/50'
+                            : 'bg-gray-700/50 border-gray-600 hover:border-gray-500'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-4 h-4 rounded-full"
+                            style={{ backgroundColor: role.color || '#6366f1' }}
+                          />
+                          <span className="text-gray-100">
+                            {lang === 'fr' ? role.name_fr : role.name_en}
+                          </span>
+                        </div>
+                        {hasRole && (
+                          <MdCheck className="text-green-400" size={20} />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Bouton fermer */}
+              <button
+                onClick={() => {
+                  setShowRolesModal(false);
+                  setSelectedMember(null);
+                }}
+                className="w-full mt-6 px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                {t('close') || 'Fermer'}
+              </button>
+            </div>
           </div>
         </div>
       )}
