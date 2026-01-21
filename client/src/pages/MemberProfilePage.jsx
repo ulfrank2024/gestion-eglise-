@@ -61,18 +61,20 @@ function MemberProfilePage() {
 
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `member-${profile.id}-${Date.now()}.${fileExt}`;
-      const filePath = `member-photos/${fileName}`;
+      const fileName = `member-photos/member-${profile.id}-${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('logos')
-        .upload(filePath, file);
+        .from('event_images')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
-        .from('logos')
-        .getPublicUrl(filePath);
+        .from('event_images')
+        .getPublicUrl(fileName);
 
       // Update formData with new photo URL
       setFormData(prev => ({ ...prev, profile_photo_url: publicUrl }));

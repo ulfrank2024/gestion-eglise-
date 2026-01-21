@@ -113,18 +113,20 @@ function AdminChurchSettingsPage() {
 
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `church-${churchId}-${Date.now()}.${fileExt}`;
-      const filePath = `church-logos/${fileName}`;
+      const fileName = `church-logos/church-${churchId}-${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('logos')
-        .upload(filePath, file);
+        .from('event_images')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
-        .from('logos')
-        .getPublicUrl(filePath);
+        .from('event_images')
+        .getPublicUrl(fileName);
 
       setChurchSettings(prev => ({ ...prev, logo_url: publicUrl }));
     } catch (err) {
@@ -163,18 +165,20 @@ function AdminChurchSettingsPage() {
 
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `admin-profile-${Date.now()}.${fileExt}`;
-      const filePath = `admin-photos/${fileName}`;
+      const fileName = `admin-photos/admin-profile-${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('logos')
-        .upload(filePath, file);
+        .from('event_images')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
-        .from('logos')
-        .getPublicUrl(filePath);
+        .from('event_images')
+        .getPublicUrl(fileName);
 
       setAdminProfile(prev => ({ ...prev, profile_photo_url: publicUrl }));
     } catch (err) {
