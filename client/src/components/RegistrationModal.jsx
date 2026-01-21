@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
+import { getErrorMessage } from '../utils/errorHandler';
 import './RegistrationModal.css';
 
 function RegistrationModal({ isOpen, onClose, eventId, churchId }) {
@@ -61,7 +62,7 @@ function RegistrationModal({ isOpen, onClose, eventId, churchId }) {
 
         } catch (err) {
           console.error('Failed to fetch form fields', err);
-          setError(err.response?.data?.error || err.message || t('error_fetching_fields'));
+          setError(getErrorMessage(err, t));
         } finally {
           setLoading(false);
         }
@@ -156,7 +157,7 @@ function RegistrationModal({ isOpen, onClose, eventId, churchId }) {
             onClose(true);
         }, 1500);
       } else {
-        setError(err.response?.data?.error || err.message || t('registration_failed'));
+        setError(getErrorMessage(err, t));
       }
       console.error('Registration error:', err);
     } finally {

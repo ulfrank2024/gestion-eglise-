@@ -4,10 +4,14 @@ import { useTranslation } from 'react-i18next';
 import { supabase } from '../supabaseClient';
 import { api } from '../api/api';
 import { MdEvent, MdImage, MdCalendarToday, MdArrowBack, MdSave } from 'react-icons/md';
+import AlertMessage from '../components/AlertMessage';
+import { useToast } from '../components/Toast';
+import { getErrorMessage } from '../utils/errorHandler';
 
 function AdminEventNewPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { showSuccess, showError } = useToast();
   const [eventNameFr, setEventNameFr] = useState('');
   const [eventNameEn, setEventNameEn] = useState('');
   const [descriptionFr, setDescriptionFr] = useState('');
@@ -19,7 +23,6 @@ function AdminEventNewPage() {
   const [isCompleted, setIsCompleted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [churchId, setChurchId] = useState(null);
 
   useEffect(() => {
@@ -62,10 +65,11 @@ function AdminEventNewPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    setSuccess('');
 
     if (!churchId) {
-      setError(t('error_church_id_missing'));
+      const errorMsg = t('error_church_id_missing');
+      setError(errorMsg);
+      showError(errorMsg);
       setLoading(false);
       return;
     }
@@ -105,14 +109,16 @@ function AdminEventNewPage() {
         is_archived: isCompleted,
       });
 
-      setSuccess(t('event_created_successfully'));
+      showSuccess(t('event_created_successfully'));
       setTimeout(() => {
         navigate('/admin/events');
       }, 1500);
 
     } catch (err) {
       console.error('Error creating event:', err);
-      setError(err.response?.data?.error || err.message || t('error_creating_event'));
+      const errorMsg = getErrorMessage(err, t);
+      setError(errorMsg);
+      showError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -274,17 +280,12 @@ function AdminEventNewPage() {
             </label>
           </div>
 
-          {/* Error / Success Messages */}
-          {error && (
-            <div className="bg-red-900/30 border border-red-700 rounded-lg p-4">
-              <p className="text-red-400">{error}</p>
-            </div>
-          )}
-          {success && (
-            <div className="bg-green-900/30 border border-green-700 rounded-lg p-4">
-              <p className="text-green-400">{success}</p>
-            </div>
-          )}
+          {/* Error Message */}
+          <AlertMessage
+            type="error"
+            message={error}
+            onClose={() => setError('')}
+          />
 
           {/* Submit Button */}
           <div className="flex justify-end gap-4 pt-4 border-t border-gray-700">

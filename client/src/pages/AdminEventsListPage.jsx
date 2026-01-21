@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import AttendeesModal from '../components/AttendeesModal';
 import { api } from '../api/api';
 import { MdEvent, MdAdd, MdPeople, MdVisibility, MdFilterList } from 'react-icons/md';
+import AlertMessage from '../components/AlertMessage';
+import { getErrorMessage } from '../utils/errorHandler';
 
 function AdminEventsListPage() {
   const { t } = useTranslation();
@@ -43,7 +45,7 @@ function AdminEventsListPage() {
         setEvents(data);
       } catch (err) {
         console.error('Error fetching events:', err);
-        setError(err.response?.data?.error || err.message || t('error_fetching_events'));
+        setError(getErrorMessage(err, t));
         if (err.response?.status === 401 || err.response?.status === 403) {
           navigate('/admin/login');
         }
@@ -83,8 +85,12 @@ function AdminEventsListPage() {
 
   if (error) {
     return (
-      <div className="bg-red-900/30 border border-red-700 rounded-lg p-4 m-4">
-        <p className="text-red-400">{t('error')}: {error}</p>
+      <div className="p-6">
+        <AlertMessage
+          type="error"
+          message={error}
+          onClose={() => setError('')}
+        />
       </div>
     );
   }

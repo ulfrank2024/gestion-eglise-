@@ -5,6 +5,7 @@ import './i18n'; // Importation de la configuration i18n
 import { I18nextProvider } from 'react-i18next'; // Importation de I18nextProvider
 import i18n from './i18n';
 import './index.css'; // Importation du fichier CSS principal
+import { ToastProvider } from './components/Toast'; // Système de notifications toast
 
 // Layouts
 import AdminLayout from './layouts/AdminLayout';
@@ -60,8 +61,9 @@ import WelcomeCheckinPage from './pages/WelcomeCheckinPage'; // Importer la nouv
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <I18nextProvider i18n={i18n}>
-      <BrowserRouter>
-        <Routes>
+      <ToastProvider>
+        <BrowserRouter>
+          <Routes>
           {/* Admin Login - No Layout (MUST be before /:churchId to avoid conflict) */}
           <Route path="/admin/login" element={<AdminLoginPage />} />
 
@@ -137,8 +139,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="checkin-success" element={<CheckinSuccessPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
-        </Routes>
-      </BrowserRouter>
+          </Routes>
+        </BrowserRouter>
+      </ToastProvider>
     </I18nextProvider>
   </React.StrictMode>
 );

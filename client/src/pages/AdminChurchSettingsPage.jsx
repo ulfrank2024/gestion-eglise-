@@ -5,12 +5,16 @@ import { supabase } from '../supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import {
   MdSettings, MdChurch, MdPerson, MdEmail, MdPhone, MdLocationOn,
-  MdImage, MdLock, MdSave, MdCheck, MdClose, MdVisibility, MdVisibilityOff
+  MdImage, MdLock, MdSave, MdVisibility, MdVisibilityOff
 } from 'react-icons/md';
+import AlertMessage from '../components/AlertMessage';
+import { useToast } from '../components/Toast';
+import { getErrorMessage } from '../utils/errorHandler';
 
 function AdminChurchSettingsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { showSuccess, showError } = useToast();
 
   // Church settings state
   const [churchSettings, setChurchSettings] = useState({
@@ -45,12 +49,9 @@ function AdminChurchSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [churchId, setChurchId] = useState(null);
 
-  // Messages
-  const [churchSuccess, setChurchSuccess] = useState('');
+  // Messages d'erreur (les succès utilisent les toasts)
   const [churchError, setChurchError] = useState('');
-  const [profileSuccess, setProfileSuccess] = useState('');
   const [profileError, setProfileError] = useState('');
-  const [passwordSuccess, setPasswordSuccess] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
   // Submitting states
@@ -94,7 +95,7 @@ function AdminChurchSettingsPage() {
 
       } catch (err) {
         console.error('Error fetching settings:', err);
-        setChurchError(err.response?.data?.error || err.message || t('error_fetching_church_settings'));
+        setChurchError(getErrorMessage(err, t));
       } finally {
         setLoading(false);
       }
@@ -131,7 +132,8 @@ function AdminChurchSettingsPage() {
       setChurchSettings(prev => ({ ...prev, logo_url: publicUrl }));
     } catch (err) {
       console.error('Logo upload error:', err);
-      setChurchError(t('error_uploading_image'));
+      setChurchError(getErrorMessage(err, t));
+      showError(getErrorMessage(err, t));
     } finally {
       setUploadingLogo(false);
     }
@@ -141,15 +143,16 @@ function AdminChurchSettingsPage() {
   const handleChurchSubmit = async (e) => {
     e.preventDefault();
     setSavingChurch(true);
-    setChurchSuccess('');
     setChurchError('');
 
     try {
       await api.admin.updateChurchSettings(churchId, churchSettings);
-      setChurchSuccess(t('church_settings_updated_successfully'));
+      showSuccess(t('church_settings_updated_successfully'));
     } catch (err) {
       console.error('Error updating church settings:', err);
-      setChurchError(err.response?.data?.error || err.message || t('error_updating_church_settings'));
+      const errorMsg = getErrorMessage(err, t);
+      setChurchError(errorMsg);
+      showError(errorMsg);
     } finally {
       setSavingChurch(false);
     }
@@ -183,7 +186,9 @@ function AdminChurchSettingsPage() {
       setAdminProfile(prev => ({ ...prev, profile_photo_url: publicUrl }));
     } catch (err) {
       console.error('Profile photo upload error:', err);
-      setProfileError(t('error_uploading_image'));
+      const errorMsg = getErrorMessage(err, t);
+      setProfileError(errorMsg);
+      showError(errorMsg);
     } finally {
       setUploadingProfilePhoto(false);
     }
@@ -193,7 +198,6 @@ function AdminChurchSettingsPage() {
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
     setSavingProfile(true);
-    setProfileSuccess('');
     setProfileError('');
 
     try {
@@ -202,10 +206,12 @@ function AdminChurchSettingsPage() {
         full_name: adminProfile.full_name,
         profile_photo_url: adminProfile.profile_photo_url
       });
-      setProfileSuccess(t('profile_updated_success'));
+      showSuccess(t('profile_updated_success'));
     } catch (err) {
       console.error('Error updating profile:', err);
-      setProfileError(err.response?.data?.error || err.message || t('error_updating_profile'));
+      const errorMsg = getErrorMessage(err, t);
+      setProfileError(errorMsg);
+      showError(errorMsg);
     } finally {
       setSavingProfile(false);
     }
@@ -215,19 +221,22 @@ function AdminChurchSettingsPage() {
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     setSavingPassword(true);
-    setPasswordSuccess('');
     setPasswordError('');
 
     // Validate passwords match
     if (passwordData.new_password !== passwordData.confirm_password) {
-      setPasswordError(t('passwords_dont_match'));
+      const errorMsg = t('error_passwords_dont_match');
+      setPasswordError(errorMsg);
+      showError(errorMsg);
       setSavingPassword(false);
       return;
     }
 
     // Validate password length
     if (passwordData.new_password.length < 6) {
-      setPasswordError(t('password_too_short'));
+      const errorMsg = t('error_password_too_short');
+      setPasswordError(errorMsg);
+      showError(errorMsg);
       setSavingPassword(false);
       return;
     }
@@ -239,7 +248,7 @@ function AdminChurchSettingsPage() {
 
       if (error) throw error;
 
-      setPasswordSuccess(t('password_changed_success'));
+      showSuccess(t('password_changed_success'));
       setPasswordData({
         current_password: '',
         new_password: '',
@@ -247,7 +256,9 @@ function AdminChurchSettingsPage() {
       });
     } catch (err) {
       console.error('Error changing password:', err);
-      setPasswordError(err.message || t('error_changing_password') || 'Erreur lors du changement de mot de passe');
+      const errorMsg = getErrorMessage(err, t);
+      setPasswordError(errorMsg);
+      showError(errorMsg);
     } finally {
       setSavingPassword(false);
     }
@@ -385,19 +396,12 @@ function AdminChurchSettingsPage() {
             </div>
           </div>
 
-          {/* Messages */}
-          {churchError && (
-            <div className="p-3 bg-red-900/30 border border-red-700 rounded-lg text-red-400 text-sm flex items-center gap-2">
-              <MdClose size={16} />
-              {churchError}
-            </div>
-          )}
-          {churchSuccess && (
-            <div className="p-3 bg-green-900/30 border border-green-700 rounded-lg text-green-400 text-sm flex items-center gap-2">
-              <MdCheck size={16} />
-              {churchSuccess}
-            </div>
-          )}
+          {/* Message d'erreur */}
+          <AlertMessage
+            type="error"
+            message={churchError}
+            onClose={() => setChurchError('')}
+          />
 
           <button
             type="submit"
@@ -489,19 +493,12 @@ function AdminChurchSettingsPage() {
             </div>
           </div>
 
-          {/* Messages */}
-          {profileError && (
-            <div className="p-3 bg-red-900/30 border border-red-700 rounded-lg text-red-400 text-sm flex items-center gap-2">
-              <MdClose size={16} />
-              {profileError}
-            </div>
-          )}
-          {profileSuccess && (
-            <div className="p-3 bg-green-900/30 border border-green-700 rounded-lg text-green-400 text-sm flex items-center gap-2">
-              <MdCheck size={16} />
-              {profileSuccess}
-            </div>
-          )}
+          {/* Message d'erreur */}
+          <AlertMessage
+            type="error"
+            message={profileError}
+            onClose={() => setProfileError('')}
+          />
 
           <button
             type="submit"
@@ -574,19 +571,12 @@ function AdminChurchSettingsPage() {
             </div>
           </div>
 
-          {/* Messages */}
-          {passwordError && (
-            <div className="p-3 bg-red-900/30 border border-red-700 rounded-lg text-red-400 text-sm flex items-center gap-2">
-              <MdClose size={16} />
-              {passwordError}
-            </div>
-          )}
-          {passwordSuccess && (
-            <div className="p-3 bg-green-900/30 border border-green-700 rounded-lg text-green-400 text-sm flex items-center gap-2">
-              <MdCheck size={16} />
-              {passwordSuccess}
-            </div>
-          )}
+          {/* Message d'erreur */}
+          <AlertMessage
+            type="error"
+            message={passwordError}
+            onClose={() => setPasswordError('')}
+          />
 
           <button
             type="submit"

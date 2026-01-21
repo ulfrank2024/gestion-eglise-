@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../supabaseClient';
 import logo from '../assets/logo_eden.png';
+import AlertMessage from '../components/AlertMessage';
+import { getErrorMessage } from '../utils/errorHandler';
 
 function AdminLoginPage() {
   const { t, i18n } = useTranslation();
@@ -30,9 +32,9 @@ function AdminLoginPage() {
       if (error) throw error;
       localStorage.setItem('supabase.auth.token', JSON.stringify(data.session));
       navigate('/admin/dashboard');
-    } catch (error) {
-      setError(error.message);
-      console.error('Login error:', error);
+    } catch (err) {
+      setError(getErrorMessage(err, t));
+      console.error('Login error:', err);
     } finally {
       setLoading(false);
     }
@@ -122,11 +124,11 @@ function AdminLoginPage() {
                 placeholder={t('password')}
               />
             </div>
-            {error && (
-              <p className="text-sm text-red-400 bg-red-900/30 border border-red-800 rounded p-3">
-                {error}
-              </p>
-            )}
+            <AlertMessage
+              type="error"
+              message={error}
+              onClose={() => setError('')}
+            />
             <div>
               <button
                 type="submit"
