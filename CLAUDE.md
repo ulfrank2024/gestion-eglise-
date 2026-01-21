@@ -2190,3 +2190,45 @@ api.member.getDashboard, getProfile, updateProfile, getEvents, getRoles, getNoti
 
 **Prochaine étape:**
 - Exécuter le script SQL mis à jour pour ajouter la colonne `profile_photo_url`
+
+
+### 2026-01-21 - Ajout des champs ville et photo dans les inscriptions
+
+**Contexte:**
+- Demande d'ajouter le champ "ville" dans l'inscription admin (église)
+- Demande d'ajouter adresse, ville et photo de profil dans l'inscription membre
+
+**Modifications apportées:**
+
+1. **ChurchRegistrationPage.jsx** - Inscription admin
+   - Ajout du champ `city` (ville) dans le formState
+   - Nouveau champ visuel séparé de l'adresse
+   - Envoi de `city` au backend
+
+2. **MemberRegistrationPage.jsx** - Inscription membre
+   - Import de `MdLocationCity`, `MdImage` et `supabase`
+   - Ajout des champs `city` et `profilePhoto` dans formData
+   - Nouveau champ visuel pour la ville
+   - Système d'upload de photo avec preview
+   - Upload vers Supabase Storage (bucket `event_images/member-photos/`)
+   - Envoi de `city` et `profile_photo_url` au backend
+
+3. **publicRoutes.js** - Backend
+   - Route `/churches/register`: ajout de `city` dans la déstructuration et l'insertion
+   - Route `/:churchId/members/register`: ajout de `city` et `profile_photo_url`
+
+4. **Traductions** (fr.json et en.json)
+   - `church_registration.address` - Adresse de l'Église / Church Address
+   - `church_registration.city` - Ville / City
+   - `city_placeholder` - Montréal, QC
+   - `address_placeholder` - 123 Rue Exemple / 123 Example Street
+
+5. **Script SQL de migration** (`server/db/add_city_columns.sql`)
+   - Ajout de la colonne `city` à `churches_v2`
+   - Ajout de la colonne `city` à `members_v2`
+   - Ajout de la colonne `profile_photo_url` à `members_v2`
+
+**Prochaine étape:**
+- Exécuter le script SQL `/server/db/add_city_columns.sql` dans Supabase
+
+---
