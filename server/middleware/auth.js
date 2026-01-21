@@ -24,9 +24,10 @@ const protect = async (req, res, next) => {
     // Récupérer le church_id, rôle, permissions et infos de l'utilisateur à partir de church_users_v2
     // Utiliser supabaseAdmin pour contourner RLS lors de la récupération du rôle,
     // car le middleware doit toujours être capable de déterminer le rôle.
+    // Note: On utilise select('*') pour être compatible même si les nouvelles colonnes n'existent pas encore
     const { data: churchUserData, error: churchUserError } = await supabaseAdmin
       .from('church_users_v2')
-      .select('church_id, role, permissions, is_main_admin, full_name')
+      .select('*')
       .eq('user_id', req.user.id)
       .limit(1) // On prend le premier rôle trouvé pour cet utilisateur
       .single();
