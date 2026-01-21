@@ -24,10 +24,13 @@ function MemberLoginPage() {
     try {
       const response = await api.auth.login({ email, password });
 
-      if (response.token) {
+      // Supabase retourne session.access_token
+      const token = response.session?.access_token || response.token;
+
+      if (token) {
         localStorage.setItem('supabase.auth.token', JSON.stringify({
-          access_token: response.token,
-          user: response.user
+          access_token: token,
+          user: response.user || response.session?.user
         }));
 
         // Vérifier le rôle de l'utilisateur
@@ -40,8 +43,10 @@ function MemberLoginPage() {
         } else if (userInfo.church_role === 'super_admin') {
           navigate('/super-admin/dashboard');
         } else {
-          setError(t('forbidden_access'));
+          setError(t('forbidden_access') || 'Accès non autorisé');
         }
+      } else {
+        setError(t('error_login_failed') || 'Échec de la connexion');
       }
     } catch (err) {
       console.error('Login error:', err);
