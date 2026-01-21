@@ -2,7 +2,7 @@ const express = require('express');
 const { supabase, supabaseAdmin } = require('../db/supabase'); // Utiliser supabase et supabaseAdmin pour les routes Super Admin
 const { protect, isSuperAdmin } = require('../middleware/auth');
 const crypto = require('crypto');
-const { transporter } = require('../services/mailer');
+const { transporter, generateChurchInvitationEmail } = require('../services/mailer');
 
 const router = express.Router();
 
@@ -150,18 +150,20 @@ router.post('/churches_v2/invite', protect, isSuperAdmin, async (req, res) => {
 
     const registrationUrl = `${process.env.FRONTEND_BASE_URL}/church-register/${token}`;
 
+    // Générer le contenu HTML professionnel
+    const htmlContent = generateChurchInvitationEmail({
+      registrationUrl,
+      language: req.body.language || 'fr'
+    });
+
     // Envoyer l'e-mail d'invitation
     const mailOptions = {
-      from: process.env.NODEMAILER_EMAIL,
+      from: `"MY EDEN X" <${process.env.NODEMAILER_EMAIL}>`,
       to: email,
-      subject: 'Invitation à rejoindre notre plateforme',
-      html: `
-        <h1>Invitation à créer votre église</h1>
-        <p>Vous avez été invité à créer une église sur notre plateforme.</p>
-        <p>Cliquez sur le lien ci-dessous pour vous inscrire :</p>
-        <a href="${registrationUrl}">${registrationUrl}</a>
-        <p>Ce lien expirera dans 24 heures.</p>
-      `,
+      subject: req.body.language === 'en'
+        ? '🎉 Invitation to create your church on MY EDEN X'
+        : '🎉 Invitation à créer votre église sur MY EDEN X',
+      html: htmlContent,
     };
 
     await transporter.sendMail(mailOptions);
