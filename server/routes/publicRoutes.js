@@ -795,9 +795,16 @@ router.post('/:churchId/members/register', async (req, res) => {
                 .update({ used_at: new Date().toISOString() })
                 .eq('id', invitationId);
         } else if (linkId) {
+            // Incrémenter le compteur d'utilisation du lien public
+            const { data: linkData } = await supabaseAdmin
+                .from('public_registration_links_v2')
+                .select('current_uses')
+                .eq('id', linkId)
+                .single();
+
             await supabaseAdmin
                 .from('public_registration_links_v2')
-                .update({ current_uses: supabaseAdmin.raw('current_uses + 1') })
+                .update({ current_uses: (linkData?.current_uses || 0) + 1 })
                 .eq('id', linkId);
         }
 

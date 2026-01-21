@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
+import { getErrorMessage } from '../utils/errorHandler';
 import defaultLogo from '../assets/logo_eden.png';
 import {
   MdPerson, MdEmail, MdPhone, MdLock, MdCheck, MdClose,
@@ -79,7 +80,7 @@ function MemberRegistrationPage() {
       setValidationData(data);
     } catch (err) {
       console.error('Validation error:', err);
-      setError(err.response?.data?.error || err.message);
+      setError(getErrorMessage(err, t));
     } finally {
       setLoading(false);
     }
@@ -141,7 +142,7 @@ function MemberRegistrationPage() {
       setSuccess(true);
     } catch (err) {
       console.error('Registration error:', err);
-      setError(err.response?.data?.error || err.message);
+      setError(getErrorMessage(err, t));
     } finally {
       setSubmitting(false);
     }
