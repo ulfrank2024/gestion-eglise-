@@ -2137,3 +2137,56 @@ api.member.getDashboard, getProfile, updateProfile, getEvents, getRoles, getNoti
 
 **Prochaine étape:**
 - Exécuter le script SQL `/server/db/add_permissions_and_activity_logs.sql` dans Supabase
+
+---
+
+### 2026-01-21 - Corrections UI et fonctionnalités profil admin
+
+**Problèmes corrigés:**
+
+1. **Traductions manquantes:**
+   - Ajout de `church_information` - FR: "Informations de l'église" / EN: "Church Information"
+   - Ajout de `admin_profile` - FR: "Profil Administrateur" / EN: "Administrator Profile"
+   - Ajout de `email_cannot_be_changed` - FR: "L'email ne peut pas être modifié"
+   - Ajout de `error_updating_profile`, `error_changing_password`, `city`, `admin_phone`, `profile_photo`
+
+2. **Sauvegarde nom/téléphone admin lors inscription:**
+   - Modifié `/server/routes/publicRoutes.js`
+   - Lors de l'inscription d'une église, `full_name`, `is_main_admin: true`, et `permissions: ["all"]` sont maintenant sauvegardés dans `church_users_v2`
+
+3. **Sauvegarde profil admin (AdminChurchSettingsPage):**
+   - Corrigé pour utiliser `api.admin.updateAdminProfile()` au lieu de `supabase.auth.updateUser()`
+   - Le `full_name` est maintenant sauvegardé dans `church_users_v2`
+
+4. **Photo de profil admin:**
+   - Ajout de la colonne `profile_photo_url` dans `church_users_v2` (script SQL)
+   - Route `/api/auth/me` retourne maintenant `profile_photo_url`
+   - Route `PUT /church-admin/profile` accepte `profile_photo_url`
+   - **AdminLayout.jsx** affiche la photo de l'admin à côté du logo de l'église
+     - Logo église à gauche (bordure indigo)
+     - Photo admin à droite (bordure verte)
+     - Si pas de photo: initiale du nom sur fond gris
+     - Nom de l'admin affiché en vert sous les logos
+   - **AdminChurchSettingsPage.jsx** permet l'upload de la photo de profil
+     - Nouveau champ dans la section "Profil Administrateur"
+     - Upload vers Supabase Storage `logos/admin-photos/`
+     - Prévisualisation de la photo avec fallback sur initiale
+
+**Fichiers modifiés:**
+- `/client/src/locales/fr.json`
+- `/client/src/locales/en.json`
+- `/server/routes/publicRoutes.js`
+- `/server/routes/auth.js`
+- `/server/routes/churchAdminRoutes.js`
+- `/server/db/add_permissions_and_activity_logs.sql`
+- `/client/src/layouts/AdminLayout.jsx`
+- `/client/src/pages/AdminChurchSettingsPage.jsx`
+
+**Résultat:**
+- ✅ Traductions complètes sur la page des paramètres
+- ✅ Nom de l'admin sauvegardé lors de l'inscription
+- ✅ Photo de profil admin visible dans le sidebar
+- ✅ Upload et gestion de la photo de profil
+
+**Prochaine étape:**
+- Exécuter le script SQL mis à jour pour ajouter la colonne `profile_photo_url`

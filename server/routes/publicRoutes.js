@@ -382,7 +382,13 @@ router.post('/churches/register', async (req, res) => {
             console.log('User already linked to a church, updating...');
             const { error: updateLinkError } = await supabaseAdmin
                 .from('church_users_v2')
-                .update({ church_id: churchId, role: 'church_admin' })
+                .update({
+                    church_id: churchId,
+                    role: 'church_admin',
+                    full_name: adminName,
+                    is_main_admin: true,
+                    permissions: ['all']
+                })
                 .eq('user_id', userId);
 
             if (updateLinkError) {
@@ -397,6 +403,9 @@ router.post('/churches/register', async (req, res) => {
                     user_id: userId,
                     church_id: churchId,
                     role: 'church_admin',
+                    full_name: adminName,
+                    is_main_admin: true,
+                    permissions: ['all']
                 });
 
             if (roleError) {

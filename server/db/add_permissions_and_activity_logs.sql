@@ -18,6 +18,10 @@ ADD COLUMN IF NOT EXISTS is_main_admin BOOLEAN DEFAULT false;
 ALTER TABLE church_users_v2
 ADD COLUMN IF NOT EXISTS full_name VARCHAR(255);
 
+-- 3b. Ajouter la photo de profil de l'utilisateur
+ALTER TABLE church_users_v2
+ADD COLUMN IF NOT EXISTS profile_photo_url TEXT;
+
 -- 4. Mettre à jour les admins existants comme admins principaux
 -- (Ceux qui ont créé leur église sont les admins principaux)
 UPDATE church_users_v2

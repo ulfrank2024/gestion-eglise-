@@ -26,7 +26,9 @@ function AdminChurchSettingsPage() {
   const [adminProfile, setAdminProfile] = useState({
     email: '',
     full_name: '',
+    profile_photo_url: '',
   });
+  const [uploadingProfilePhoto, setUploadingProfilePhoto] = useState(false);
 
   // Password change state
   const [passwordData, setPasswordData] = useState({
@@ -87,6 +89,7 @@ function AdminChurchSettingsPage() {
         setAdminProfile({
           email: userInfo.email || '',
           full_name: userInfo.full_name || '',
+          profile_photo_url: userInfo.profile_photo_url || '',
         });
 
       } catch (err) {
@@ -150,6 +153,38 @@ function AdminChurchSettingsPage() {
     }
   };
 
+  // Handle profile photo upload
+  const handleProfilePhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploadingProfilePhoto(true);
+    setProfileError('');
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `admin-profile-${Date.now()}.${fileExt}`;
+      const filePath = `admin-photos/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('logos')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('logos')
+        .getPublicUrl(filePath);
+
+      setAdminProfile(prev => ({ ...prev, profile_photo_url: publicUrl }));
+    } catch (err) {
+      console.error('Profile photo upload error:', err);
+      setProfileError(t('error_uploading_image'));
+    } finally {
+      setUploadingProfilePhoto(false);
+    }
+  };
+
   // Save admin profile
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
@@ -158,16 +193,15 @@ function AdminChurchSettingsPage() {
     setProfileError('');
 
     try {
-      // Update user metadata in Supabase Auth
-      const { error } = await supabase.auth.updateUser({
-        data: { full_name: adminProfile.full_name }
+      // Update profile in church_users_v2 via API
+      await api.admin.updateAdminProfile({
+        full_name: adminProfile.full_name,
+        profile_photo_url: adminProfile.profile_photo_url
       });
-
-      if (error) throw error;
       setProfileSuccess(t('profile_updated_success'));
     } catch (err) {
       console.error('Error updating profile:', err);
-      setProfileError(err.message || t('error_updating_profile') || 'Erreur lors de la mise à jour du profil');
+      setProfileError(err.response?.data?.error || err.message || t('error_updating_profile'));
     } finally {
       setSavingProfile(false);
     }
@@ -382,6 +416,44 @@ function AdminChurchSettingsPage() {
         </div>
 
         <form onSubmit={handleProfileSubmit} className="p-5 space-y-4">
+          {/* Photo de profil */}
+          <div>
+            <label className="block text-gray-300 text-sm mb-2 flex items-center gap-2">
+              <MdImage className="text-gray-400" />
+              {t('profile_photo')}
+            </label>
+            <div className="flex items-center gap-4">
+              {adminProfile.profile_photo_url ? (
+                <img
+                  src={adminProfile.profile_photo_url}
+                  alt="Profile"
+                  className="w-20 h-20 rounded-full object-cover border-2 border-green-500"
+                />
+              ) : (
+                <div className="w-20 h-20 rounded-full bg-gray-700 border-2 border-green-500 flex items-center justify-center text-gray-400 text-2xl font-bold">
+                  {adminProfile.full_name?.charAt(0)?.toUpperCase() || 'A'}
+                </div>
+              )}
+              <div className="flex-1">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleProfilePhotoUpload}
+                  disabled={uploadingProfilePhoto}
+                  className="block w-full text-sm text-gray-400
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-lg file:border-0
+                    file:text-sm file:font-medium
+                    file:bg-green-600 file:text-white
+                    hover:file:bg-green-700
+                    file:cursor-pointer file:transition-colors
+                    disabled:opacity-50"
+                />
+                {uploadingProfilePhoto && <p className="text-xs text-gray-500 mt-1">{t('loading')}...</p>}
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-gray-300 text-sm mb-1 flex items-center gap-2">
@@ -408,7 +480,7 @@ function AdminChurchSettingsPage() {
                 className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-400 cursor-not-allowed"
               />
               <p className="text-xs text-gray-500 mt-1">
-                {t('email_cannot_be_changed') || 'L\'email ne peut pas être modifié'}
+                {t('email_cannot_be_changed')}
               </p>
             </div>
           </div>

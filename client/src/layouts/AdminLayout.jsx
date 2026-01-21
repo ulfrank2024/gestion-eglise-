@@ -24,6 +24,7 @@ function AdminLayout() {
   const [permissions, setPermissions] = useState(['all']);
   const [isMainAdmin, setIsMainAdmin] = useState(false);
   const [adminName, setAdminName] = useState('');
+  const [adminPhotoUrl, setAdminPhotoUrl] = useState(null);
 
   // État pour le module actif (events ou members)
   const [activeModule, setActiveModule] = useState(() => {
@@ -71,6 +72,7 @@ function AdminLayout() {
         setPermissions(userInfo.permissions || ['all']);
         setIsMainAdmin(userInfo.is_main_admin || false);
         setAdminName(userInfo.full_name || userInfo.email);
+        setAdminPhotoUrl(userInfo.profile_photo_url || null);
 
         // Si l'utilisateur n'a pas accès au module actif, rediriger vers un module autorisé
         const currentModule = localStorage.getItem('adminActiveModule') || 'events';
@@ -289,31 +291,74 @@ function AdminLayout() {
         overflowY: 'auto'
       }}>
         <div>
-          {/* Logo et nom de l'église */}
+          {/* Logo église et profil admin */}
           <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-            <img
-              src={churchDetails?.logo_url || defaultLogo}
-              alt={churchDetails?.name || 'MY EDEN X'}
-              style={{
-                width: '70px',
-                height: '70px',
-                display: 'block',
-                borderRadius: '50%',
-                objectFit: 'cover',
-                margin: '0 auto',
-                border: '3px solid #4f46e5'
-              }}
-            />
+            {/* Logo et photo admin côte à côte */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: '10px',
+              marginBottom: '10px'
+            }}>
+              {/* Logo de l'église */}
+              <img
+                src={churchDetails?.logo_url || defaultLogo}
+                alt={churchDetails?.name || 'MY EDEN X'}
+                style={{
+                  width: '55px',
+                  height: '55px',
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  border: '2px solid #4f46e5'
+                }}
+              />
+              {/* Photo de l'admin */}
+              {adminPhotoUrl ? (
+                <img
+                  src={adminPhotoUrl}
+                  alt={adminName}
+                  style={{
+                    width: '55px',
+                    height: '55px',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    border: '2px solid #22c55e'
+                  }}
+                />
+              ) : (
+                <div style={{
+                  width: '55px',
+                  height: '55px',
+                  borderRadius: '50%',
+                  backgroundColor: '#374151',
+                  border: '2px solid #22c55e',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#9ca3af',
+                  fontSize: '18px',
+                  fontWeight: 'bold'
+                }}>
+                  {adminName?.charAt(0)?.toUpperCase() || 'A'}
+                </div>
+              )}
+            </div>
+            {/* Nom de l'église */}
             <h3 style={{
               color: '#f3f4f6',
-              marginTop: '10px',
-              marginBottom: '3px',
+              marginTop: '5px',
+              marginBottom: '2px',
               fontSize: '14px',
               fontWeight: 'bold'
             }}>
               {churchDetails?.name || 'MY EDEN X'}
             </h3>
-            <p style={{ color: '#9ca3af', fontSize: '11px' }}>
+            {/* Nom de l'admin */}
+            <p style={{ color: '#22c55e', fontSize: '12px', fontWeight: '500', margin: '2px 0' }}>
+              {adminName}
+            </p>
+            <p style={{ color: '#9ca3af', fontSize: '10px' }}>
               {t('church_management_platform')}
             </p>
           </div>
