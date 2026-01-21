@@ -5,8 +5,9 @@ import { api } from '../api/api';
 import defaultLogo from '../assets/logo_eden.png';
 import {
   MdPerson, MdEmail, MdPhone, MdLock, MdCheck, MdClose,
-  MdCake, MdLocationOn
+  MdCake, MdLocationOn, MdLocationCity, MdImage
 } from 'react-icons/md';
+import { supabase } from '../supabaseClient';
 
 function MemberRegistrationPage() {
   const { t, i18n } = useTranslation();
@@ -28,8 +29,24 @@ function MemberRegistrationPage() {
     password: '',
     confirmPassword: '',
     address: '',
-    date_of_birth: ''
+    city: '',
+    date_of_birth: '',
+    profilePhoto: null
   });
+  const [photoPreview, setPhotoPreview] = useState(null);
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData({ ...formData, profilePhoto: file });
+      // Créer une preview de l'image
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   useEffect(() => {
     validateAccess();
@@ -86,6 +103,28 @@ function MemberRegistrationPage() {
     setSubmitting(true);
 
     try {
+      let profilePhotoUrl = null;
+
+      // Upload de la photo de profil si sélectionnée
+      if (formData.profilePhoto) {
+        const fileExt = formData.profilePhoto.name.split('.').pop();
+        const fileName = `member-photos/${churchId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('event_images')
+          .upload(fileName, formData.profilePhoto, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (!uploadError) {
+          const { data: { publicUrl } } = supabase.storage
+            .from('event_images')
+            .getPublicUrl(fileName);
+          profilePhotoUrl = publicUrl;
+        }
+      }
+
       await api.public.registerMember(churchId, {
         token,
         ref,
@@ -94,7 +133,9 @@ function MemberRegistrationPage() {
         phone: formData.phone,
         password: formData.password,
         address: formData.address,
-        date_of_birth: formData.date_of_birth
+        city: formData.city,
+        date_of_birth: formData.date_of_birth,
+        profile_photo_url: profilePhotoUrl
       });
 
       setSuccess(true);
@@ -243,6 +284,57 @@ function MemberRegistrationPage() {
               onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
               className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
+          </div>
+
+          <div>
+            <label className="block text-gray-300 text-sm mb-1 flex items-center gap-2">
+              <MdLocationOn className="text-gray-400" />
+              {t('address') || 'Adresse'}
+            </label>
+            <input
+              type="text"
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder={t('address_placeholder') || '123 Rue Exemple'}
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-300 text-sm mb-1 flex items-center gap-2">
+              <MdLocationCity className="text-gray-400" />
+              {t('city') || 'Ville'}
+            </label>
+            <input
+              type="text"
+              value={formData.city}
+              onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+              className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder={t('city_placeholder') || 'Montréal, QC'}
+            />
+          </div>
+
+          {/* Photo de profil */}
+          <div>
+            <label className="block text-gray-300 text-sm mb-1 flex items-center gap-2">
+              <MdImage className="text-gray-400" />
+              {t('profile_photo') || 'Photo de profil'}
+            </label>
+            <div className="flex items-center gap-4">
+              {photoPreview && (
+                <img
+                  src={photoPreview}
+                  alt="Preview"
+                  className="w-16 h-16 rounded-full object-cover border-2 border-indigo-500"
+                />
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 file:cursor-pointer"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

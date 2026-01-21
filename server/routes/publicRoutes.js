@@ -270,7 +270,7 @@ router.post('/churches/register', async (req, res) => {
     console.log('=== CHURCH REGISTRATION START ===');
     console.log('Request body:', JSON.stringify(req.body, null, 2));
 
-    const { token, churchName, subdomain, location, email, phone, adminName, password, logoUrl } = req.body;
+    const { token, churchName, subdomain, location, city, email, phone, adminName, password, logoUrl } = req.body;
 
     if (!token || !churchName || !subdomain || !email || !password) {
         console.log('Missing required fields:', { token: !!token, churchName: !!churchName, subdomain: !!subdomain, email: !!email, password: !!password });
@@ -352,6 +352,7 @@ router.post('/churches/register', async (req, res) => {
                 name: churchName,
                 subdomain,
                 location,
+                city: city || null,
                 email,
                 phone,
                 logo_url: logoUrl || null, // URL du logo uploadé vers Supabase Storage
@@ -641,7 +642,7 @@ router.get('/:churchId/join/validate-link', async (req, res) => {
 // POST /api/public/:churchId/members/register - Inscription membre via lien public ou invitation
 router.post('/:churchId/members/register', async (req, res) => {
     const { churchId } = req.params;
-    const { token, ref, full_name, email, phone, password, address, date_of_birth } = req.body;
+    const { token, ref, full_name, email, phone, password, address, city, date_of_birth, profile_photo_url } = req.body;
 
     console.log('=== MEMBER REGISTRATION START ===');
     console.log('ChurchId (subdomain):', churchId);
@@ -761,7 +762,9 @@ router.post('/:churchId/members/register', async (req, res) => {
                 email,
                 phone,
                 address,
+                city: city || null,
                 date_of_birth,
+                profile_photo_url: profile_photo_url || null,
                 joined_at: new Date().toISOString()
             })
             .select()

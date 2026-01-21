@@ -19,6 +19,7 @@ const ChurchRegistrationPage = () => {
     churchName: '',
     subdomain: '',
     location: '',
+    city: '',
     email: '',
     phone: '',
     adminName: '',
@@ -98,6 +99,7 @@ const ChurchRegistrationPage = () => {
         churchName: formState.churchName,
         subdomain: formState.subdomain,
         location: formState.location,
+        city: formState.city,
         email: formState.email,
         phone: formState.phone,
         adminName: formState.adminName,
@@ -224,10 +226,10 @@ const ChurchRegistrationPage = () => {
                 </div>
               </div>
 
-              {/* Location */}
+              {/* Location (Address) */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  {t('church_registration.location')}
+                  {t('church_registration.address')}
                 </label>
                 <div className="relative">
                   <MdLocationOn className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -237,7 +239,25 @@ const ChurchRegistrationPage = () => {
                     value={formState.location}
                     onChange={handleChange}
                     className="w-full pl-10 pr-4 py-3 bg-gray-700 text-white placeholder-gray-400 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    placeholder="Ville, Pays"
+                    placeholder="123 Rue de l'Église"
+                  />
+                </div>
+              </div>
+
+              {/* City */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  {t('church_registration.city')}
+                </label>
+                <div className="relative">
+                  <MdLocationOn className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    name="city"
+                    value={formState.city}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-3 bg-gray-700 text-white placeholder-gray-400 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    placeholder="Montréal, QC"
                   />
                 </div>
               </div>

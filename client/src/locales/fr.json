@@ -279,6 +279,8 @@
     "church_registration.church_name": "Nom de l'Église",
     "church_registration.subdomain": "Sous-domaine (ex: mon-eglise.example.com)",
     "church_registration.location": "Localisation de l'Église",
+    "church_registration.address": "Adresse de l'Église",
+    "church_registration.city": "Ville",
     "church_registration.contact_email": "Email de Contact de l'Église",
     "church_registration.phone": "Numéro de Téléphone de l'Église",
     "church_registration.logo": "Logo de l'Église",
@@ -361,6 +363,9 @@
     "error_updating_profile": "Erreur lors de la mise à jour du profil",
     "error_changing_password": "Erreur lors du changement de mot de passe",
     "city": "Ville",
+    "city_placeholder": "Montréal, QC",
+    "address": "Adresse",
+    "address_placeholder": "123 Rue Exemple",
     "admin_phone": "Téléphone de l'administrateur",
     "profile_photo": "Photo de profil",
 
