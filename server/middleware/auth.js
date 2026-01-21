@@ -43,6 +43,7 @@ const protect = async (req, res, next) => {
       req.user.permissions = churchUserData.permissions || ['all'];
       req.user.is_main_admin = churchUserData.is_main_admin || false;
       req.user.full_name = churchUserData.full_name || req.user.email;
+      req.user.profile_photo_url = churchUserData.profile_photo_url || null;
     } else {
       // Si l'utilisateur n'est pas trouvé dans 'church_users_v2', vérifier si c'est un Super Admin par email.
       // Cela permet aux Super Admins de ne pas avoir forcément une entrée dans 'church_users_v2' liée à un church_id.
