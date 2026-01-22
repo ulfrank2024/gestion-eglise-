@@ -108,7 +108,12 @@ router.put('/profile', async (req, res) => {
  */
 router.get('/events', async (req, res) => {
   try {
-    const { church_id } = req.user;
+    const { church_id } = req.user || {};
+
+    if (!church_id) {
+      // User is not associated with a church, return empty array
+      return res.json([]);
+    }
 
     const { data: events, error } = await supabaseAdmin
       .from('events_v2')
@@ -303,11 +308,11 @@ router.get('/dashboard', async (req, res) => {
     // Événements à venir
     const { data: upcomingEvents } = await supabaseAdmin
       .from('events_v2')
-      .select('id, name_fr, name_en, start_date, background_image_url')
+      .select('id, name_fr, name_en, event_start_date, background_image_url')
       .eq('church_id', church_id)
       .eq('is_archived', false)
-      .gte('start_date', now)
-      .order('start_date', { ascending: true })
+      .gte('event_start_date', now)
+      .order('event_start_date', { ascending: true })
       .limit(5);
 
     // Notifications non lues
