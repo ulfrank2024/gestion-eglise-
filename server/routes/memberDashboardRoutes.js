@@ -115,8 +115,8 @@ router.get('/events', async (req, res) => {
       .select('*')
       .eq('church_id', church_id)
       .eq('is_archived', false)
-      .gte('end_date', new Date().toISOString())
-      .order('start_date', { ascending: true });
+      .gte('event_end_date', new Date().toISOString())
+      .order('event_start_date', { ascending: true });
 
     if (error) {
       console.error('Error fetching events:', error);
