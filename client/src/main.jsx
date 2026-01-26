@@ -29,6 +29,7 @@ import AdminMyProfilePage from './pages/AdminMyProfilePage'; // Page Mon Profil
 import AdminMyEventsPage from './pages/AdminMyEventsPage'; // Page Mes Événements
 
 // Admin Pages - Module Membres
+import AdminMembersDashboardPage from './pages/AdminMembersDashboardPage';
 import AdminMembersListPage from './pages/AdminMembersListPage';
 import AdminRolesPage from './pages/AdminRolesPage';
 import AdminMemberInvitationsPage from './pages/AdminMemberInvitationsPage';
@@ -101,6 +102,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="my-profile" element={<AdminMyProfilePage />} /> {/* Mon Profil */}
             <Route path="my-events" element={<AdminMyEventsPage />} /> {/* Mes Événements */}
             {/* Module Membres */}
+            <Route path="members-dashboard" element={<AdminMembersDashboardPage />} />
             <Route path="members" element={<AdminMembersListPage />} />
             <Route path="roles" element={<AdminRolesPage />} />
             <Route path="member-invitations" element={<AdminMemberInvitationsPage />} />

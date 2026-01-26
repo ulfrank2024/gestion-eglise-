@@ -442,6 +442,13 @@
     "active_members": "Active Members",
     "new_this_month": "New This Month",
     "with_roles": "With Roles",
+    "recent_members": "Recent Members",
+    "no_members_yet": "No members yet",
+    "invite_first_member": "Invite your first member",
+    "send_invitation": "Send invitation",
+    "create_assign_roles": "Create and assign",
+    "new_announcement": "New Announcement",
+    "publish_announcement": "Publish an announcement",
 
     "roles": "Roles",
     "role_management": "Role Management",

@@ -123,7 +123,28 @@ router.get('/statistics', async (req, res) => {
       .eq('church_id', church_id)
       .eq('is_active', true);
 
+    // Total membres (actifs + inactifs, non archivés)
+    const { count: totalMembers } = await supabaseAdmin
+      .from('members_v2')
+      .select('*', { count: 'exact', head: true })
+      .eq('church_id', church_id)
+      .eq('is_archived', false);
+
+    // Total annonces publiées
+    const { count: totalAnnouncements } = await supabaseAdmin
+      .from('announcements_v2')
+      .select('*', { count: 'exact', head: true })
+      .eq('church_id', church_id)
+      .eq('is_published', true);
+
     res.json({
+      total_members: totalMembers || 0,
+      active_members: totalActive || 0,
+      archived_members: totalArchived || 0,
+      new_this_month: newThisMonth || 0,
+      total_roles: totalRoles || 0,
+      total_announcements: totalAnnouncements || 0,
+      // Garder les anciens noms pour compatibilité
       totalActive: totalActive || 0,
       totalArchived: totalArchived || 0,
       newThisMonth: newThisMonth || 0,

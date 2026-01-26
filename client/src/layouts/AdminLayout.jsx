@@ -531,6 +531,17 @@ function AdminLayout() {
                     <ul style={{ listStyle: 'none', paddingLeft: '20px', marginTop: '5px' }}>
                       <li style={{ marginBottom: '5px' }}>
                         <NavLink
+                          to="/admin/members-dashboard"
+                          onMouseEnter={() => setHoveredItem('members-dashboard')}
+                          onMouseLeave={() => setHoveredItem(null)}
+                          style={({ isActive }) => getLinkStyle({ isActive, itemName: 'members-dashboard' })}
+                        >
+                          <MdDashboard style={iconStyle} />
+                          {t('dashboard')}
+                        </NavLink>
+                      </li>
+                      <li style={{ marginBottom: '5px' }}>
+                        <NavLink
                           to="/admin/members"
                           onMouseEnter={() => setHoveredItem('members-list')}
                           onMouseLeave={() => setHoveredItem(null)}
