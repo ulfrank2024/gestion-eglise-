@@ -301,16 +301,25 @@ router.delete('/churches_v2/:churchId/users/:userId', protect, isAdminChurch, ca
 // PUT /api/church-admin/churches_v2/:churchId/settings - Mettre à jour les paramètres
 router.put('/churches_v2/:churchId/settings', protect, isAdminChurch, async (req, res) => {
   const { churchId } = req.params;
-  const { name, subdomain, logo_url, location, email, phone } = req.body;
+  const { name, subdomain, logo_url, location, city, contact_email, contact_phone } = req.body;
 
   if (req.user.church_id !== churchId) {
     return res.status(403).json({ error: 'Forbidden: You can only update settings for your own church.' });
   }
 
   try {
+    const updateData = { updated_at: new Date() };
+    if (name !== undefined) updateData.name = name;
+    if (subdomain !== undefined) updateData.subdomain = subdomain;
+    if (logo_url !== undefined) updateData.logo_url = logo_url;
+    if (location !== undefined) updateData.location = location;
+    if (city !== undefined) updateData.city = city;
+    if (contact_email !== undefined) updateData.contact_email = contact_email;
+    if (contact_phone !== undefined) updateData.contact_phone = contact_phone;
+
     const { data, error } = await supabaseAdmin
       .from('churches_v2')
-      .update({ name, subdomain, logo_url, location, email, phone, updated_at: new Date() })
+      .update(updateData)
       .eq('id', churchId)
       .select();
 

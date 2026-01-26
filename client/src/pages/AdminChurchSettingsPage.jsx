@@ -4,7 +4,7 @@ import { api } from '../api/api';
 import { supabase } from '../supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import {
-  MdSettings, MdChurch, MdEmail, MdPhone, MdLocationOn,
+  MdSettings, MdChurch, MdEmail, MdPhone, MdLocationOn, MdLocationCity,
   MdImage, MdLock, MdSave, MdVisibility, MdVisibilityOff
 } from 'react-icons/md';
 import AlertMessage from '../components/AlertMessage';
@@ -22,6 +22,7 @@ function AdminChurchSettingsPage() {
     subdomain: '',
     logo_url: '',
     location: '',
+    city: '',
     contact_email: '',
     contact_phone: '',
   });
@@ -74,11 +75,13 @@ function AdminChurchSettingsPage() {
 
         // Fetch church settings
         const churchData = await api.admin.getChurchDetails(currentChurchId);
+        console.log('=== Church data received ===', churchData);
         setChurchSettings({
           name: churchData.name || '',
           subdomain: churchData.subdomain || '',
           logo_url: churchData.logo_url || '',
           location: churchData.location || '',
+          city: churchData.city || '',
           contact_email: churchData.contact_email || '',
           contact_phone: churchData.contact_phone || '',
         });
@@ -282,19 +285,34 @@ function AdminChurchSettingsPage() {
             </div>
           </div>
 
-          {/* Location */}
-          <div>
-            <label className="block text-gray-300 text-sm mb-1 flex items-center gap-2">
-              <MdLocationOn className="text-gray-400" />
-              {t('super_admin_dashboard.location')}
-            </label>
-            <input
-              type="text"
-              value={churchSettings.location}
-              onChange={(e) => setChurchSettings(prev => ({ ...prev, location: e.target.value }))}
-              className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="123 Rue de l'Église, Ville"
-            />
+          {/* Location & City */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-gray-300 text-sm mb-1 flex items-center gap-2">
+                <MdLocationOn className="text-gray-400" />
+                {t('address') || 'Adresse'}
+              </label>
+              <input
+                type="text"
+                value={churchSettings.location}
+                onChange={(e) => setChurchSettings(prev => ({ ...prev, location: e.target.value }))}
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="123 Rue de l'Église"
+              />
+            </div>
+            <div>
+              <label className="block text-gray-300 text-sm mb-1 flex items-center gap-2">
+                <MdLocationCity className="text-gray-400" />
+                {t('city') || 'Ville'}
+              </label>
+              <input
+                type="text"
+                value={churchSettings.city}
+                onChange={(e) => setChurchSettings(prev => ({ ...prev, city: e.target.value }))}
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Montréal, QC"
+              />
+            </div>
           </div>
 
           {/* Contact Email & Phone */}
