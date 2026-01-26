@@ -4,7 +4,7 @@ import { api } from '../api/api';
 import { supabase } from '../supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import {
-  MdSettings, MdChurch, MdPerson, MdEmail, MdPhone, MdLocationOn,
+  MdSettings, MdChurch, MdEmail, MdPhone, MdLocationOn,
   MdImage, MdLock, MdSave, MdVisibility, MdVisibilityOff
 } from 'react-icons/md';
 import AlertMessage from '../components/AlertMessage';
@@ -26,14 +26,6 @@ function AdminChurchSettingsPage() {
     contact_phone: '',
   });
 
-  // Admin profile state
-  const [adminProfile, setAdminProfile] = useState({
-    email: '',
-    full_name: '',
-    profile_photo_url: '',
-  });
-  const [uploadingProfilePhoto, setUploadingProfilePhoto] = useState(false);
-
   // Password change state
   const [passwordData, setPasswordData] = useState({
     current_password: '',
@@ -51,12 +43,10 @@ function AdminChurchSettingsPage() {
 
   // Messages d'erreur (les succès utilisent les toasts)
   const [churchError, setChurchError] = useState('');
-  const [profileError, setProfileError] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
   // Submitting states
   const [savingChurch, setSavingChurch] = useState(false);
-  const [savingProfile, setSavingProfile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
 
@@ -84,13 +74,6 @@ function AdminChurchSettingsPage() {
           location: churchData.location || '',
           contact_email: churchData.contact_email || '',
           contact_phone: churchData.contact_phone || '',
-        });
-
-        // Set admin profile (email from auth)
-        setAdminProfile({
-          email: userInfo.email || '',
-          full_name: userInfo.full_name || '',
-          profile_photo_url: userInfo.profile_photo_url || '',
         });
 
       } catch (err) {
@@ -155,65 +138,6 @@ function AdminChurchSettingsPage() {
       showError(errorMsg);
     } finally {
       setSavingChurch(false);
-    }
-  };
-
-  // Handle profile photo upload
-  const handleProfilePhotoUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    setUploadingProfilePhoto(true);
-    setProfileError('');
-
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `admin-photos/admin-profile-${Date.now()}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('event_images')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('event_images')
-        .getPublicUrl(fileName);
-
-      setAdminProfile(prev => ({ ...prev, profile_photo_url: publicUrl }));
-    } catch (err) {
-      console.error('Profile photo upload error:', err);
-      const errorMsg = getErrorMessage(err, t);
-      setProfileError(errorMsg);
-      showError(errorMsg);
-    } finally {
-      setUploadingProfilePhoto(false);
-    }
-  };
-
-  // Save admin profile
-  const handleProfileSubmit = async (e) => {
-    e.preventDefault();
-    setSavingProfile(true);
-    setProfileError('');
-
-    try {
-      // Update profile in church_users_v2 via API
-      await api.admin.updateAdminProfile({
-        full_name: adminProfile.full_name,
-        profile_photo_url: adminProfile.profile_photo_url
-      });
-      showSuccess(t('profile_updated_success'));
-    } catch (err) {
-      console.error('Error updating profile:', err);
-      const errorMsg = getErrorMessage(err, t);
-      setProfileError(errorMsg);
-      showError(errorMsg);
-    } finally {
-      setSavingProfile(false);
     }
   };
 
@@ -410,103 +334,6 @@ function AdminChurchSettingsPage() {
           >
             <MdSave />
             {savingChurch ? t('saving') : t('save')}
-          </button>
-        </form>
-      </div>
-
-      {/* Admin Profile Section */}
-      <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
-        <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-5 py-3">
-          <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-            <MdPerson />
-            {t('admin_profile') || 'Profil administrateur'}
-          </h2>
-        </div>
-
-        <form onSubmit={handleProfileSubmit} className="p-5 space-y-4">
-          {/* Photo de profil */}
-          <div>
-            <label className="block text-gray-300 text-sm mb-2 flex items-center gap-2">
-              <MdImage className="text-gray-400" />
-              {t('profile_photo')}
-            </label>
-            <div className="flex items-center gap-4">
-              {adminProfile.profile_photo_url ? (
-                <img
-                  src={adminProfile.profile_photo_url}
-                  alt="Profile"
-                  className="w-20 h-20 rounded-full object-cover border-2 border-green-500"
-                />
-              ) : (
-                <div className="w-20 h-20 rounded-full bg-gray-700 border-2 border-green-500 flex items-center justify-center text-gray-400 text-2xl font-bold">
-                  {adminProfile.full_name?.charAt(0)?.toUpperCase() || 'A'}
-                </div>
-              )}
-              <div className="flex-1">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleProfilePhotoUpload}
-                  disabled={uploadingProfilePhoto}
-                  className="block w-full text-sm text-gray-400
-                    file:mr-4 file:py-2 file:px-4
-                    file:rounded-lg file:border-0
-                    file:text-sm file:font-medium
-                    file:bg-green-600 file:text-white
-                    hover:file:bg-green-700
-                    file:cursor-pointer file:transition-colors
-                    disabled:opacity-50"
-                />
-                {uploadingProfilePhoto && <p className="text-xs text-gray-500 mt-1">{t('loading')}...</p>}
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-gray-300 text-sm mb-1 flex items-center gap-2">
-                <MdPerson className="text-gray-400" />
-                {t('full_name')}
-              </label>
-              <input
-                type="text"
-                value={adminProfile.full_name}
-                onChange={(e) => setAdminProfile(prev => ({ ...prev, full_name: e.target.value }))}
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
-                placeholder="Votre nom complet"
-              />
-            </div>
-            <div>
-              <label className="block text-gray-300 text-sm mb-1 flex items-center gap-2">
-                <MdEmail className="text-gray-400" />
-                {t('email')}
-              </label>
-              <input
-                type="email"
-                value={adminProfile.email}
-                disabled
-                className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-gray-400 cursor-not-allowed"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                {t('email_cannot_be_changed')}
-              </p>
-            </div>
-          </div>
-
-          {/* Message d'erreur */}
-          <AlertMessage
-            type="error"
-            message={profileError}
-            onClose={() => setProfileError('')}
-          />
-
-          <button
-            type="submit"
-            disabled={savingProfile}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50"
-          >
-            <MdSave />
-            {savingProfile ? t('saving') : t('update_profile')}
           </button>
         </form>
       </div>
