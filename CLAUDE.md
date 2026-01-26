@@ -2265,3 +2265,47 @@ api.member.getDashboard, getProfile, updateProfile, getEvents, getRoles, getNoti
 - ✅ "Mon Profil" = paramètres personnels de l'admin
 
 ---
+
+### 2026-01-26 - Correction affichage contact_email, contact_phone et champ ville
+
+**Problème identifié:**
+- Dans la page "Paramètres de l'Église", les champs contact_email et contact_phone ne s'affichaient pas
+- Le champ ville (city) était manquant dans le formulaire
+
+**Cause racine:**
+- Le script SQL pour `churches_v2` n'incluait pas les colonnes `contact_email`, `contact_phone` et `city`
+- Les colonnes devaient être ajoutées à la table
+
+**Solution appliquée:**
+
+1. **Script SQL mis à jour** (`server/db/add_church_contact_columns.sql`)
+   - Ajout des colonnes pour `churches_v2`:
+     - `location` (TEXT) - Adresse physique
+     - `city` (VARCHAR 255) - Ville
+     - `contact_email` (VARCHAR 255) - Email de contact
+     - `contact_phone` (VARCHAR 50) - Téléphone de contact
+   - Conservation des colonnes pour `churches` (v1) pour compatibilité
+
+2. **Frontend** (`AdminChurchSettingsPage.jsx`)
+   - Déjà configuré avec tous les champs (city, contact_email, contact_phone)
+   - Icône MdLocationCity pour le champ ville
+
+3. **Backend** (`churchAdminRoutes.js`)
+   - Route PUT `/churches_v2/:churchId/settings` accepte tous les champs
+   - Route GET `/churches_v2/:churchId/settings` retourne toutes les données
+
+**Fichiers modifiés:**
+- `/server/db/add_church_contact_columns.sql`
+
+**Prochaine étape pour l'utilisateur:**
+```bash
+# Exécuter ce script dans Supabase SQL Editor:
+# server/db/add_church_contact_columns.sql
+```
+
+**Résultat:**
+- ✅ Script SQL prêt pour ajouter les colonnes manquantes
+- ✅ Frontend et backend déjà configurés
+- ✅ Après exécution du SQL, tous les champs s'afficheront correctement
+
+---
