@@ -385,12 +385,16 @@ router.get('/churches_v2/:churchId/activity-logs', protect, isAdminChurch, async
 
 // PUT /api/church-admin/profile - Mettre à jour le profil admin
 router.put('/profile', protect, isAdminChurch, async (req, res) => {
-  const { full_name, profile_photo_url } = req.body;
+  const { full_name, profile_photo_url, phone, address, city, date_of_birth } = req.body;
 
   try {
     const updateData = { updated_at: new Date() };
     if (full_name !== undefined) updateData.full_name = full_name;
     if (profile_photo_url !== undefined) updateData.profile_photo_url = profile_photo_url;
+    if (phone !== undefined) updateData.phone = phone;
+    if (address !== undefined) updateData.address = address;
+    if (city !== undefined) updateData.city = city;
+    if (date_of_birth !== undefined) updateData.date_of_birth = date_of_birth;
 
     const { data, error } = await supabaseAdmin
       .from('church_users_v2')
