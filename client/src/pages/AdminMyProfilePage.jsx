@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
-import { supabase } from '../supabaseClient';
 import {
   MdAccountCircle, MdEmail, MdPhone, MdLocationOn,
   MdCake, MdEdit, MdSave, MdClose, MdCameraAlt
@@ -121,21 +120,8 @@ function AdminMyProfilePage() {
       setUploadingPhoto(true);
       setError('');
 
-      const fileExt = file.name.split('.').pop();
-      const fileName = `admin-photos/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('event_images')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('event_images')
-        .getPublicUrl(fileName);
+      // Upload via l'API backend (bypass RLS)
+      const { url: publicUrl } = await api.admin.uploadProfilePhoto(file);
 
       if (editing) {
         setEditForm({ ...editForm, profile_photo_url: publicUrl });

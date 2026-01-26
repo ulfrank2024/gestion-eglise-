@@ -1,10 +1,24 @@
 const express = require('express');
+const multer = require('multer');
 const { supabaseAdmin } = require('../db/supabase');
 const { protect, isAdminChurch, canManageTeam } = require('../middleware/auth');
 const { logActivity, getActivityLogs, MODULES, ACTIONS } = require('../services/activityLogger');
 const { sendEmail, generateAdminInvitationEmail } = require('../services/mailer');
 
 const router = express.Router();
+
+// Configuration multer pour l'upload en mémoire
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'), false);
+    }
+  }
+});
 
 // ============================================
 // Routes pour la gestion de l'équipe d'église
@@ -435,6 +449,43 @@ router.get('/profile', protect, isAdminChurch, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching admin profile:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/church-admin/upload-photo - Upload une photo de profil
+router.post('/upload-photo', protect, isAdminChurch, upload.single('photo'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const file = req.file;
+    const fileExt = file.originalname.split('.').pop();
+    const fileName = `admin-photos/${req.user.id}-${Date.now()}.${fileExt}`;
+
+    // Upload vers Supabase Storage avec supabaseAdmin (bypass RLS)
+    const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+      .from('event_images')
+      .upload(fileName, file.buffer, {
+        contentType: file.mimetype,
+        cacheControl: '3600',
+        upsert: true
+      });
+
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      throw uploadError;
+    }
+
+    // Récupérer l'URL publique
+    const { data: { publicUrl } } = supabaseAdmin.storage
+      .from('event_images')
+      .getPublicUrl(fileName);
+
+    res.status(200).json({ url: publicUrl });
+  } catch (error) {
+    console.error('Error uploading photo:', error);
     res.status(500).json({ error: error.message });
   }
 });

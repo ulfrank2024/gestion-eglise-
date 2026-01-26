@@ -228,6 +228,14 @@ export const api = {
       const { data } = await apiClient.put('/church-admin/profile', profileData);
       return data;
     },
+    uploadProfilePhoto: async (file) => {
+      const formData = new FormData();
+      formData.append('photo', file);
+      const { data } = await apiClient.post('/church-admin/upload-photo', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      return data;
+    },
 
     // --- Members ---
     getMembers: async (params = {}) => {
