@@ -2230,5 +2230,4 @@ api.member.getDashboard, getProfile, updateProfile, getEvents, getRoles, getNoti
 
 **Prochaine étape:**
 - Exécuter le script SQL `/server/db/add_city_columns.sql` dans Supabase
-
 ---

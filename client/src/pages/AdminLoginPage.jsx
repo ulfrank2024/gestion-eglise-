@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../supabaseClient';
+import { api } from '../api/api';
 import logo from '../assets/logo_eden.png';
 import AlertMessage from '../components/AlertMessage';
 import { getErrorMessage } from '../utils/errorHandler';
@@ -30,8 +31,25 @@ function AdminLoginPage() {
       });
 
       if (error) throw error;
-      localStorage.setItem('supabase.auth.token', JSON.stringify(data.session));
-      navigate('/admin/dashboard');
+
+      // Stocker le token
+      localStorage.setItem('supabase.auth.token', JSON.stringify({
+        access_token: data.session.access_token,
+        user: data.user
+      }));
+
+      // Vérifier le rôle de l'utilisateur et rediriger vers le bon dashboard
+      const userInfo = await api.auth.me();
+
+      if (userInfo.church_role === 'super_admin') {
+        navigate('/super-admin/dashboard');
+      } else if (userInfo.church_role === 'church_admin') {
+        navigate('/admin/dashboard');
+      } else if (userInfo.church_role === 'member') {
+        navigate('/member/dashboard');
+      } else {
+        setError(t('forbidden_access') || 'Accès non autorisé');
+      }
     } catch (err) {
       setError(getErrorMessage(err, t));
       console.error('Login error:', err);
