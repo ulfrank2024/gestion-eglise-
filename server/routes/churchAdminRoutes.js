@@ -189,13 +189,24 @@ router.put('/churches_v2/:churchId/users/:userId', protect, isAdminChurch, canMa
   // Empêcher de modifier l'admin principal
   const { data: targetUser } = await supabaseAdmin
     .from('church_users_v2')
-    .select('is_main_admin, full_name')
+    .select('is_main_admin, full_name, user_id')
     .eq('church_id', churchId)
     .eq('user_id', userId)
     .single();
 
   if (targetUser?.is_main_admin) {
     return res.status(403).json({ error: 'Cannot modify the main administrator.' });
+  }
+
+  // Récupérer l'email de l'utilisateur comme fallback pour le nom
+  let targetUserName = targetUser?.full_name;
+  if (!targetUserName && targetUser?.user_id) {
+    try {
+      const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(targetUser.user_id);
+      targetUserName = authUser?.user?.email || 'Unknown';
+    } catch (e) {
+      targetUserName = 'Unknown';
+    }
   }
 
   try {
@@ -233,7 +244,7 @@ router.put('/churches_v2/:churchId/users/:userId', protect, isAdminChurch, canMa
       action: ACTIONS.UPDATE,
       entityType: 'team_member',
       entityId: data[0].id,
-      entityName: targetUser?.full_name || 'Unknown',
+      entityName: targetUserName || 'Unknown',
       details: { permissions, role },
       req
     });
@@ -256,13 +267,24 @@ router.delete('/churches_v2/:churchId/users/:userId', protect, isAdminChurch, ca
   // Empêcher de supprimer l'admin principal
   const { data: targetUser } = await supabaseAdmin
     .from('church_users_v2')
-    .select('is_main_admin, full_name')
+    .select('is_main_admin, full_name, user_id')
     .eq('church_id', churchId)
     .eq('user_id', userId)
     .single();
 
   if (targetUser?.is_main_admin) {
     return res.status(403).json({ error: 'Cannot remove the main administrator.' });
+  }
+
+  // Récupérer l'email de l'utilisateur comme fallback pour le nom
+  let targetUserName = targetUser?.full_name;
+  if (!targetUserName && targetUser?.user_id) {
+    try {
+      const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(targetUser.user_id);
+      targetUserName = authUser?.user?.email || 'Unknown';
+    } catch (e) {
+      targetUserName = 'Unknown';
+    }
   }
 
   try {
@@ -283,7 +305,7 @@ router.delete('/churches_v2/:churchId/users/:userId', protect, isAdminChurch, ca
       module: MODULES.TEAM,
       action: ACTIONS.DELETE,
       entityType: 'team_member',
-      entityName: targetUser?.full_name || 'Unknown',
+      entityName: targetUserName || 'Unknown',
       req
     });
 
