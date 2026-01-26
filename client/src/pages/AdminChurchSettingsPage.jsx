@@ -58,6 +58,13 @@ function AdminChurchSettingsPage() {
         const userInfo = await api.auth.me();
         const currentChurchId = userInfo.church_id;
 
+        // Vérifier si l'utilisateur est l'admin principal
+        if (!userInfo.is_main_admin) {
+          // Rediriger vers le dashboard si pas admin principal
+          navigate('/admin/dashboard');
+          return;
+        }
+
         if (!currentChurchId) {
           setChurchError(t('error_loading_user_data'));
           setLoading(false);

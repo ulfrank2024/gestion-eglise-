@@ -649,22 +649,23 @@ function AdminLayout() {
                 </li>
               </>
             )}
-            <li style={{
-              marginBottom: '5px',
-              marginTop: isMainAdmin ? '5px' : '20px',
-              borderTop: isMainAdmin ? 'none' : '1px solid #374151',
-              paddingTop: isMainAdmin ? '0' : '15px'
-            }}>
-              <NavLink
-                to="/admin/church-settings"
-                onMouseEnter={() => setHoveredItem('church-settings')}
-                onMouseLeave={() => setHoveredItem(null)}
-                style={({ isActive }) => getLinkStyle({ isActive, itemName: 'church-settings' })}
-              >
-                <MdSettings style={iconStyle} />
-                {t('church_settings')}
-              </NavLink>
-            </li>
+            {/* Paramètres de l'église - Visible uniquement pour l'admin principal */}
+            {isMainAdmin && (
+              <li style={{
+                marginBottom: '5px',
+                marginTop: '5px'
+              }}>
+                <NavLink
+                  to="/admin/church-settings"
+                  onMouseEnter={() => setHoveredItem('church-settings')}
+                  onMouseLeave={() => setHoveredItem(null)}
+                  style={({ isActive }) => getLinkStyle({ isActive, itemName: 'church-settings' })}
+                >
+                  <MdSettings style={iconStyle} />
+                  {t('church_settings')}
+                </NavLink>
+              </li>
+            )}
           </ul>
         </div>
 
