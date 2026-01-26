@@ -357,13 +357,28 @@ router.get('/dashboard', async (req, res) => {
       .eq('id', church_id)
       .single();
 
+    // Compter les annonces publiées
+    const { count: announcementsCount } = await supabaseAdmin
+      .from('announcements_v2')
+      .select('*', { count: 'exact', head: true })
+      .eq('church_id', church_id)
+      .eq('is_published', true)
+      .or(`expires_at.is.null,expires_at.gt.${now}`);
+
+    const formattedRoles = roles?.map(r => r.church_roles_v2) || [];
+
     res.json({
       member,
       church,
-      upcomingEvents: upcomingEvents || [],
-      unreadNotifications: unreadNotifications || 0,
-      latestAnnouncements: latestAnnouncements || [],
-      roles: roles?.map(r => r.church_roles_v2) || []
+      // Arrays pour affichage
+      upcoming_events: upcomingEvents || [],
+      recent_announcements: latestAnnouncements || [],
+      roles: formattedRoles,
+      // Counts pour les cartes statistiques
+      upcoming_events_count: upcomingEvents?.length || 0,
+      roles_count: formattedRoles.length,
+      unread_notifications: unreadNotifications || 0,
+      announcements_count: announcementsCount || 0
     });
   } catch (err) {
     console.error('Error in GET /member/dashboard:', err);
