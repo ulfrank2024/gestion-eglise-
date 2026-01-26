@@ -5,7 +5,8 @@ import defaultLogo from '../assets/logo_eden.png';
 import {
   MdEvent, MdLeaderboard, MdExpandMore, MdExpandLess, MdSettings,
   MdGroupAdd, MdHistory, MdLogout, MdDashboard, MdPeople,
-  MdPersonAdd, MdBadge, MdAnnouncement, MdMail
+  MdPersonAdd, MdBadge, MdAnnouncement, MdMail, MdAccountCircle,
+  MdEventAvailable
 } from 'react-icons/md';
 import { api } from '../api/api';
 import { supabase } from '../supabaseClient';
@@ -36,6 +37,7 @@ function AdminLayout() {
     events: true,
     members: true,
     reportsAndStats: false,
+    mySpace: true,
   });
 
   useEffect(() => {
@@ -577,11 +579,53 @@ function AdminLayout() {
               </>
             )}
 
+            {/* Section Mon Espace - Visible pour tous les admins */}
+            <li style={{ marginTop: '20px', borderTop: '1px solid #374151', paddingTop: '15px', marginBottom: '10px' }}>
+              <div
+                onClick={() => toggleSection('mySpace')}
+                style={{ ...getLinkStyle({ itemName: 'mySpace', isParent: true }), cursor: 'pointer' }}
+              >
+                <MdAccountCircle style={iconStyle} />
+                {t('my_space') || 'Mon Espace'}
+                {openSections.mySpace ? (
+                  <MdExpandLess style={toggleIconStyle} />
+                ) : (
+                  <MdExpandMore style={toggleIconStyle} />
+                )}
+              </div>
+              {openSections.mySpace && (
+                <ul style={{ listStyle: 'none', paddingLeft: '20px', marginTop: '5px' }}>
+                  <li style={{ marginBottom: '5px' }}>
+                    <NavLink
+                      to="/admin/my-profile"
+                      onMouseEnter={() => setHoveredItem('my-profile')}
+                      onMouseLeave={() => setHoveredItem(null)}
+                      style={({ isActive }) => getLinkStyle({ isActive, itemName: 'my-profile' })}
+                    >
+                      <MdAccountCircle style={iconStyle} />
+                      {t('my_profile') || 'Mon Profil'}
+                    </NavLink>
+                  </li>
+                  <li style={{ marginBottom: '5px' }}>
+                    <NavLink
+                      to="/admin/my-events"
+                      onMouseEnter={() => setHoveredItem('my-events')}
+                      onMouseLeave={() => setHoveredItem(null)}
+                      style={({ isActive }) => getLinkStyle({ isActive, itemName: 'my-events' })}
+                    >
+                      <MdEventAvailable style={iconStyle} />
+                      {t('my_events') || 'Mes Événements'}
+                    </NavLink>
+                  </li>
+                </ul>
+              )}
+            </li>
+
             {/* Section commune : Paramètres */}
             {/* Membres de l'équipe - Visible uniquement pour l'admin principal */}
             {isMainAdmin && (
               <>
-                <li style={{ marginTop: '20px', borderTop: '1px solid #374151', paddingTop: '15px' }}>
+                <li style={{ marginTop: '10px', marginBottom: '5px' }}>
                   <NavLink
                     to="/admin/church-users"
                     onMouseEnter={() => setHoveredItem('church-users')}
