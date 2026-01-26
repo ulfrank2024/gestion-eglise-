@@ -187,7 +187,14 @@ router.put('/churches_v2/:churchId/users/:userId', protect, isAdminChurch, canMa
   try {
     const updateData = { updated_at: new Date() };
     if (role) updateData.role = role;
-    if (permissions) updateData.permissions = permissions;
+    if (permissions) {
+      updateData.permissions = permissions;
+      // Si des permissions sont données, changer automatiquement le rôle en church_admin
+      // pour permettre l'accès au dashboard admin
+      if (permissions.length > 0 && !role) {
+        updateData.role = 'church_admin';
+      }
+    }
     if (full_name) updateData.full_name = full_name;
 
     const { data, error } = await supabaseAdmin
