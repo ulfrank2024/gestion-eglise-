@@ -2231,3 +2231,37 @@ api.member.getDashboard, getProfile, updateProfile, getEvents, getRoles, getNoti
 **Prochaine étape:**
 - Exécuter le script SQL `/server/db/add_city_columns.sql` dans Supabase
 ---
+
+### 2026-01-26 - Correction doublon profil admin + Section "Mon Espace"
+
+**Problème identifié:**
+- La page "Paramètres de l'Église" (AdminChurchSettingsPage) contenait une section "Profil Administrateur"
+- La nouvelle page "Mon Profil" (AdminMyProfilePage) dans "Mon Espace" gérait également le profil admin
+- Cela créait un doublon de données et une confusion utilisateur
+
+**Solution appliquée:**
+
+1. **Suppression de la section profil de AdminChurchSettingsPage**
+   - Suppression de la section "Admin Profile" (formulaire photo, nom, email)
+   - Suppression des fonctions inutilisées: `handleProfilePhotoUpload`, `handleProfileSubmit`
+   - Suppression du code `setAdminProfile` dans useEffect
+   - Nettoyage des imports (MdPerson supprimé)
+
+2. **Structure actuelle de AdminChurchSettingsPage:**
+   - Section 1: Informations de l'église (logo, nom, subdomain, localisation, email, téléphone)
+   - Section 2: Changer le mot de passe
+
+3. **Le profil admin est maintenant géré dans:**
+   - `/admin/my-profile` → AdminMyProfilePage.jsx
+   - Accessible via "Mon Espace" > "Mon Profil" dans le sidebar
+
+**Fichiers modifiés:**
+- `/client/src/pages/AdminChurchSettingsPage.jsx` (174 lignes supprimées)
+
+**Résultat:**
+- ✅ Plus de doublon de données entre les pages
+- ✅ Séparation claire des responsabilités
+- ✅ "Paramètres de l'Église" = paramètres de l'organisation
+- ✅ "Mon Profil" = paramètres personnels de l'admin
+
+---
