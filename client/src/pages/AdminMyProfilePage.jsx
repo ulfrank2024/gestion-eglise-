@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
 import {
   MdAccountCircle, MdEmail, MdPhone, MdLocationOn,
-  MdCake, MdEdit, MdSave, MdClose, MdCameraAlt
+  MdCake, MdEdit, MdSave, MdClose, MdCameraAlt, MdPerson
 } from 'react-icons/md';
 
 function AdminMyProfilePage() {
@@ -310,6 +310,13 @@ function AdminMyProfilePage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex items-center gap-3">
+                <MdPerson className="text-gray-400 text-xl" />
+                <div>
+                  <p className="text-gray-500 text-sm">{t('full_name') || 'Nom complet'}</p>
+                  <p className="text-gray-100">{profile.full_name || '-'}</p>
+                </div>
+              </div>
               <div className="flex items-center gap-3">
                 <MdEmail className="text-gray-400 text-xl" />
                 <div>
