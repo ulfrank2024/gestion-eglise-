@@ -108,30 +108,35 @@ router.put('/profile', async (req, res) => {
  */
 router.get('/events', async (req, res) => {
   try {
-    const { church_id } = req.user || {};
+    const { church_id, member_id } = req.user || {};
+
+    console.log('=== GET /member/events ===');
+    console.log('church_id:', church_id);
+    console.log('member_id:', member_id);
 
     if (!church_id) {
       // User is not associated with a church, return empty array
       return res.json([]);
     }
 
+    // Récupérer les événements non archivés de l'église
     const { data: events, error } = await supabaseAdmin
       .from('events_v2')
       .select('*')
       .eq('church_id', church_id)
       .eq('is_archived', false)
-      .gte('event_end_date', new Date().toISOString())
       .order('event_start_date', { ascending: true });
 
     if (error) {
       console.error('Error fetching events:', error);
-      return res.status(500).json({ error: 'Erreur lors de la récupération des événements' });
+      return res.status(500).json({ error: 'Erreur lors de la récupération des événements', details: error.message });
     }
 
-    res.json(events);
+    console.log('Events found:', events?.length || 0);
+    res.json(events || []);
   } catch (err) {
     console.error('Error in GET /member/events:', err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ error: 'Erreur serveur', details: err.message });
   }
 });
 
