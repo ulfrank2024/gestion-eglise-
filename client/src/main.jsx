@@ -58,6 +58,7 @@ import SuperAdminEventsPage from './pages/SuperAdminEventsPage';
 import SuperAdminEventsByChurchPage from './pages/SuperAdminEventsByChurchPage';
 import SuperAdminStatisticsPage from './pages/SuperAdminStatisticsPage';
 import SuperAdminChurchDetailPage from './pages/SuperAdminChurchDetailPage';
+import SuperAdminChurchesPage from './pages/SuperAdminChurchesPage';
 import SuperAdminMembersPage from './pages/SuperAdminMembersPage';
 import SuperAdminMembersByChurchPage from './pages/SuperAdminMembersByChurchPage';
 import ChurchRegistrationPage from './pages/ChurchRegistrationPage';
@@ -115,13 +116,18 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Route path="/super-admin" element={<SuperAdminLayout />}>
             <Route index element={<SuperAdminDashboardPage />} />
             <Route path="dashboard" element={<SuperAdminDashboardPage />} />
+            {/* Églises */}
+            <Route path="churches" element={<SuperAdminChurchesPage />} />
+            <Route path="churches/:churchId" element={<SuperAdminChurchDetailPage />} />
+            <Route path="churches/:churchId/members" element={<SuperAdminMembersByChurchPage />} />
+            {/* Événements */}
             <Route path="events" element={<SuperAdminEventsPage />} />
             <Route path="events/:churchId" element={<SuperAdminEventsByChurchPage />} />
             <Route path="events/:churchId/details/:id" element={<AdminEventDetailPage />} />
-            <Route path="statistics" element={<SuperAdminStatisticsPage />} />
-            <Route path="churches/:churchId" element={<SuperAdminChurchDetailPage />} />
+            {/* Membres */}
             <Route path="members" element={<SuperAdminMembersPage />} />
-            <Route path="churches/:churchId/members" element={<SuperAdminMembersByChurchPage />} />
+            {/* Statistiques */}
+            <Route path="statistics" element={<SuperAdminStatisticsPage />} />
           </Route>
 
           {/* Member Login - No Layout */}
