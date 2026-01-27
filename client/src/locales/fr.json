@@ -395,6 +395,7 @@
       "total_attendees": "Participants",
       "total_checkins": "Check-ins",
       "church_admins": "Administrateurs",
+      "church_admin": "Admin de l'église",
       "recent_events": "Événements Récents",
       "no_admins": "Aucun administrateur trouvé.",
       "no_events": "Aucun événement pour cette église."

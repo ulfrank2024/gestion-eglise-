@@ -399,6 +399,7 @@
       "total_attendees": "Attendees",
       "total_checkins": "Check-ins",
       "church_admins": "Administrators",
+      "church_admin": "Church Admin",
       "recent_events": "Recent Events",
       "no_admins": "No administrators found.",
       "no_events": "No events for this church."

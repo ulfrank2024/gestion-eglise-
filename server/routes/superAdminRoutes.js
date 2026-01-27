@@ -350,24 +350,38 @@ router.get('/statistics', protect, isSuperAdmin, async (req, res) => {
 // ROUTES SUPERVISION DES MEMBRES
 // ============================================
 
-// GET /api/super-admin/members/statistics - Statistiques globales des membres
+// GET /api/super-admin/members/statistics - Statistiques globales des membres (incluant admins)
 router.get('/members/statistics', protect, isSuperAdmin, async (req, res) => {
   try {
-    // Total membres sur la plateforme
-    const { count: totalMembers, error: membersError } = await supabaseAdmin
+    // Total membres dans members_v2
+    const { count: regularMembers, error: membersError } = await supabaseAdmin
       .from('members_v2')
       .select('*', { count: 'exact', head: true });
 
     if (membersError) throw membersError;
 
-    // Membres actifs (non archivés)
-    const { count: activeMembers, error: activeError } = await supabaseAdmin
+    // Total admins d'églises dans church_users_v2
+    const { count: churchAdmins, error: adminsError } = await supabaseAdmin
+      .from('church_users_v2')
+      .select('*', { count: 'exact', head: true })
+      .eq('role', 'church_admin')
+      .not('church_id', 'is', null); // Exclure les super admins
+
+    if (adminsError) throw adminsError;
+
+    // Total = membres + admins
+    const totalMembers = (regularMembers || 0) + (churchAdmins || 0);
+
+    // Membres actifs (membres_v2 actifs + tous les admins)
+    const { count: activeMembersCount, error: activeError } = await supabaseAdmin
       .from('members_v2')
       .select('*', { count: 'exact', head: true })
       .eq('is_archived', false)
       .eq('is_active', true);
 
     if (activeError) throw activeError;
+
+    const activeMembers = (activeMembersCount || 0) + (churchAdmins || 0);
 
     // Total rôles créés
     const { count: totalRoles, error: rolesError } = await supabaseAdmin
@@ -385,55 +399,72 @@ router.get('/members/statistics', protect, isSuperAdmin, async (req, res) => {
 
     if (announcementsError) throw announcementsError;
 
-    // Top églises par nombre de membres
-    const { data: churchesWithMembers, error: topError } = await supabaseAdmin
+    // Top églises par nombre de membres (membres_v2 + admins)
+    const { data: churchesData, error: churchesError } = await supabaseAdmin
       .from('churches_v2')
       .select(`
         id,
         name,
         logo_url,
-        members_v2(count)
+        location,
+        members_v2(count),
+        church_users_v2!church_users_v2_church_id_fkey(count)
       `)
       .order('created_at', { ascending: false });
 
-    if (topError) throw topError;
+    if (churchesError) throw churchesError;
 
-    const topChurches = churchesWithMembers
+    const topChurches = churchesData
       .map(church => ({
         id: church.id,
         name: church.name,
         logo_url: church.logo_url,
-        member_count: church.members_v2[0]?.count || 0
+        location: church.location,
+        member_count: (church.members_v2[0]?.count || 0) + (church.church_users_v2[0]?.count || 0)
       }))
       .sort((a, b) => b.member_count - a.member_count)
       .slice(0, 5);
 
-    // Membres récents (derniers inscrits)
+    // Membres récents (membres_v2)
     const { data: recentMembers, error: recentError } = await supabaseAdmin
       .from('members_v2')
       .select(`
         id,
         full_name,
         email,
+        phone,
+        address,
         profile_photo_url,
-        created_at,
+        joined_at,
         churches_v2 (
           id,
           name
         )
       `)
-      .order('created_at', { ascending: false })
+      .order('joined_at', { ascending: false })
       .limit(10);
 
     if (recentError) throw recentError;
 
+    // Formater les membres récents
+    const formattedRecentMembers = (recentMembers || []).map(m => ({
+      id: m.id,
+      full_name: m.full_name,
+      email: m.email,
+      phone: m.phone,
+      address: m.address,
+      profile_photo_url: m.profile_photo_url,
+      joined_at: m.joined_at,
+      church_name: m.churches_v2?.name || 'N/A'
+    }));
+
     res.json({
-      total_members: totalMembers || 0,
-      active_members: activeMembers || 0,
+      total_members: totalMembers,
+      active_members: activeMembers,
       total_roles: totalRoles || 0,
       total_announcements: totalAnnouncements || 0,
       top_churches: topChurches,
-      recent_members: recentMembers || []
+      recent_members: formattedRecentMembers
     });
 
   } catch (error) {
@@ -442,13 +473,14 @@ router.get('/members/statistics', protect, isSuperAdmin, async (req, res) => {
   }
 });
 
-// GET /api/super-admin/churches_v2/:churchId/members - Liste des membres d'une église
+// GET /api/super-admin/churches_v2/:churchId/members - Liste des membres d'une église (incluant les admins)
 router.get('/churches_v2/:churchId/members', protect, isSuperAdmin, async (req, res) => {
   const { churchId } = req.params;
   const { archived, search, limit = 50, offset = 0 } = req.query;
 
   try {
-    let query = supabaseAdmin
+    // 1. Récupérer les membres de members_v2
+    let membersQuery = supabaseAdmin
       .from('members_v2')
       .select(`
         *,
@@ -468,33 +500,100 @@ router.get('/churches_v2/:churchId/members', protect, isSuperAdmin, async (req, 
 
     // Filtre par archivé
     if (archived === 'true') {
-      query = query.eq('is_archived', true);
+      membersQuery = membersQuery.eq('is_archived', true);
     } else if (archived === 'false' || !archived) {
-      query = query.eq('is_archived', false);
+      membersQuery = membersQuery.eq('is_archived', false);
     }
 
     // Recherche par nom ou email
     if (search) {
-      query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`);
+      membersQuery = membersQuery.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`);
+    }
+
+    const { data: regularMembers, error: membersError } = await membersQuery;
+    if (membersError) throw membersError;
+
+    // 2. Récupérer les admins de church_users_v2 (seulement church_admin)
+    const { data: churchAdmins, error: adminsError } = await supabaseAdmin
+      .from('church_users_v2')
+      .select('user_id, role, created_at')
+      .eq('church_id', churchId)
+      .eq('role', 'church_admin');
+
+    if (adminsError) throw adminsError;
+
+    // 3. Récupérer les détails des admins depuis auth.users
+    let adminMembers = [];
+    if (churchAdmins && churchAdmins.length > 0) {
+      const { data: { users }, error: authError } = await supabaseAdmin.auth.admin.listUsers();
+      if (authError) throw authError;
+
+      adminMembers = churchAdmins.map(admin => {
+        const authUser = users.find(u => u.id === admin.user_id);
+        // Vérifier si cet admin n'est pas déjà dans members_v2
+        const isAlreadyMember = regularMembers?.some(m => m.email === authUser?.email);
+        if (isAlreadyMember) return null;
+
+        return {
+          id: admin.user_id,
+          church_id: churchId,
+          full_name: authUser?.user_metadata?.full_name || authUser?.email?.split('@')[0] || 'Admin',
+          email: authUser?.email || 'N/A',
+          phone: authUser?.user_metadata?.phone || null,
+          address: authUser?.user_metadata?.address || null,
+          profile_photo_url: authUser?.user_metadata?.avatar_url || null,
+          is_active: true,
+          is_archived: false,
+          joined_at: admin.created_at,
+          created_at: admin.created_at,
+          is_admin: true, // Flag pour identifier les admins
+          roles: [{
+            name_fr: 'Administrateur',
+            name_en: 'Administrator',
+            color: '#dc2626' // Rouge pour les admins
+          }]
+        };
+      }).filter(Boolean); // Retirer les null (admins déjà dans members_v2)
+    }
+
+    // 4. Fusionner les membres et les admins
+    let allMembers = [...adminMembers, ...(regularMembers || [])];
+
+    // Formater les rôles des membres réguliers
+    allMembers = allMembers.map(member => {
+      if (member.is_admin) {
+        return member;
+      }
+      // Transformer member_roles_v2 en format simplifié
+      const roles = member.member_roles_v2?.map(mr => ({
+        name_fr: mr.church_roles_v2?.name_fr,
+        name_en: mr.church_roles_v2?.name_en,
+        color: mr.church_roles_v2?.color
+      })).filter(r => r.name_fr) || [];
+
+      return {
+        ...member,
+        roles,
+        member_roles_v2: undefined // Retirer le champ original
+      };
+    });
+
+    // Appliquer la recherche aux admins aussi
+    if (search) {
+      const searchLower = search.toLowerCase();
+      allMembers = allMembers.filter(m =>
+        m.full_name?.toLowerCase().includes(searchLower) ||
+        m.email?.toLowerCase().includes(searchLower)
+      );
     }
 
     // Pagination
-    query = query.range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
-
-    const { data: members, error } = await query;
-
-    if (error) throw error;
-
-    // Compter le total
-    const { count: totalCount } = await supabaseAdmin
-      .from('members_v2')
-      .select('*', { count: 'exact', head: true })
-      .eq('church_id', churchId)
-      .eq('is_archived', archived === 'true');
+    const total = allMembers.length;
+    const paginatedMembers = allMembers.slice(parseInt(offset), parseInt(offset) + parseInt(limit));
 
     res.json({
-      members: members || [],
-      total: totalCount || 0,
+      members: paginatedMembers,
+      total: total,
       limit: parseInt(limit),
       offset: parseInt(offset)
     });
@@ -505,36 +604,57 @@ router.get('/churches_v2/:churchId/members', protect, isSuperAdmin, async (req, 
   }
 });
 
-// GET /api/super-admin/churches_v2/:churchId/members/statistics - Statistiques membres d'une église
+// GET /api/super-admin/churches_v2/:churchId/members/statistics - Statistiques membres d'une église (incluant admins)
 router.get('/churches_v2/:churchId/members/statistics', protect, isSuperAdmin, async (req, res) => {
   const { churchId } = req.params;
 
   try {
-    // Total membres
-    const { count: totalMembers } = await supabaseAdmin
+    // Total membres dans members_v2
+    const { count: regularMembers } = await supabaseAdmin
       .from('members_v2')
       .select('*', { count: 'exact', head: true })
       .eq('church_id', churchId)
       .eq('is_archived', false);
 
-    // Membres actifs
-    const { count: activeMembers } = await supabaseAdmin
+    // Total admins dans church_users_v2
+    const { count: churchAdmins } = await supabaseAdmin
+      .from('church_users_v2')
+      .select('*', { count: 'exact', head: true })
+      .eq('church_id', churchId)
+      .eq('role', 'church_admin');
+
+    // Total = membres + admins
+    const totalMembers = (regularMembers || 0) + (churchAdmins || 0);
+
+    // Membres actifs (membres_v2 actifs + tous les admins)
+    const { count: activeMembersCount } = await supabaseAdmin
       .from('members_v2')
       .select('*', { count: 'exact', head: true })
       .eq('church_id', churchId)
       .eq('is_archived', false)
       .eq('is_active', true);
 
-    // Nouveaux ce mois
+    const activeMembers = (activeMembersCount || 0) + (churchAdmins || 0);
+
+    // Nouveaux ce mois (membres_v2 + admins créés ce mois)
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
 
-    const { count: newThisMonth } = await supabaseAdmin
+    const { count: newMembersThisMonth } = await supabaseAdmin
       .from('members_v2')
       .select('*', { count: 'exact', head: true })
       .eq('church_id', churchId)
       .gte('created_at', startOfMonth.toISOString());
+
+    const { count: newAdminsThisMonth } = await supabaseAdmin
+      .from('church_users_v2')
+      .select('*', { count: 'exact', head: true })
+      .eq('church_id', churchId)
+      .eq('role', 'church_admin')
+      .gte('created_at', startOfMonth.toISOString());
+
+    const newThisMonth = (newMembersThisMonth || 0) + (newAdminsThisMonth || 0);
 
     // Total rôles
     const { count: totalRoles } = await supabaseAdmin
@@ -551,9 +671,9 @@ router.get('/churches_v2/:churchId/members/statistics', protect, isSuperAdmin, a
       .eq('is_published', true);
 
     res.json({
-      total_members: totalMembers || 0,
-      active_members: activeMembers || 0,
-      new_this_month: newThisMonth || 0,
+      total_members: totalMembers,
+      active_members: activeMembers,
+      new_this_month: newThisMonth,
       total_roles: totalRoles || 0,
       total_announcements: totalAnnouncements || 0
     });

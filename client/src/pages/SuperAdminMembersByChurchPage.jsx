@@ -4,7 +4,8 @@ import { useParams, Link } from 'react-router-dom';
 import { api } from '../api/api';
 import {
   MdPeople, MdArrowBack, MdBadge, MdAnnouncement,
-  MdTrendingUp, MdPersonAdd, MdSearch, MdChurch
+  MdTrendingUp, MdPersonAdd, MdSearch, MdChurch,
+  MdPhone, MdLocationOn, MdEmail
 } from 'react-icons/md';
 import AlertMessage from '../components/AlertMessage';
 import { getErrorMessage } from '../utils/errorHandler';
@@ -33,11 +34,11 @@ function SuperAdminMembersByChurchPage() {
       try {
         setError('');
 
-        // R\u00e9cup\u00e9rer les d\u00e9tails de l'\u00e9glise
+        // Recuperer les details de l'eglise
         const churchData = await api.superAdmin.getChurch(churchId);
         setChurch(churchData);
 
-        // R\u00e9cup\u00e9rer les statistiques des membres
+        // Recuperer les statistiques des membres
         const statsData = await api.superAdmin.getChurchMembersStatistics(churchId);
         setStats({
           totalMembers: statsData.total_members || 0,
@@ -47,7 +48,7 @@ function SuperAdminMembersByChurchPage() {
           totalAnnouncements: statsData.total_announcements || 0
         });
 
-        // R\u00e9cup\u00e9rer la liste des membres
+        // Recuperer la liste des membres
         const membersData = await api.superAdmin.getChurchMembers(churchId);
         const membersArray = Array.isArray(membersData?.members) ? membersData.members : [];
         setMembers(membersArray);
@@ -118,7 +119,7 @@ function SuperAdminMembersByChurchPage() {
           )}
           <div>
             <h1 className="text-2xl font-bold text-gray-100">{church?.name}</h1>
-            <p className="text-gray-400">{t('super_admin_members.church_members') || 'Membres de l\'\u00e9glise'}</p>
+            <p className="text-gray-400">{t('super_admin_members.church_members') || "Membres de l'eglise"}</p>
           </div>
         </div>
       </div>
@@ -168,7 +169,7 @@ function SuperAdminMembersByChurchPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-white">{stats.totalRoles}</p>
-              <p className="text-xs text-gray-400">{t('roles') || 'R\u00f4les'}</p>
+              <p className="text-xs text-gray-400">{t('roles') || 'Roles'}</p>
             </div>
           </div>
         </div>
@@ -239,7 +240,7 @@ function SuperAdminMembersByChurchPage() {
             <MdPeople className="text-5xl text-gray-600 mx-auto mb-3" />
             <p className="text-gray-400">
               {searchTerm || filter !== 'all'
-                ? (t('no_members_match') || 'Aucun membre ne correspond \u00e0 votre recherche')
+                ? (t('no_members_match') || 'Aucun membre ne correspond a votre recherche')
                 : (t('no_members_yet') || 'Aucun membre pour le moment')}
             </p>
           </div>
@@ -252,13 +253,25 @@ function SuperAdminMembersByChurchPage() {
                     {t('member') || 'Membre'}
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">
-                    {t('email') || 'Email'}
+                    <span className="flex items-center gap-1">
+                      <MdEmail className="text-indigo-400" />
+                      {t('email') || 'Email'}
+                    </span>
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">
-                    {t('phone') || 'T\u00e9l\u00e9phone'}
+                    <span className="flex items-center gap-1">
+                      <MdPhone className="text-green-400" />
+                      {t('phone') || 'Telephone'}
+                    </span>
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">
-                    {t('roles') || 'R\u00f4les'}
+                    <span className="flex items-center gap-1">
+                      <MdLocationOn className="text-amber-400" />
+                      {t('address') || 'Localisation'}
+                    </span>
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">
+                    {t('roles') || 'Roles'}
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">
                     {t('status') || 'Statut'}
@@ -280,15 +293,23 @@ function SuperAdminMembersByChurchPage() {
                             className="w-10 h-10 rounded-full object-cover"
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-medium">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-medium ${member.is_admin ? 'bg-red-600' : 'bg-indigo-600'}`}>
                             {member.full_name?.charAt(0)?.toUpperCase() || '?'}
                           </div>
                         )}
-                        <span className="text-gray-100 font-medium">{member.full_name}</span>
+                        <div>
+                          <span className="text-gray-100 font-medium block">{member.full_name}</span>
+                          {member.is_admin && (
+                            <span className="text-xs text-red-400">{t('church_admin') || "Admin de l'eglise"}</span>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-gray-300">{member.email}</td>
                     <td className="px-6 py-4 text-gray-300">{member.phone || '-'}</td>
+                    <td className="px-6 py-4 text-gray-300 max-w-xs truncate" title={member.address || ''}>
+                      {member.address || '-'}
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-1">
                         {member.roles && member.roles.length > 0 ? (
