@@ -145,10 +145,16 @@ function AdminLayout() {
     return permissions.includes(module);
   };
 
-  // Changer de module et sauvegarder dans localStorage
+  // Changer de module et sauvegarder dans localStorage + rediriger vers le dashboard du module
   const handleModuleChange = (module) => {
     setActiveModule(module);
     localStorage.setItem('adminActiveModule', module);
+    // Rediriger vers le tableau de bord du module sélectionné
+    if (module === 'events') {
+      navigate('/admin/dashboard');
+    } else if (module === 'members') {
+      navigate('/admin/members-dashboard');
+    }
   };
 
   const handleLogout = async () => {
