@@ -40,18 +40,20 @@ function AdminDashboardPage() {
         setChurchId(currentChurchId);
 
         const events = await api.admin.listEvents();
-        setEventsData(events);
+        // S'assurer que events est un tableau
+        const eventsArray = Array.isArray(events) ? events : [];
+        setEventsData(eventsArray);
 
-        setTotalEvents(events.length);
-        
+        setTotalEvents(eventsArray.length);
+
         // Calculer les totaux
-        const attendeesCount = events.reduce((sum, event) => sum + (event.attendeeCount || 0), 0);
+        const attendeesCount = eventsArray.reduce((sum, event) => sum + (event.attendeeCount || 0), 0);
         setTotalAttendees(attendeesCount);
 
-        const checkInsCount = events.reduce((sum, event) => sum + (event.checkinCount || 0), 0);
+        const checkInsCount = eventsArray.reduce((sum, event) => sum + (event.checkinCount || 0), 0);
         setTotalCheckIns(checkInsCount);
 
-        const sortedEvents = [...events].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        const sortedEvents = [...eventsArray].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         setLatestEvents(sortedEvents.slice(0, 5));
 
       } catch (err) {
@@ -74,11 +76,11 @@ function AdminDashboardPage() {
     { name: t('checked_in_attendees'), value: totalCheckIns },
   ];
 
-  const barData = eventsData.slice(0, 5).map(event => ({
-    name: event.name_fr,
+  const barData = (Array.isArray(eventsData) ? eventsData : []).slice(0, 5).map(event => ({
+    name: event.name_fr || '',
     participants: event.attendeeCount || 0,
     checkins: event.checkinCount || 0,
-  })).sort((a, b) => a.name.localeCompare(b.name));
+  })).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
   if (loading) {
     return (

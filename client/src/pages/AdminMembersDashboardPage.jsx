@@ -46,8 +46,10 @@ function AdminMembersDashboardPage() {
         });
 
         // Récupérer les membres récents
-        const members = await api.admin.getMembers({ limit: 5 });
-        setRecentMembers(members.slice(0, 5));
+        const membersResponse = await api.admin.getMembers({ limit: 5 });
+        // L'API retourne { members: [...], total, limit, offset }
+        const membersArray = Array.isArray(membersResponse?.members) ? membersResponse.members : [];
+        setRecentMembers(membersArray.slice(0, 5));
 
       } catch (err) {
         console.error('Error fetching dashboard data:', err);

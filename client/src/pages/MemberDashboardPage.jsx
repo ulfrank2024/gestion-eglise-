@@ -115,7 +115,7 @@ function MemberDashboardPage() {
       </div>
 
       {/* Recent Announcements */}
-      {dashboardData?.recent_announcements?.length > 0 && (
+      {Array.isArray(dashboardData?.recent_announcements) && dashboardData.recent_announcements.length > 0 && (
         <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
           <div className="p-4 border-b border-gray-700 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
@@ -153,7 +153,7 @@ function MemberDashboardPage() {
       )}
 
       {/* Upcoming Events */}
-      {dashboardData?.upcoming_events?.length > 0 && (
+      {Array.isArray(dashboardData?.upcoming_events) && dashboardData.upcoming_events.length > 0 && (
         <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
           <div className="p-4 border-b border-gray-700 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
@@ -198,7 +198,7 @@ function MemberDashboardPage() {
       )}
 
       {/* Member Roles */}
-      {dashboardData?.roles?.length > 0 && (
+      {Array.isArray(dashboardData?.roles) && dashboardData.roles.length > 0 && (
         <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
           <div className="p-4 border-b border-gray-700">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
