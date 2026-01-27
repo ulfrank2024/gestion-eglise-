@@ -126,6 +126,19 @@ export const api = {
       const { data } = await apiClient.get(`/super-admin/churches_v2/${churchId}/users`);
       return data;
     },
+    // --- Members (Supervision) ---
+    getMembersStatistics: async () => {
+      const { data } = await apiClient.get('/super-admin/members/statistics');
+      return data;
+    },
+    getChurchMembers: async (churchId, params = {}) => {
+      const { data } = await apiClient.get(`/super-admin/churches_v2/${churchId}/members`, { params });
+      return data;
+    },
+    getChurchMembersStatistics: async (churchId) => {
+      const { data } = await apiClient.get(`/super-admin/churches_v2/${churchId}/members/statistics`);
+      return data;
+    },
   },
 
   admin: {

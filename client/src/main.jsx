@@ -58,6 +58,8 @@ import SuperAdminEventsPage from './pages/SuperAdminEventsPage';
 import SuperAdminEventsByChurchPage from './pages/SuperAdminEventsByChurchPage';
 import SuperAdminStatisticsPage from './pages/SuperAdminStatisticsPage';
 import SuperAdminChurchDetailPage from './pages/SuperAdminChurchDetailPage';
+import SuperAdminMembersPage from './pages/SuperAdminMembersPage';
+import SuperAdminMembersByChurchPage from './pages/SuperAdminMembersByChurchPage';
 import ChurchRegistrationPage from './pages/ChurchRegistrationPage';
 
 // Public Pages
@@ -118,6 +120,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="events/:churchId/details/:id" element={<AdminEventDetailPage />} />
             <Route path="statistics" element={<SuperAdminStatisticsPage />} />
             <Route path="churches/:churchId" element={<SuperAdminChurchDetailPage />} />
+            <Route path="members" element={<SuperAdminMembersPage />} />
+            <Route path="churches/:churchId/members" element={<SuperAdminMembersByChurchPage />} />
           </Route>
 
           {/* Member Login - No Layout */}

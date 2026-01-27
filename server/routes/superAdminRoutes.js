@@ -346,4 +346,222 @@ router.get('/statistics', protect, isSuperAdmin, async (req, res) => {
   }
 });
 
+// ============================================
+// ROUTES SUPERVISION DES MEMBRES
+// ============================================
+
+// GET /api/super-admin/members/statistics - Statistiques globales des membres
+router.get('/members/statistics', protect, isSuperAdmin, async (req, res) => {
+  try {
+    // Total membres sur la plateforme
+    const { count: totalMembers, error: membersError } = await supabaseAdmin
+      .from('members_v2')
+      .select('*', { count: 'exact', head: true });
+
+    if (membersError) throw membersError;
+
+    // Membres actifs (non archivés)
+    const { count: activeMembers, error: activeError } = await supabaseAdmin
+      .from('members_v2')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_archived', false)
+      .eq('is_active', true);
+
+    if (activeError) throw activeError;
+
+    // Total rôles créés
+    const { count: totalRoles, error: rolesError } = await supabaseAdmin
+      .from('church_roles_v2')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_active', true);
+
+    if (rolesError) throw rolesError;
+
+    // Total annonces publiées
+    const { count: totalAnnouncements, error: announcementsError } = await supabaseAdmin
+      .from('announcements_v2')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_published', true);
+
+    if (announcementsError) throw announcementsError;
+
+    // Top églises par nombre de membres
+    const { data: churchesWithMembers, error: topError } = await supabaseAdmin
+      .from('churches_v2')
+      .select(`
+        id,
+        name,
+        logo_url,
+        members_v2(count)
+      `)
+      .order('created_at', { ascending: false });
+
+    if (topError) throw topError;
+
+    const topChurches = churchesWithMembers
+      .map(church => ({
+        id: church.id,
+        name: church.name,
+        logo_url: church.logo_url,
+        member_count: church.members_v2[0]?.count || 0
+      }))
+      .sort((a, b) => b.member_count - a.member_count)
+      .slice(0, 5);
+
+    // Membres récents (derniers inscrits)
+    const { data: recentMembers, error: recentError } = await supabaseAdmin
+      .from('members_v2')
+      .select(`
+        id,
+        full_name,
+        email,
+        profile_photo_url,
+        created_at,
+        churches_v2 (
+          id,
+          name
+        )
+      `)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (recentError) throw recentError;
+
+    res.json({
+      total_members: totalMembers || 0,
+      active_members: activeMembers || 0,
+      total_roles: totalRoles || 0,
+      total_announcements: totalAnnouncements || 0,
+      top_churches: topChurches,
+      recent_members: recentMembers || []
+    });
+
+  } catch (error) {
+    console.error('Error fetching members statistics:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/super-admin/churches_v2/:churchId/members - Liste des membres d'une église
+router.get('/churches_v2/:churchId/members', protect, isSuperAdmin, async (req, res) => {
+  const { churchId } = req.params;
+  const { archived, search, limit = 50, offset = 0 } = req.query;
+
+  try {
+    let query = supabaseAdmin
+      .from('members_v2')
+      .select(`
+        *,
+        member_roles_v2 (
+          id,
+          role_id,
+          church_roles_v2 (
+            id,
+            name_fr,
+            name_en,
+            color
+          )
+        )
+      `)
+      .eq('church_id', churchId)
+      .order('created_at', { ascending: false });
+
+    // Filtre par archivé
+    if (archived === 'true') {
+      query = query.eq('is_archived', true);
+    } else if (archived === 'false' || !archived) {
+      query = query.eq('is_archived', false);
+    }
+
+    // Recherche par nom ou email
+    if (search) {
+      query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`);
+    }
+
+    // Pagination
+    query = query.range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
+
+    const { data: members, error } = await query;
+
+    if (error) throw error;
+
+    // Compter le total
+    const { count: totalCount } = await supabaseAdmin
+      .from('members_v2')
+      .select('*', { count: 'exact', head: true })
+      .eq('church_id', churchId)
+      .eq('is_archived', archived === 'true');
+
+    res.json({
+      members: members || [],
+      total: totalCount || 0,
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+
+  } catch (error) {
+    console.error('Error fetching members for church:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/super-admin/churches_v2/:churchId/members/statistics - Statistiques membres d'une église
+router.get('/churches_v2/:churchId/members/statistics', protect, isSuperAdmin, async (req, res) => {
+  const { churchId } = req.params;
+
+  try {
+    // Total membres
+    const { count: totalMembers } = await supabaseAdmin
+      .from('members_v2')
+      .select('*', { count: 'exact', head: true })
+      .eq('church_id', churchId)
+      .eq('is_archived', false);
+
+    // Membres actifs
+    const { count: activeMembers } = await supabaseAdmin
+      .from('members_v2')
+      .select('*', { count: 'exact', head: true })
+      .eq('church_id', churchId)
+      .eq('is_archived', false)
+      .eq('is_active', true);
+
+    // Nouveaux ce mois
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const { count: newThisMonth } = await supabaseAdmin
+      .from('members_v2')
+      .select('*', { count: 'exact', head: true })
+      .eq('church_id', churchId)
+      .gte('created_at', startOfMonth.toISOString());
+
+    // Total rôles
+    const { count: totalRoles } = await supabaseAdmin
+      .from('church_roles_v2')
+      .select('*', { count: 'exact', head: true })
+      .eq('church_id', churchId)
+      .eq('is_active', true);
+
+    // Total annonces publiées
+    const { count: totalAnnouncements } = await supabaseAdmin
+      .from('announcements_v2')
+      .select('*', { count: 'exact', head: true })
+      .eq('church_id', churchId)
+      .eq('is_published', true);
+
+    res.json({
+      total_members: totalMembers || 0,
+      active_members: activeMembers || 0,
+      new_this_month: newThisMonth || 0,
+      total_roles: totalRoles || 0,
+      total_announcements: totalAnnouncements || 0
+    });
+
+  } catch (error) {
+    console.error('Error fetching church members statistics:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

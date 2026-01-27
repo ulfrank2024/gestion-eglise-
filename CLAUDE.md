@@ -2371,3 +2371,65 @@ api.member.getDashboard, getProfile, updateProfile, getEvents, getRoles, getNoti
 - ✅ Architecture propre et maintenable
 
 ---
+
+### 2026-01-26 - Ajout de la supervision des membres côté Super Admin
+
+**Demande utilisateur:**
+- Intégrer la supervision des membres dans le panneau Super Admin (similaire à ce qui existe déjà pour les événements)
+
+**Modifications effectuées:**
+
+1. **Routes backend (`/server/routes/superAdminRoutes.js`)**
+   - ✅ `GET /api/super-admin/members/statistics` - Statistiques globales des membres (total, actifs, rôles, annonces, top églises, membres récents)
+   - ✅ `GET /api/super-admin/churches_v2/:churchId/members` - Liste des membres d'une église
+   - ✅ `GET /api/super-admin/churches_v2/:churchId/members/statistics` - Statistiques membres d'une église spécifique
+
+2. **API Client (`/client/src/api/api.js`)**
+   - ✅ `api.superAdmin.getMembersStatistics()` - Stats globales membres
+   - ✅ `api.superAdmin.getChurchMembers(churchId, params)` - Liste membres église
+   - ✅ `api.superAdmin.getChurchMembersStatistics(churchId)` - Stats membres église
+
+3. **Nouvelles pages Super Admin:**
+   - ✅ `SuperAdminMembersPage.jsx` - Vue d'ensemble des membres de toutes les églises avec:
+     - 4 cartes de statistiques (Total Membres, Membres Actifs, Rôles, Annonces)
+     - Top Églises par nombre de membres (avec liens vers détails)
+     - Membres récents de la plateforme
+   - ✅ `SuperAdminMembersByChurchPage.jsx` - Liste détaillée des membres d'une église avec:
+     - Header avec logo et nom de l'église
+     - 5 cartes de stats (Total, Actifs, Nouveaux ce mois, Rôles, Annonces)
+     - Recherche et filtres (Tous/Actifs/Inactifs)
+     - Table responsive avec toutes les infos membres et rôles
+
+4. **Mise à jour de `SuperAdminStatisticsPage.jsx`:**
+   - ✅ Nouvelle section "Statistiques Membres" avec 4 cartes colorées
+   - ✅ Section "Top Églises par Membres" avec liens cliquables
+   - ✅ Section "Membres Récents" avec infos et église d'origine
+   - ✅ Lien vers `/super-admin/members` pour plus de détails
+
+5. **Mise à jour de `SuperAdminLayout.jsx`:**
+   - ✅ Nouveau lien "Gestion Membres" avec icône MdPeople dans le menu
+   - ✅ Ajouté dans la section "Gestion de la Plateforme"
+
+6. **Routes frontend (`/client/src/main.jsx`):**
+   - ✅ `<Route path="members" element={<SuperAdminMembersPage />} />`
+   - ✅ `<Route path="churches/:churchId/members" element={<SuperAdminMembersByChurchPage />} />`
+
+7. **Traductions (fr.json et en.json):**
+   - ✅ `super_admin_statistics.*` - Nouvelles clés pour stats membres
+   - ✅ `super_admin_members.*` - Nouvelles clés pour supervision membres
+   - ✅ Autres clés utilitaires (members_management, no_members_match, all, status, joined, member, new_this_month)
+
+**Parcours Super Admin:**
+1. Dashboard → Lien "Gestion Membres" dans le menu
+2. `/super-admin/members` → Vue d'ensemble avec stats et top églises
+3. Clic sur une église → `/super-admin/churches/:churchId/members` → Liste détaillée des membres
+4. `/super-admin/statistics` → Nouvelles sections membres dans les statistiques
+
+**Résultat:**
+- ✅ Super Admin peut superviser les membres de toutes les églises
+- ✅ Statistiques globales et par église disponibles
+- ✅ Navigation intuitive entre les niveaux (plateforme → église → membres)
+- ✅ Cohérence visuelle avec le thème dark existant
+- ✅ Support bilingue FR/EN complet
+
+---

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import logo from '../assets/logo_eden.png';
-import { MdDomain, MdLeaderboard, MdExpandMore, MdExpandLess, MdLogout } from 'react-icons/md';
+import { MdDomain, MdLeaderboard, MdExpandMore, MdExpandLess, MdLogout, MdPeople } from 'react-icons/md';
 import { api } from '../api/api';
 import { supabase } from '../supabaseClient';
 
@@ -170,7 +170,17 @@ function SuperAdminLayout() {
                       {t('events_management')}
                     </NavLink>
                   </li>
-                  {/* Ajouter d'autres liens spécifiques au Super-Admin ici */}
+                  <li style={{ marginBottom: '5px' }}>
+                    <NavLink
+                      to="/super-admin/members"
+                      onMouseEnter={() => setHoveredItem('superAdminMembers')}
+                      onMouseLeave={() => setHoveredItem(null)}
+                      style={({ isActive }) => getLinkStyle({ isActive, itemName: 'superAdminMembers' })}
+                    >
+                      <MdPeople style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+                      {t('members_management') || 'Gestion Membres'}
+                    </NavLink>
+                  </li>
                 </ul>
               )}
             </li>
