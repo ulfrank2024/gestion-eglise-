@@ -31,6 +31,7 @@ import AdminMyEventsPage from './pages/AdminMyEventsPage'; // Page Mes Événeme
 // Admin Pages - Module Membres
 import AdminMembersDashboardPage from './pages/AdminMembersDashboardPage';
 import AdminMembersListPage from './pages/AdminMembersListPage';
+import AdminMemberDetailPage from './pages/AdminMemberDetailPage';
 import AdminRolesPage from './pages/AdminRolesPage';
 import AdminMemberInvitationsPage from './pages/AdminMemberInvitationsPage';
 import AdminAnnouncementsPage from './pages/AdminAnnouncementsPage';
@@ -107,6 +108,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             {/* Module Membres */}
             <Route path="members-dashboard" element={<AdminMembersDashboardPage />} />
             <Route path="members" element={<AdminMembersListPage />} />
+            <Route path="members/:memberId" element={<AdminMemberDetailPage />} />
             <Route path="roles" element={<AdminRolesPage />} />
             <Route path="member-invitations" element={<AdminMemberInvitationsPage />} />
             <Route path="announcements" element={<AdminAnnouncementsPage />} />

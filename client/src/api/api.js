@@ -352,6 +352,27 @@ export const api = {
     deleteAnnouncement: async (announcementId) => {
       await apiClient.delete(`/admin/announcements/${announcementId}`);
     },
+
+    // --- Notifications Admin ---
+    getNotifications: async () => {
+      const { data } = await apiClient.get('/admin/notifications');
+      return data;
+    },
+    getNotificationStatistics: async () => {
+      const { data } = await apiClient.get('/admin/notifications/statistics');
+      return data;
+    },
+    sendNotification: async (notificationData) => {
+      const { data } = await apiClient.post('/admin/notifications', notificationData);
+      return data;
+    },
+    broadcastNotification: async (notificationData) => {
+      const { data } = await apiClient.post('/admin/notifications/broadcast', notificationData);
+      return data;
+    },
+    deleteNotification: async (notificationId) => {
+      await apiClient.delete(`/admin/notifications/${notificationId}`);
+    },
   },
 
   public: {

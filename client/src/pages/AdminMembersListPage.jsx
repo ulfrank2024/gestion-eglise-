@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
 import {
   MdPeople, MdAdd, MdSearch, MdArchive, MdUnarchive,
-  MdEdit, MdDelete, MdFilterList, MdPerson, MdBadge, MdClose, MdCheck
+  MdEdit, MdDelete, MdFilterList, MdPerson, MdBadge, MdClose, MdCheck, MdVisibility
 } from 'react-icons/md';
 
 function AdminMembersListPage() {
@@ -356,6 +356,13 @@ function AdminMembersListPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => navigate(`/admin/members/${member.id}`)}
+                        className="p-2 text-blue-400 hover:text-blue-300 hover:bg-gray-700 rounded-lg transition-colors"
+                        title={t('view_details') || 'Voir les détails'}
+                      >
+                        <MdVisibility size={18} />
+                      </button>
                       <button
                         onClick={() => openRolesModal(member)}
                         className="p-2 text-purple-400 hover:text-purple-300 hover:bg-gray-700 rounded-lg transition-colors"

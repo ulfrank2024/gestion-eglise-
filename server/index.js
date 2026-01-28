@@ -33,6 +33,7 @@ const memberRoutes = require('./routes/memberRoutes');
 const roleRoutes = require('./routes/roleRoutes');
 const memberInvitationRoutes = require('./routes/memberInvitationRoutes');
 const announcementRoutes = require('./routes/announcementRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 const memberDashboardRoutes = require('./routes/memberDashboardRoutes');
 
 // Middleware
@@ -80,6 +81,7 @@ app.use('/api/admin/members', memberRoutes); // CRUD membres
 app.use('/api/admin/roles', roleRoutes); // CRUD rôles
 app.use('/api/admin/member-invitations', memberInvitationRoutes); // Invitations membres
 app.use('/api/admin/announcements', announcementRoutes); // Annonces
+app.use('/api/admin/notifications', notificationRoutes); // Notifications admin
 app.use('/api/member', memberDashboardRoutes); // Dashboard membre
 
 // Route de test
