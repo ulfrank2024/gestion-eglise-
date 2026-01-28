@@ -904,6 +904,291 @@ function generateNotificationEmail({ title, message, churchName, ctaText, ctaUrl
   `;
 }
 
+/**
+ * Génère le contenu HTML de l'email de notification d'attribution de rôle
+ */
+function generateRoleAssignedEmail({ memberName, roleName, roleColor, churchName, dashboardUrl, language = 'fr' }) {
+  const isFrench = language === 'fr';
+
+  const texts = {
+    fr: {
+      title: 'Nouveau rôle attribué !',
+      greeting: `Bonjour ${memberName},`,
+      intro: `Nous avons le plaisir de vous informer qu'un nouveau rôle vous a été attribué au sein de <strong style="color: #a5b4fc;">${churchName}</strong>.`,
+      role_label: 'Votre nouveau rôle',
+      responsibilities: 'Responsabilités',
+      responsibilities_text: 'Ce rôle vous confère de nouvelles responsabilités au sein de notre communauté. Vous pouvez consulter les détails dans votre espace membre.',
+      button: 'Accéder à mon espace',
+      footer: 'Plateforme de gestion d\'église'
+    },
+    en: {
+      title: 'New Role Assigned!',
+      greeting: `Hello ${memberName},`,
+      intro: `We are pleased to inform you that a new role has been assigned to you within <strong style="color: #a5b4fc;">${churchName}</strong>.`,
+      role_label: 'Your new role',
+      responsibilities: 'Responsibilities',
+      responsibilities_text: 'This role grants you new responsibilities within our community. You can view the details in your member space.',
+      button: 'Access my space',
+      footer: 'Church Management Platform'
+    }
+  };
+
+  const t = texts[isFrench ? 'fr' : 'en'];
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${t.title} - MY EDEN X</title>
+    </head>
+    <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1f2937;">
+      <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); border-radius: 16px 16px 0 0; padding: 40px 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 28px; font-weight: bold;">🎖️ MY EDEN X</h1>
+          <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 16px;">${t.title}</p>
+        </div>
+
+        <!-- Content -->
+        <div style="background-color: #374151; padding: 40px 30px; border-radius: 0 0 16px 16px;">
+          <h2 style="color: #f3f4f6; margin: 0 0 20px; font-size: 22px;">${t.greeting}</h2>
+
+          <p style="color: #d1d5db; line-height: 1.6; margin: 0 0 25px; font-size: 16px;">
+            ${t.intro}
+          </p>
+
+          <!-- Role Badge -->
+          <div style="background-color: #1f2937; border-radius: 12px; padding: 25px; margin: 25px 0; text-align: center;">
+            <p style="color: #9ca3af; margin: 0 0 10px; font-size: 14px;">${t.role_label}</p>
+            <div style="display: inline-block; background-color: ${roleColor || '#6366f1'}; color: white; padding: 12px 30px; border-radius: 25px; font-size: 18px; font-weight: bold;">
+              ${roleName}
+            </div>
+          </div>
+
+          <!-- Responsibilities Box -->
+          <div style="background-color: #1f2937; border-radius: 12px; padding: 25px; margin: 25px 0; border-left: 4px solid #10b981;">
+            <h3 style="color: #10b981; margin: 0 0 15px; font-size: 16px;">${t.responsibilities}</h3>
+            <p style="color: #d1d5db; margin: 0; font-size: 14px; line-height: 1.6;">
+              ${t.responsibilities_text}
+            </p>
+          </div>
+
+          <!-- CTA Button -->
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${dashboardUrl}" style="display: inline-block; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              ${t.button}
+            </a>
+          </div>
+
+          <!-- Bible Verse -->
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #4b5563;">
+            <p style="color: #9ca3af; font-style: italic; font-size: 13px; margin: 0;">
+              ${isFrench ? 'Chacun de vous a reçu un don particulier: mettez-le au service des autres.' : 'Each of you should use whatever gift you have received to serve others.'}
+            </p>
+            <p style="color: #6b7280; font-size: 12px; margin: 5px 0 0;">
+              - ${isFrench ? '1 Pierre 4:10' : '1 Peter 4:10'}
+            </p>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align: center; padding: 20px;">
+          <p style="color: #6b7280; font-size: 12px; margin: 0;">
+            © ${new Date().getFullYear()} MY EDEN X - ${t.footer}
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+/**
+ * Génère le contenu HTML de l'email de notification de retrait de rôle
+ */
+function generateRoleRemovedEmail({ memberName, roleName, churchName, language = 'fr' }) {
+  const isFrench = language === 'fr';
+
+  const texts = {
+    fr: {
+      title: 'Modification de vos rôles',
+      greeting: `Bonjour ${memberName},`,
+      intro: `Nous vous informons qu'un rôle vous a été retiré au sein de <strong style="color: #a5b4fc;">${churchName}</strong>.`,
+      role_label: 'Rôle retiré',
+      message: 'Si vous avez des questions concernant ce changement, n\'hésitez pas à contacter l\'administration de votre église.',
+      footer: 'Plateforme de gestion d\'église'
+    },
+    en: {
+      title: 'Role Update',
+      greeting: `Hello ${memberName},`,
+      intro: `We inform you that a role has been removed from your profile within <strong style="color: #a5b4fc;">${churchName}</strong>.`,
+      role_label: 'Role removed',
+      message: 'If you have any questions about this change, please contact your church administration.',
+      footer: 'Church Management Platform'
+    }
+  };
+
+  const t = texts[isFrench ? 'fr' : 'en'];
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${t.title} - MY EDEN X</title>
+    </head>
+    <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1f2937;">
+      <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); border-radius: 16px 16px 0 0; padding: 40px 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 28px; font-weight: bold;">MY EDEN X</h1>
+          <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 16px;">${t.title}</p>
+        </div>
+
+        <!-- Content -->
+        <div style="background-color: #374151; padding: 40px 30px; border-radius: 0 0 16px 16px;">
+          <h2 style="color: #f3f4f6; margin: 0 0 20px; font-size: 22px;">${t.greeting}</h2>
+
+          <p style="color: #d1d5db; line-height: 1.6; margin: 0 0 25px; font-size: 16px;">
+            ${t.intro}
+          </p>
+
+          <!-- Role Badge -->
+          <div style="background-color: #1f2937; border-radius: 12px; padding: 25px; margin: 25px 0; text-align: center;">
+            <p style="color: #9ca3af; margin: 0 0 10px; font-size: 14px;">${t.role_label}</p>
+            <div style="display: inline-block; background-color: #6b7280; color: white; padding: 12px 30px; border-radius: 25px; font-size: 18px; font-weight: bold; text-decoration: line-through;">
+              ${roleName}
+            </div>
+          </div>
+
+          <p style="color: #9ca3af; line-height: 1.6; margin: 25px 0 0; font-size: 14px; text-align: center;">
+            ${t.message}
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align: center; padding: 20px;">
+          <p style="color: #6b7280; font-size: 12px; margin: 0;">
+            © ${new Date().getFullYear()} MY EDEN X - ${t.footer}
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+/**
+ * Génère le contenu HTML de l'email de notification de nouvel événement
+ */
+function generateNewEventNotificationEmail({ eventName, eventDate, eventDescription, churchName, eventUrl, language = 'fr' }) {
+  const isFrench = language === 'fr';
+
+  const texts = {
+    fr: {
+      title: 'Nouvel événement !',
+      greeting: 'Bonjour,',
+      intro: `Un nouvel événement a été créé par <strong style="color: #a5b4fc;">${churchName}</strong> !`,
+      event_details: 'Détails de l\'événement',
+      event: 'Événement',
+      date: 'Date',
+      description: 'Description',
+      button: 'Voir l\'événement',
+      footer: 'Plateforme de gestion d\'église'
+    },
+    en: {
+      title: 'New Event!',
+      greeting: 'Hello,',
+      intro: `A new event has been created by <strong style="color: #a5b4fc;">${churchName}</strong>!`,
+      event_details: 'Event Details',
+      event: 'Event',
+      date: 'Date',
+      description: 'Description',
+      button: 'View Event',
+      footer: 'Church Management Platform'
+    }
+  };
+
+  const t = texts[isFrench ? 'fr' : 'en'];
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${t.title} - MY EDEN X</title>
+    </head>
+    <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1f2937;">
+      <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 16px 16px 0 0; padding: 40px 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 28px; font-weight: bold;">📅 MY EDEN X</h1>
+          <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 16px;">${t.title}</p>
+        </div>
+
+        <!-- Content -->
+        <div style="background-color: #374151; padding: 40px 30px; border-radius: 0 0 16px 16px;">
+          <h2 style="color: #f3f4f6; margin: 0 0 20px; font-size: 22px;">${t.greeting}</h2>
+
+          <p style="color: #d1d5db; line-height: 1.6; margin: 0 0 25px; font-size: 16px;">
+            ${t.intro}
+          </p>
+
+          <!-- Event Details Box -->
+          <div style="background-color: #1f2937; border-radius: 12px; padding: 25px; margin: 25px 0; border-left: 4px solid #f59e0b;">
+            <h3 style="color: #fbbf24; margin: 0 0 20px; font-size: 16px;">${t.event_details}</h3>
+            <table style="width: 100%; color: #d1d5db;">
+              <tr>
+                <td style="padding: 8px 0; color: #9ca3af;">${t.event}:</td>
+                <td style="padding: 8px 0; color: #f3f4f6; font-weight: bold;">${eventName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #9ca3af;">${t.date}:</td>
+                <td style="padding: 8px 0; color: #f3f4f6;">${eventDate}</td>
+              </tr>
+              ${eventDescription ? `
+              <tr>
+                <td style="padding: 8px 0; color: #9ca3af; vertical-align: top;">${t.description}:</td>
+                <td style="padding: 8px 0; color: #d1d5db;">${eventDescription}</td>
+              </tr>
+              ` : ''}
+            </table>
+          </div>
+
+          <!-- CTA Button -->
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${eventUrl}" style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              ${t.button}
+            </a>
+          </div>
+
+          <!-- Bible Verse -->
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #4b5563;">
+            <p style="color: #9ca3af; font-style: italic; font-size: 13px; margin: 0;">
+              ${isFrench ? 'Voici, je fais une chose nouvelle; elle va éclater: ne la connaîtrez-vous pas?' : 'See, I am doing a new thing! Now it springs up; do you not perceive it?'}
+            </p>
+            <p style="color: #6b7280; font-size: 12px; margin: 5px 0 0;">
+              - ${isFrench ? 'Ésaïe 43:19' : 'Isaiah 43:19'}
+            </p>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align: center; padding: 20px;">
+          <p style="color: #6b7280; font-size: 12px; margin: 0;">
+            © ${new Date().getFullYear()} MY EDEN X - ${t.footer}
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
 module.exports = {
   transporter,
   sendEmail,
@@ -915,5 +1200,8 @@ module.exports = {
   generateMemberInvitationEmail,
   generateMemberWelcomeEmail,
   generateThankYouEmail,
-  generateNotificationEmail
+  generateNotificationEmail,
+  generateRoleAssignedEmail,
+  generateRoleRemovedEmail,
+  generateNewEventNotificationEmail
 };

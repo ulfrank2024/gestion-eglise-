@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../supabaseClient';
 import { api } from '../api/api';
-import { MdEvent, MdImage, MdCalendarToday, MdArrowBack, MdSave } from 'react-icons/md';
+import { MdEvent, MdImage, MdCalendarToday, MdArrowBack, MdSave, MdNotifications } from 'react-icons/md';
 import AlertMessage from '../components/AlertMessage';
 import { useToast } from '../components/Toast';
 import { getErrorMessage } from '../utils/errorHandler';
@@ -21,6 +21,7 @@ function AdminEventNewPage() {
   const [imagePreview, setImagePreview] = useState(null);
   const [eventStartDate, setEventStartDate] = useState('');
   const [isCompleted, setIsCompleted] = useState(false);
+  const [notifyMembers, setNotifyMembers] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [churchId, setChurchId] = useState(null);
@@ -107,6 +108,7 @@ function AdminEventNewPage() {
         background_image_url: finalImageUrl,
         event_start_date: eventStartDate || null,
         is_archived: isCompleted,
+        notify_members: notifyMembers,
       });
 
       showSuccess(t('event_created_successfully'));
@@ -266,18 +268,41 @@ function AdminEventNewPage() {
             />
           </div>
 
-          {/* Is Archived */}
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="isCompleted"
-              checked={isCompleted}
-              onChange={(e) => setIsCompleted(e.target.checked)}
-              className="w-5 h-5 rounded bg-gray-700 border-gray-600 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-gray-800"
-            />
-            <label htmlFor="isCompleted" className="ml-3 text-gray-300">
-              {t('is_completed')}
-            </label>
+          {/* Options */}
+          <div className="space-y-4">
+            {/* Notify Members */}
+            <div className="flex items-start p-4 bg-gray-700/50 rounded-lg border border-gray-600">
+              <input
+                type="checkbox"
+                id="notifyMembers"
+                checked={notifyMembers}
+                onChange={(e) => setNotifyMembers(e.target.checked)}
+                className="w-5 h-5 mt-0.5 rounded bg-gray-700 border-gray-600 text-amber-600 focus:ring-amber-500 focus:ring-offset-gray-800"
+              />
+              <div className="ml-3">
+                <label htmlFor="notifyMembers" className="flex items-center text-gray-200 font-medium cursor-pointer">
+                  <MdNotifications className="mr-2 text-amber-500" />
+                  {t('notify_members') || 'Notifier les membres'}
+                </label>
+                <p className="text-sm text-gray-400 mt-1">
+                  {t('notify_members_hint') || 'Envoyer un email à tous les membres de l\'église pour les informer de ce nouvel événement'}
+                </p>
+              </div>
+            </div>
+
+            {/* Is Archived */}
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="isCompleted"
+                checked={isCompleted}
+                onChange={(e) => setIsCompleted(e.target.checked)}
+                className="w-5 h-5 rounded bg-gray-700 border-gray-600 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-gray-800"
+              />
+              <label htmlFor="isCompleted" className="ml-3 text-gray-300">
+                {t('is_completed')}
+              </label>
+            </div>
           </div>
 
           {/* Error Message */}

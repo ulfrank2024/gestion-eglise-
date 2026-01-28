@@ -1,6 +1,6 @@
 const express = require('express');
 const { supabase, supabaseAdmin } = require('../db/supabase');
-const { transporter, generateThankYouEmail } = require('../services/mailer');
+const { transporter, generateThankYouEmail, sendEmail, generateNewEventNotificationEmail } = require('../services/mailer');
 const { protect, isAdminChurch, isSuperAdminOrChurchAdmin } = require('../middleware/auth');
 const router = express.Router();
 const qrcode = require('qrcode');
@@ -9,11 +9,11 @@ const qrcode = require('qrcode');
 
 // POST /api/admin/events_v2 - Créer un nouvel événement
 router.post('/events_v2', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
-  const { name_fr, name_en, description_fr, description_en, background_image_url, is_archived, event_start_date, event_end_date } = req.body;
+  const { name_fr, name_en, description_fr, description_en, background_image_url, is_archived, event_start_date, event_end_date, notify_members } = req.body;
 
   console.log('=== CREATE EVENT DEBUG ===');
   console.log('User:', req.user?.id, 'Church ID:', req.user?.church_id, 'Role:', req.user?.church_role);
-  console.log('Body:', { name_fr, name_en });
+  console.log('Body:', { name_fr, name_en, notify_members });
 
   if (!req.user?.church_id) {
     console.error('ERROR: church_id is missing from req.user');
@@ -31,8 +31,75 @@ router.post('/events_v2', protect, isSuperAdminOrChurchAdmin, async (req, res) =
       throw error;
     }
 
-    console.log('Event created successfully:', data[0]?.id);
-    res.status(201).json(data[0]);
+    const createdEvent = data[0];
+    console.log('Event created successfully:', createdEvent?.id);
+
+    // Si l'admin souhaite notifier les membres
+    if (notify_members) {
+      try {
+        // Récupérer les infos de l'église
+        const { data: church } = await supabaseAdmin
+          .from('churches_v2')
+          .select('name, subdomain')
+          .eq('id', req.user.church_id)
+          .single();
+
+        // Récupérer tous les membres actifs de l'église
+        const { data: members } = await supabaseAdmin
+          .from('members_v2')
+          .select('email, full_name')
+          .eq('church_id', req.user.church_id)
+          .eq('is_active', true);
+
+        if (members && members.length > 0) {
+          const eventUrl = `${process.env.FRONTEND_BASE_URL}/${church?.subdomain}/event/${createdEvent.id}`;
+
+          const dateFormatOptionsFr = { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' };
+          const dateFormatOptionsEn = { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' };
+          const eventDateFr = event_start_date
+            ? new Date(event_start_date).toLocaleString('fr-FR', dateFormatOptionsFr)
+            : 'À confirmer';
+          const eventDateEn = event_start_date
+            ? new Date(event_start_date).toLocaleString('en-US', dateFormatOptionsEn)
+            : 'To be confirmed';
+
+          // Envoyer l'email à chaque membre (en batch)
+          const emailPromises = members.map(async (member) => {
+            const emailHtmlFr = generateNewEventNotificationEmail({
+              eventName: name_fr,
+              eventDate: eventDateFr,
+              eventDescription: description_fr,
+              churchName: church?.name || 'Votre église',
+              eventUrl,
+              language: 'fr'
+            });
+
+            const emailHtmlEn = generateNewEventNotificationEmail({
+              eventName: name_en,
+              eventDate: eventDateEn,
+              eventDescription: description_en,
+              churchName: church?.name || 'Your church',
+              eventUrl,
+              language: 'en'
+            });
+
+            return sendEmail({
+              to: member.email,
+              subject: `📅 Nouvel événement: ${name_fr} / New event: ${name_en}`,
+              html: `${emailHtmlFr}<hr style="border: 0; border-top: 1px solid #374151; margin: 30px 0;">${emailHtmlEn}`
+            });
+          });
+
+          await Promise.allSettled(emailPromises);
+          console.log(`Event notification emails sent to ${members.length} members`);
+        }
+      } catch (mailError) {
+        console.error('Error sending event notification emails:', mailError);
+        // Ne pas faire échouer la création si les emails échouent
+      }
+    }
+
+    res.status(201).json(createdEvent);
   } catch (error) {
     console.error('Database insertion error:', error);
     res.status(500).json({ error: error.message });

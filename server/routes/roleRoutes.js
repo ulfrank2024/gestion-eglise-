@@ -7,6 +7,7 @@ const express = require('express');
 const router = express.Router();
 const { supabaseAdmin } = require('../db/supabase');
 const { protect, isSuperAdminOrChurchAdmin } = require('../middleware/auth');
+const { sendEmail, generateRoleAssignedEmail, generateRoleRemovedEmail } = require('../services/mailer');
 
 // Appliquer le middleware d'authentification à toutes les routes
 router.use(protect);
@@ -223,10 +224,10 @@ router.post('/:roleId/assign/:memberId', async (req, res) => {
     const { church_id, id: userId } = req.user;
     const { roleId, memberId } = req.params;
 
-    // Vérifier que le rôle appartient à l'église
+    // Vérifier que le rôle appartient à l'église et récupérer ses détails
     const { data: role } = await supabaseAdmin
       .from('church_roles_v2')
-      .select('id')
+      .select('id, name_fr, name_en, color')
       .eq('id', roleId)
       .eq('church_id', church_id)
       .single();
@@ -235,10 +236,10 @@ router.post('/:roleId/assign/:memberId', async (req, res) => {
       return res.status(404).json({ error: 'Rôle non trouvé' });
     }
 
-    // Vérifier que le membre appartient à l'église
+    // Vérifier que le membre appartient à l'église et récupérer ses détails
     const { data: member } = await supabaseAdmin
       .from('members_v2')
-      .select('id')
+      .select('id, full_name, email')
       .eq('id', memberId)
       .eq('church_id', church_id)
       .single();
@@ -259,6 +260,13 @@ router.post('/:roleId/assign/:memberId', async (req, res) => {
       return res.status(400).json({ error: 'Ce rôle est déjà assigné à ce membre' });
     }
 
+    // Récupérer les infos de l'église
+    const { data: church } = await supabaseAdmin
+      .from('churches_v2')
+      .select('name, subdomain')
+      .eq('id', church_id)
+      .single();
+
     // Créer l'assignation
     const { data: assignment, error } = await supabaseAdmin
       .from('member_roles_v2')
@@ -273,6 +281,39 @@ router.post('/:roleId/assign/:memberId', async (req, res) => {
     if (error) {
       console.error('Error assigning role:', error);
       return res.status(500).json({ error: 'Erreur lors de l\'assignation du rôle' });
+    }
+
+    // Envoyer l'email de notification au membre
+    const dashboardUrl = `${process.env.FRONTEND_BASE_URL}/member/dashboard`;
+
+    try {
+      const emailHtmlFr = generateRoleAssignedEmail({
+        memberName: member.full_name,
+        roleName: role.name_fr,
+        roleColor: role.color,
+        churchName: church?.name || 'Votre église',
+        dashboardUrl,
+        language: 'fr'
+      });
+
+      const emailHtmlEn = generateRoleAssignedEmail({
+        memberName: member.full_name,
+        roleName: role.name_en,
+        roleColor: role.color,
+        churchName: church?.name || 'Your church',
+        dashboardUrl,
+        language: 'en'
+      });
+
+      await sendEmail({
+        to: member.email,
+        subject: `🎖️ Nouveau rôle: ${role.name_fr} / New role: ${role.name_en}`,
+        html: `${emailHtmlFr}<hr style="border: 0; border-top: 1px solid #374151; margin: 30px 0;">${emailHtmlEn}`
+      });
+      console.log('Role assignment email sent to:', member.email);
+    } catch (mailError) {
+      console.error('Error sending role assignment email:', mailError);
+      // Ne pas faire échouer l'assignation si l'email échoue
     }
 
     res.status(201).json(assignment);
@@ -291,10 +332,10 @@ router.delete('/:roleId/unassign/:memberId', async (req, res) => {
     const { church_id } = req.user;
     const { roleId, memberId } = req.params;
 
-    // Vérifier que le rôle appartient à l'église
+    // Vérifier que le rôle appartient à l'église et récupérer ses détails
     const { data: role } = await supabaseAdmin
       .from('church_roles_v2')
-      .select('id')
+      .select('id, name_fr, name_en')
       .eq('id', roleId)
       .eq('church_id', church_id)
       .single();
@@ -302,6 +343,21 @@ router.delete('/:roleId/unassign/:memberId', async (req, res) => {
     if (!role) {
       return res.status(404).json({ error: 'Rôle non trouvé' });
     }
+
+    // Récupérer les infos du membre
+    const { data: member } = await supabaseAdmin
+      .from('members_v2')
+      .select('id, full_name, email')
+      .eq('id', memberId)
+      .eq('church_id', church_id)
+      .single();
+
+    // Récupérer les infos de l'église
+    const { data: church } = await supabaseAdmin
+      .from('churches_v2')
+      .select('name')
+      .eq('id', church_id)
+      .single();
 
     const { error } = await supabaseAdmin
       .from('member_roles_v2')
@@ -312,6 +368,35 @@ router.delete('/:roleId/unassign/:memberId', async (req, res) => {
     if (error) {
       console.error('Error unassigning role:', error);
       return res.status(500).json({ error: 'Erreur lors du retrait du rôle' });
+    }
+
+    // Envoyer l'email de notification au membre si on a ses infos
+    if (member && member.email) {
+      try {
+        const emailHtmlFr = generateRoleRemovedEmail({
+          memberName: member.full_name,
+          roleName: role.name_fr,
+          churchName: church?.name || 'Votre église',
+          language: 'fr'
+        });
+
+        const emailHtmlEn = generateRoleRemovedEmail({
+          memberName: member.full_name,
+          roleName: role.name_en,
+          churchName: church?.name || 'Your church',
+          language: 'en'
+        });
+
+        await sendEmail({
+          to: member.email,
+          subject: `Modification de vos rôles / Role Update - ${church?.name || 'MY EDEN X'}`,
+          html: `${emailHtmlFr}<hr style="border: 0; border-top: 1px solid #374151; margin: 30px 0;">${emailHtmlEn}`
+        });
+        console.log('Role removal email sent to:', member.email);
+      } catch (mailError) {
+        console.error('Error sending role removal email:', mailError);
+        // Ne pas faire échouer le retrait si l'email échoue
+      }
     }
 
     res.json({ message: 'Rôle retiré avec succès' });
