@@ -2659,3 +2659,42 @@ api.member.getDashboard, getProfile, updateProfile, getEvents, getRoles, getNoti
 - Filtres de recherche
 
 ---
+
+### 2026-01-28 - Correction erreur 500 sur les routes /not-found
+
+**Problème identifié:**
+- Erreur 500: `invalid input syntax for type uuid: "not-found"`
+- Quand PublicLayout détectait une route réservée (ex: "/admin" sans auth), il redirigeait vers "/not-found"
+- La route "/not-found" était capturée par `/:churchId` et "not-found" devenait le churchId
+- Le backend recevait "not-found" comme UUID et retournait une erreur 500
+
+**Cause racine:**
+- Pas de route explicite pour `/not-found` dans main.jsx
+- La redirection de PublicLayout vers "/not-found" était interceptée par la route `/:churchId`
+
+**Corrections apportées:**
+
+1. **main.jsx** - Ajout route explicite
+   ```jsx
+   {/* Not Found - Explicit route to prevent /not-found being captured as /:churchId */}
+   <Route path="/not-found" element={<NotFoundPage />} />
+   ```
+
+2. **NotFoundPage.jsx** - Refonte complète
+   - Design dark theme cohérent avec l'application
+   - Icône MdSearchOff avec gradient indigo/violet
+   - Texte "404" en gradient
+   - Boutons "Retour" et "Accueil"
+   - Animations hover sur les boutons
+
+3. **Traductions ajoutées** (fr.json / en.json)
+   - `page_not_found_description` - Message explicatif
+   - `go_back` - FR: "Retour" / EN: "Go Back"
+   - `go_home` - FR: "Accueil" / EN: "Home"
+
+**Résultat:**
+- ✅ Plus d'erreur 500 sur /not-found
+- ✅ Page 404 avec design moderne
+- ✅ Navigation de retour fonctionnelle
+
+---
