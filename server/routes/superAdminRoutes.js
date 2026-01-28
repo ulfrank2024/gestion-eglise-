@@ -218,9 +218,9 @@ router.get('/churches_v2/:churchId/statistics', protect, isSuperAdmin, async (re
 router.get('/churches_v2/:churchId/users', protect, isSuperAdmin, async (req, res) => {
   const { churchId } = req.params;
   try {
-    // Récupérer les utilisateurs associés à cette église
+    // Récupérer les utilisateurs associés à cette église (table v2)
     const { data: churchUsers, error: usersError } = await supabaseAdmin
-      .from('church_users')
+      .from('church_users_v2')
       .select('user_id, role')
       .eq('church_id', churchId);
 
