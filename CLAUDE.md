@@ -2433,3 +2433,56 @@ api.member.getDashboard, getProfile, updateProfile, getEvents, getRoles, getNoti
 - ✅ Support bilingue FR/EN complet
 
 ---
+
+### 2026-01-27 - Refonte complète des templates emails professionnels
+
+**Demande utilisateur:**
+- Utiliser les templates emails professionnels existants pour tous les types d'emails (inscription, mot de passe oublié, création de compte, notifications admin, etc.)
+
+**Modifications effectuées:**
+
+1. **Nouveaux templates dans `/server/services/mailer.js`:**
+   - ✅ `generateEventRegistrationEmail` - Confirmation d'inscription à un événement (dark theme, bilingue)
+   - ✅ `generateWelcomeChurchAdminEmail` - Bienvenue pour nouvel admin d'église
+   - ✅ `generateMemberInvitationEmail` - Invitation membre à rejoindre l'église
+   - ✅ `generateMemberWelcomeEmail` - Bienvenue pour nouveau membre
+   - ✅ `generateThankYouEmail` - Remerciement post-événement avec message personnalisé
+   - ✅ `generateNotificationEmail` - Notification générique avec CTA optionnel
+
+2. **Mise à jour de `/server/routes/publicRoutes.js`:**
+   - ✅ Import des nouvelles fonctions de templates
+   - ✅ Route `POST /:churchId/events/:eventId/register` - Utilise `generateEventRegistrationEmail`
+   - ✅ Route `POST /churches/register` - Utilise `generateWelcomeChurchAdminEmail`
+   - ✅ Route `POST /:churchId/members/register` - Utilise `generateMemberWelcomeEmail`
+
+3. **Mise à jour de `/server/routes/adminRoutes.js`:**
+   - ✅ Import de `generateThankYouEmail`
+   - ✅ Route `POST /events_v2/:eventId/send-thanks` - Utilise `generateThankYouEmail`
+
+4. **Mise à jour de `/server/routes/memberInvitationRoutes.js`:**
+   - ✅ Import de `sendEmail` et `generateMemberInvitationEmail`
+   - ✅ Correction de l'import (`sendMail` → `sendEmail`)
+   - ✅ Route `POST /invite` - Utilise `generateMemberInvitationEmail`
+
+**Design des templates:**
+- Background principal: `#1f2937` (gray-800)
+- Header gradient: `#4f46e5` → `#7c3aed` (indigo → violet)
+- Texte principal: `#f3f4f6` (gray-100)
+- Texte secondaire: `#d1d5db` (gray-300)
+- Accent vert pour succès: `#10b981`
+- Tous les emails incluent un verset biblique approprié
+- Support bilingue complet (FR + EN dans chaque email)
+
+**Templates existants conservés:**
+- `generateAdminInvitationEmail` - Invitation admin équipe
+- `generatePasswordResetEmail` - Réinitialisation mot de passe
+- `generateChurchInvitationEmail` - Invitation création église
+
+**Résultat:**
+- ✅ Tous les emails de la plateforme utilisent le thème dark cohérent
+- ✅ Design professionnel et moderne sur tous les emails
+- ✅ Support bilingue FR/EN sur tous les templates
+- ✅ Versets bibliques adaptés au contexte de chaque email
+- ✅ Code plus maintenable avec templates réutilisables
+
+---
