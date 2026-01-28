@@ -2538,3 +2538,56 @@ api.member.getDashboard, getProfile, updateProfile, getEvents, getRoles, getNoti
 - ✅ Support bilingue FR/EN
 
 ---
+
+### 2026-01-28 - Page détail membre + Routes notifications admin
+
+**Nouvelles fonctionnalités:**
+
+1. **Page AdminMemberDetailPage.jsx** (`/client/src/pages/`)
+   - ✅ Vue détaillée d'un membre avec photo, nom, statut
+   - ✅ Informations de contact (email, téléphone, adresse, date de naissance)
+   - ✅ Date d'inscription
+   - ✅ Section rôles avec badges colorés
+   - ✅ Mode édition inline pour modifier les informations
+   - ✅ Actions: archiver/désarchiver, supprimer définitivement
+   - ✅ Modal de gestion des rôles
+   - ✅ Design dark theme cohérent
+
+2. **Routes notifications admin** (`/server/routes/notificationRoutes.js`)
+   - ✅ `GET /api/admin/notifications` - Liste toutes les notifications envoyées
+   - ✅ `GET /api/admin/notifications/statistics` - Statistiques (total, lues, non lues)
+   - ✅ `POST /api/admin/notifications` - Envoyer notification à des membres spécifiques
+   - ✅ `POST /api/admin/notifications/broadcast` - Envoyer à tous les membres actifs
+   - ✅ `DELETE /api/admin/notifications/:id` - Supprimer une notification
+   - ✅ Option `send_email` pour envoyer aussi par email
+
+3. **Modifications Frontend:**
+   - ✅ Bouton "Voir détails" dans AdminMembersListPage (icône MdVisibility)
+   - ✅ Route `/admin/members/:memberId` dans main.jsx
+   - ✅ Import AdminMemberDetailPage dans main.jsx
+
+4. **API Client** (`/client/src/api/api.js`)
+   - ✅ `getNotifications()` - Liste des notifications admin
+   - ✅ `getNotificationStatistics()` - Stats notifications
+   - ✅ `sendNotification(data)` - Envoyer notification ciblée
+   - ✅ `broadcastNotification(data)` - Broadcast à tous
+   - ✅ `deleteNotification(id)` - Supprimer notification
+
+5. **Traductions ajoutées:**
+   - FR: `back_to_members`, `member_not_found`, `member_profile`, `no_roles_assigned`, `delete_permanently`, `manage`, `active`, `address`, `phone`
+   - EN: Mêmes clés avec traductions anglaises
+
+**Structure AdminMemberDetailPage:**
+- Layout 3 colonnes (2/3 contenu + 1/3 sidebar)
+- Card profil avec header gradient indigo-purple
+- Informations organisées avec icônes
+- Sidebar avec rôles et actions
+- Modal de gestion des rôles intégré
+
+**Résultat:**
+- ✅ Navigation complète vers détail membre depuis la liste
+- ✅ Admin peut envoyer des notifications ciblées ou broadcast
+- ✅ Traductions FR/EN complètes
+- ✅ Commit: `6aaa0b6`
+
+---
