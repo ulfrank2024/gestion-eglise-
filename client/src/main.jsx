@@ -163,6 +163,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Route path="/:churchId/join" element={<MemberRegistrationPage />} />
           <Route path="/:churchId/join/:token" element={<MemberRegistrationPage />} />
 
+          {/* Not Found - Explicit route to prevent /not-found being captured as /:churchId */}
+          <Route path="/not-found" element={<NotFoundPage />} />
+
           {/* Public Routes - MUST be after admin/super-admin routes to avoid capturing /admin as /:churchId */}
           <Route path="/:churchId" element={<PublicLayout />}>
             <Route index element={<PublicEventsListPage />} />
