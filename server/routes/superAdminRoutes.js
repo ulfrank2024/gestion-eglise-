@@ -513,16 +513,16 @@ router.get('/churches_v2/:churchId/members', protect, isSuperAdmin, async (req, 
     const { data: regularMembers, error: membersError } = await membersQuery;
     if (membersError) throw membersError;
 
-    // 2. Récupérer les admins de church_users_v2 (seulement church_admin)
+    // 2. Récupérer les admins de church_users_v2 avec toutes leurs infos de profil
     const { data: churchAdmins, error: adminsError } = await supabaseAdmin
       .from('church_users_v2')
-      .select('user_id, role, created_at')
+      .select('user_id, role, created_at, full_name, phone, address, city, profile_photo_url, date_of_birth')
       .eq('church_id', churchId)
       .eq('role', 'church_admin');
 
     if (adminsError) throw adminsError;
 
-    // 3. Récupérer les détails des admins depuis auth.users
+    // 3. Récupérer les emails des admins depuis auth.users
     let adminMembers = [];
     if (churchAdmins && churchAdmins.length > 0) {
       const { data: { users }, error: authError } = await supabaseAdmin.auth.admin.listUsers();
@@ -537,11 +537,14 @@ router.get('/churches_v2/:churchId/members', protect, isSuperAdmin, async (req, 
         return {
           id: admin.user_id,
           church_id: churchId,
-          full_name: authUser?.user_metadata?.full_name || authUser?.email?.split('@')[0] || 'Admin',
+          // Utiliser les données de church_users_v2 (pas de auth.users)
+          full_name: admin.full_name || authUser?.email?.split('@')[0] || 'Admin',
           email: authUser?.email || 'N/A',
-          phone: authUser?.user_metadata?.phone || null,
-          address: authUser?.user_metadata?.address || null,
-          profile_photo_url: authUser?.user_metadata?.avatar_url || null,
+          phone: admin.phone || null,
+          address: admin.address || null,
+          city: admin.city || null,
+          profile_photo_url: admin.profile_photo_url || null,
+          date_of_birth: admin.date_of_birth || null,
           is_active: true,
           is_archived: false,
           joined_at: admin.created_at,
