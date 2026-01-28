@@ -2486,3 +2486,55 @@ api.member.getDashboard, getProfile, updateProfile, getEvents, getRoles, getNoti
 - ✅ Code plus maintenable avec templates réutilisables
 
 ---
+
+### 2026-01-27 - Ajout des notifications automatiques pour rôles et événements
+
+**Demande utilisateur:**
+- Ajouter des notifications par email lors de l'attribution/retrait de rôles aux membres
+- Ajouter des notifications lors de la création d'événements
+
+**Nouveaux templates dans `/server/services/mailer.js`:**
+- ✅ `generateRoleAssignedEmail` - Notification d'attribution de rôle
+  - Badge coloré avec le nom du rôle
+  - Verset biblique: "Chacun de vous a reçu un don particulier..." (1 Pierre 4:10)
+- ✅ `generateRoleRemovedEmail` - Notification de retrait de rôle
+  - Badge gris barré pour le rôle retiré
+  - Message explicatif
+- ✅ `generateNewEventNotificationEmail` - Notification de nouvel événement
+  - Header orange/ambre
+  - Détails de l'événement (nom, date, description)
+  - Bouton pour voir l'événement
+  - Verset biblique: "Voici, je fais une chose nouvelle..." (Ésaïe 43:19)
+
+**Modifications `/server/routes/roleRoutes.js`:**
+- ✅ Route `POST /:roleId/assign/:memberId` - Envoie automatiquement un email au membre lorsqu'il reçoit un rôle
+- ✅ Route `DELETE /:roleId/unassign/:memberId` - Envoie un email au membre lorsqu'on lui retire un rôle
+
+**Modifications `/server/routes/adminRoutes.js`:**
+- ✅ Route `POST /events_v2` - Nouvelle option `notify_members`
+  - Si activée, envoie un email à tous les membres actifs de l'église
+  - Utilise `Promise.allSettled` pour ne pas bloquer si certains emails échouent
+
+**Modifications Frontend `AdminEventNewPage.jsx`:**
+- ✅ Nouvelle checkbox "Notifier les membres" avec icône MdNotifications
+- ✅ Description explicative sous l'option
+- ✅ Style distinctif (fond gris, accent ambre)
+
+**Traductions ajoutées:**
+- `notify_members` - FR: "Notifier les membres" / EN: "Notify members"
+- `notify_members_hint` - Description de l'option
+- `role_assigned` - FR: "Rôle attribué" / EN: "Role assigned"
+- `role_removed` - FR: "Rôle retiré" / EN: "Role removed"
+
+**Flux des notifications:**
+1. **Attribution de rôle:** Admin assigne rôle → Email au membre avec badge coloré
+2. **Retrait de rôle:** Admin retire rôle → Email au membre avec badge barré
+3. **Nouvel événement:** Admin crée événement + coche "Notifier" → Email à tous les membres actifs
+
+**Résultat:**
+- ✅ Membres automatiquement informés des changements de rôles
+- ✅ Option pour notifier les membres lors de création d'événements
+- ✅ Emails professionnels avec thème dark cohérent
+- ✅ Support bilingue FR/EN
+
+---
