@@ -242,6 +242,8 @@ router.get('/churches_v2/:churchId/users', protect, isSuperAdmin, async (req, re
       return {
         id: cu.user_id,
         email: authUser?.email || 'N/A',
+        full_name: authUser?.user_metadata?.full_name || authUser?.user_metadata?.name || authUser?.email?.split('@')[0] || 'N/A',
+        profile_photo_url: authUser?.user_metadata?.profile_photo_url || authUser?.user_metadata?.avatar_url || null,
         role: cu.role,
         created_at: authUser?.created_at
       };

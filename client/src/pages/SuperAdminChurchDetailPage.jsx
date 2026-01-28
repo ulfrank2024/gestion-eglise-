@@ -250,14 +250,33 @@ const SuperAdminChurchDetailPage = () => {
                   className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg"
                 >
                   <div className="flex items-center">
-                    <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center mr-3">
-                      <MdPerson className="text-indigo-400" />
-                    </div>
+                    {user.profile_photo_url ? (
+                      <img
+                        src={user.profile_photo_url}
+                        alt={user.full_name}
+                        className="w-10 h-10 rounded-full object-cover mr-3"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center mr-3">
+                        <MdPerson className="text-indigo-400" />
+                      </div>
+                    )}
                     <div>
-                      <p className="text-white font-medium">{user.email}</p>
-                      <p className="text-gray-400 text-sm capitalize">{user.role}</p>
+                      <p className="text-white font-medium">{user.full_name}</p>
+                      <p className="text-gray-400 text-sm">{user.email}</p>
                     </div>
                   </div>
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    user.role === 'church_admin'
+                      ? 'bg-purple-500/20 text-purple-400'
+                      : user.role === 'super_admin'
+                        ? 'bg-red-500/20 text-red-400'
+                        : 'bg-blue-500/20 text-blue-400'
+                  }`}>
+                    {user.role === 'church_admin' ? t('church_detail.admin') || 'Admin' :
+                     user.role === 'super_admin' ? 'Super Admin' :
+                     user.role}
+                  </span>
                 </div>
               ))}
             </div>
