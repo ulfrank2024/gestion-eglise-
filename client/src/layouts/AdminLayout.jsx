@@ -218,21 +218,25 @@ function AdminLayout() {
   };
 
   const getModuleButtonStyle = (module) => ({
-    flex: 1,
-    padding: '10px 8px',
+    flex: '1 1 auto',
+    minWidth: '70px',
+    padding: '8px 6px',
     cursor: 'pointer',
     backgroundColor: activeModule === module ? '#4f46e5' : '#374151',
     color: '#fff',
     border: 'none',
     borderRadius: activeModule === module ? '6px' : '4px',
-    fontSize: '12px',
+    fontSize: '11px',
     fontWeight: activeModule === module ? 'bold' : 'normal',
     transition: 'all 0.2s',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '6px',
+    gap: '4px',
     boxShadow: activeModule === module ? '0 2px 8px rgba(79, 70, 229, 0.4)' : 'none',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
   });
 
   const iconStyle = { marginRight: '10px' };
@@ -381,6 +385,7 @@ function AdminLayout() {
             backgroundColor: '#111827',
             borderRadius: '8px',
             display: 'flex',
+            flexWrap: 'wrap',
             gap: '4px'
           }}>
             {hasPermission('events') && (
