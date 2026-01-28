@@ -1,6 +1,6 @@
 const express = require('express');
 const { supabase, supabaseAdmin } = require('../db/supabase');
-const { transporter } = require('../services/mailer');
+const { transporter, generateThankYouEmail } = require('../services/mailer');
 const { protect, isAdminChurch, isSuperAdminOrChurchAdmin } = require('../middleware/auth');
 const router = express.Router();
 const qrcode = require('qrcode');
@@ -263,42 +263,31 @@ router.post('/events_v2/:eventId/send-thanks', protect, isSuperAdminOrChurchAdmi
     }
 
     // Envoyer l'email avec le template professionnel
-    const emailPromises = attendees.map(async (attendee) => {
-      const emailBodyFr = `
-        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 10px; overflow: hidden;">
-          <div style="background-color: #4f46e5; color: white; padding: 20px; text-align: center;">
-            <h1 style="margin: 0; font-size: 24px;">${subject}</h1>
-          </div>
-          <div style="padding: 20px;">
-            <p>Bonjour ${attendee.full_name},</p>
-            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
-              <p style="margin: 0; white-space: pre-line;">${message}</p>
-            </div>
-            <p>Cordialement,</p>
-            <p><strong>L'équipe de ${churchName}</strong></p>
-          </div>
-        </div>`;
+    const eventName = eventData.name_fr || eventData.name_en || 'Événement';
 
-      const emailBodyEn = `
-        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 10px; overflow: hidden;">
-          <div style="background-color: #4f46e5; color: white; padding: 20px; text-align: center;">
-            <h1 style="margin: 0; font-size: 24px;">${subject}</h1>
-          </div>
-          <div style="padding: 20px;">
-            <p>Hello ${attendee.full_name},</p>
-            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
-              <p style="margin: 0; white-space: pre-line;">${message}</p>
-            </div>
-            <p>Sincerely,</p>
-            <p><strong>The ${churchName} Team</strong></p>
-          </div>
-        </div>`;
+    const emailPromises = attendees.map(async (attendee) => {
+      // Générer les emails avec les templates professionnels (bilingue)
+      const emailHtmlFr = generateThankYouEmail({
+        eventName: eventData.name_fr || 'Événement',
+        churchName,
+        attendeeName: attendee.full_name,
+        customMessage: message,
+        language: 'fr'
+      });
+
+      const emailHtmlEn = generateThankYouEmail({
+        eventName: eventData.name_en || 'Event',
+        churchName,
+        attendeeName: attendee.full_name,
+        customMessage: message,
+        language: 'en'
+      });
 
       const mailOptions = {
         from: process.env.NODEMAILER_EMAIL,
         to: attendee.email,
         subject: subject,
-        html: `${emailBodyFr}<hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">${emailBodyEn}<div style="text-align: center; margin-top: 20px; font-style: italic; font-size:12px; color: #777;"><p>Car là où deux ou trois sont assemblés en mon nom, je suis au milieu d'eux. - Matthieu 18:20</p><p>For where two or three gather in my name, there am I with them. - Matthew 18:20</p></div>`,
+        html: `${emailHtmlFr}<hr style="border: 0; border-top: 1px solid #374151; margin: 30px 0;">${emailHtmlEn}`,
       };
       return transporter.sendMail(mailOptions);
     });

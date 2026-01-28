@@ -8,7 +8,7 @@ const router = express.Router();
 const crypto = require('crypto');
 const { supabaseAdmin } = require('../db/supabase');
 const { protect, isSuperAdminOrChurchAdmin } = require('../middleware/auth');
-const { sendMail } = require('../services/mailer');
+const { sendEmail, generateMemberInvitationEmail } = require('../services/mailer');
 
 // Appliquer le middleware d'authentification à toutes les routes
 router.use(protect);
@@ -112,50 +112,37 @@ router.post('/invite', async (req, res) => {
       return res.status(500).json({ error: 'Erreur lors de la création de l\'invitation' });
     }
 
-    // Envoyer l'email d'invitation
+    // Envoyer l'email d'invitation avec le template professionnel
     const registrationUrl = `${process.env.FRONTEND_BASE_URL}/${church.subdomain}/join/${token}`;
 
-    const emailHtml = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-          .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
-          .button { display: inline-block; background: #6366f1; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
-          .footer { text-align: center; color: #666; font-size: 12px; margin-top: 20px; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>Bienvenue chez ${church.name}!</h1>
-          </div>
-          <div class="content">
-            <p>Bonjour${full_name ? ` ${full_name}` : ''},</p>
-            <p>Vous avez été invité(e) à rejoindre la communauté de <strong>${church.name}</strong> sur MY EDEN X.</p>
-            <p>Cliquez sur le bouton ci-dessous pour compléter votre inscription:</p>
-            <p style="text-align: center;">
-              <a href="${registrationUrl}" class="button">Compléter mon inscription</a>
-            </p>
-            <p>Ce lien est valable pendant 7 jours.</p>
-            <p>Si vous n'attendiez pas cette invitation, vous pouvez ignorer cet email.</p>
-          </div>
-          <div class="footer">
-            <p>MY EDEN X - Plateforme de gestion d'église</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+    // Récupérer le nom de l'inviteur
+    const { data: inviter } = await supabaseAdmin
+      .from('church_users_v2')
+      .select('full_name')
+      .eq('user_id', userId)
+      .single();
 
-    await sendMail({
+    const inviterName = inviter?.full_name || 'L\'équipe';
+
+    // Générer les emails avec les templates professionnels (bilingue)
+    const emailHtmlFr = generateMemberInvitationEmail({
+      churchName: church.name,
+      inviterName,
+      joinUrl: registrationUrl,
+      language: 'fr'
+    });
+
+    const emailHtmlEn = generateMemberInvitationEmail({
+      churchName: church.name,
+      inviterName,
+      joinUrl: registrationUrl,
+      language: 'en'
+    });
+
+    await sendEmail({
       to: email,
-      subject: `Invitation à rejoindre ${church.name}`,
-      html: emailHtml
+      subject: `Invitation à rejoindre ${church.name} / Invitation to join ${church.name}`,
+      html: `${emailHtmlFr}<hr style="border: 0; border-top: 1px solid #374151; margin: 30px 0;">${emailHtmlEn}`
     });
 
     res.status(201).json({

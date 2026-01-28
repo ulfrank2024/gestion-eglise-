@@ -1,7 +1,12 @@
 const express = require('express');
 const { supabase, supabaseAdmin } = require('../db/supabase');
 const router = express.Router();
-const { transporter } = require('../services/mailer'); // Importer le transporter
+const {
+  transporter,
+  generateEventRegistrationEmail,
+  generateWelcomeChurchAdminEmail,
+  generateMemberWelcomeEmail
+} = require('../services/mailer');
 
 // GET /api/public/:churchId/events - Lister tous les événements publics actifs pour une église
 router.get('/:churchId/events', async (req, res) => {
@@ -112,10 +117,10 @@ router.post('/:churchId/events/:eventId/register', async (req, res) => {
 
     if (error) throw error;
 
-    // Utiliser supabaseAdmin pour récupérer les détails de l'événement (pour l'email)
+    // Utiliser supabaseAdmin pour récupérer les détails de l'événement et de l'église (pour l'email)
     const { data: eventDetails, error: eventError } = await supabaseAdmin
         .from('events_v2')
-        .select('name_fr, name_en, description_fr, description_en, event_start_date')
+        .select('name_fr, name_en, event_start_date, church:churches_v2(name, logo_url)')
         .eq('id', eventId)
         .eq('church_id', churchId)
         .maybeSingle();
@@ -123,86 +128,40 @@ router.post('/:churchId/events/:eventId/register', async (req, res) => {
     if (eventError) {
         console.error('Error fetching event details for email:', eventError.message);
     } else {
-        const eventNameFr = eventDetails?.name_fr || 'Événement';
-        const eventNameEn = eventDetails?.name_en || 'Event';
-        const eventDescriptionFr = eventDetails?.description_fr || '';
-        const eventDescriptionEn = eventDetails?.description_en || '';
+        const dateFormatOptionsFr = { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' };
+        const dateFormatOptionsEn = { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' };
 
-        const dateFormatOptions = { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' };
-        const startDateFr = eventDetails?.event_start_date ? new Date(eventDetails.event_start_date).toLocaleString('fr-FR', dateFormatOptions) : 'Date non spécifiée';
-        const startDateEn = eventDetails?.event_start_date ? new Date(eventDetails.event_start_date).toLocaleString('en-US', dateFormatOptions) : 'Unspecified Date';
-        
-        // Construction du récapitulatif simplifié FR
-        let responsesHtmlFr = '<ul>';
-        responsesHtmlFr += `<li><strong>Nom complet:</strong> ${fullName}</li>`;
-        responsesHtmlFr += `<li><strong>Email:</strong> ${email}</li>`;
-        if (formResponses && formResponses.phone) {
-            responsesHtmlFr += `<li><strong>Téléphone:</strong> ${formResponses.phone}</li>`;
-        }
-        responsesHtmlFr += '</ul>';
+        const eventDateFr = eventDetails?.event_start_date
+            ? new Date(eventDetails.event_start_date).toLocaleString('fr-FR', dateFormatOptionsFr)
+            : 'Date non spécifiée';
+        const eventDateEn = eventDetails?.event_start_date
+            ? new Date(eventDetails.event_start_date).toLocaleString('en-US', dateFormatOptionsEn)
+            : 'Unspecified Date';
 
-        // Construction du récapitulatif simplifié EN
-        let responsesHtmlEn = '<ul>';
-        responsesHtmlEn += `<li><strong>Full Name:</strong> ${fullName}</li>`;
-        responsesHtmlEn += `<li><strong>Email:</strong> ${email}</li>`;
-        if (formResponses && formResponses.phone) {
-            responsesHtmlEn += `<li><strong>Phone:</strong> ${formResponses.phone}</li>`;
-        }
-        responsesHtmlEn += '</ul>';
+        // Générer les emails avec les templates professionnels
+        const emailHtmlFr = generateEventRegistrationEmail({
+            eventName: eventDetails?.name_fr || 'Événement',
+            eventDate: eventDateFr,
+            churchName: eventDetails?.church?.name || 'MY EDEN X',
+            churchLogo: eventDetails?.church?.logo_url,
+            attendeeName: fullName,
+            language: 'fr'
+        });
 
-        const emailBodyFr = `
-        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 10px; overflow: hidden;">
-          <div style="background-color: #4f46e5; color: white; padding: 20px; text-align: center;">
-            <h1 style="margin: 0; font-size: 24px;">Confirmation d'inscription</h1>
-          </div>
-          <div style="padding: 20px;">
-            <p>Bonjour ${fullName},</p>
-            <p>Nous avons le plaisir de confirmer votre inscription à l'événement :</p>
-            <h2 style="color: #4f46e5;">${eventNameFr}</h2>
-            <p><strong>Date et heure :</strong> ${startDateFr}</p>
-            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin-top: 20px;">
-              <h3 style="margin-top: 0;">Description de l'événement</h3>
-              <p>${eventDescriptionFr}</p>
-            </div>
-            <div style="margin-top: 20px;">
-              <h3 style="margin-top: 0;">Récapitulatif de votre inscription</h3>
-              ${responsesHtmlFr}
-            </div>
-            <p>Nous sommes impatients de vous y retrouver !</p>
-            <p>Cordialement,</p>
-            <p><strong>L'équipe d'Eden Eve</strong></p>
-          </div>
-        </div>`;
+        const emailHtmlEn = generateEventRegistrationEmail({
+            eventName: eventDetails?.name_en || 'Event',
+            eventDate: eventDateEn,
+            churchName: eventDetails?.church?.name || 'MY EDEN X',
+            churchLogo: eventDetails?.church?.logo_url,
+            attendeeName: fullName,
+            language: 'en'
+        });
 
-        const emailBodyEn = `
-        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 10px; overflow: hidden;">
-          <div style="background-color: #4f46e5; color: white; padding: 20px; text-align: center;">
-            <h1 style="margin: 0; font-size: 24px;">Registration Confirmation</h1>
-          </div>
-          <div style="padding: 20px;">
-            <p>Hello ${fullName},</p>
-            <p>We are pleased to confirm your registration for the event:</p>
-            <h2 style="color: #4f46e5;">${eventNameEn}</h2>
-            <p><strong>Date and time:</strong> ${startDateEn}</p>
-            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin-top: 20px;">
-              <h3 style="margin-top: 0;">Event Description</h3>
-              <p>${eventDescriptionEn}</p>
-            </div>
-            <div style="margin-top: 20px;">
-              <h3 style="margin-top: 0;">Your Registration Summary</h3>
-              ${responsesHtmlEn}
-            </div>
-            <p>We look forward to seeing you there!</p>
-            <p>Sincerely,</p>
-            <p><strong>The Eden Eve Team</strong></p>
-          </div>
-        </div>`;
-        
         const mailOptions = {
             from: process.env.NODEMAILER_EMAIL,
             to: email,
-            subject: `Confirmation d'inscription : ${eventNameFr} / Registration Confirmation: ${eventNameEn}`,
-            html: `${emailBodyFr}<hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">${emailBodyEn}<div style="text-align: center; margin-top: 20px; font-style: italic; font-size:12px; color: #777;"><p>Car là où deux ou trois sont assemblés en mon nom, je suis au milieu d'eux. - Matthieu 18:20</p><p>For where two or three gather in my name, there am I with them. - Matthew 18:20</p></div>`,
+            subject: `Confirmation d'inscription : ${eventDetails?.name_fr || 'Événement'} / Registration Confirmation: ${eventDetails?.name_en || 'Event'}`,
+            html: `${emailHtmlFr}<hr style="border: 0; border-top: 1px solid #374151; margin: 30px 0;">${emailHtmlEn}`,
         };
 
         try {
@@ -423,94 +382,31 @@ router.post('/churches/register', async (req, res) => {
             .delete()
             .eq('id', invitation.id);
 
-        // 6. Envoyer l'email de bienvenue au nouvel admin
+        // 6. Envoyer l'email de bienvenue au nouvel admin avec le template professionnel
         console.log('Step 6: Sending welcome email...');
         const frontendUrl = process.env.FRONTEND_BASE_URL || 'http://localhost:3000';
         const loginUrl = `${frontendUrl}/admin/login`;
 
-        const welcomeEmailFr = `
-        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 10px; overflow: hidden;">
-          <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; padding: 30px; text-align: center;">
-            <h1 style="margin: 0; font-size: 28px;">🎉 Bienvenue sur MY EDEN X</h1>
-            <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Votre plateforme de gestion d'église</p>
-          </div>
-          <div style="padding: 25px;">
-            <p>Bonjour ${adminName},</p>
-            <p>Félicitations ! Votre église <strong>${churchName}</strong> a été créée avec succès sur MY EDEN X.</p>
+        // Générer les emails avec les templates professionnels
+        const welcomeEmailFr = generateWelcomeChurchAdminEmail({
+            churchName,
+            adminName,
+            loginUrl,
+            language: 'fr'
+        });
 
-            <div style="background-color: #f0f9ff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4f46e5;">
-              <h3 style="margin-top: 0; color: #4f46e5;">📋 Récapitulatif de votre compte</h3>
-              <ul style="margin: 0; padding-left: 20px;">
-                <li><strong>Nom de l'église:</strong> ${churchName}</li>
-                <li><strong>Sous-domaine:</strong> ${subdomain}</li>
-                <li><strong>Email de connexion:</strong> ${invitation.email}</li>
-              </ul>
-            </div>
-
-            <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="margin-top: 0;">🚀 Prochaines étapes</h3>
-              <ol style="margin: 0; padding-left: 20px;">
-                <li>Connectez-vous à votre espace admin</li>
-                <li>Personnalisez les paramètres de votre église</li>
-                <li>Créez votre premier événement</li>
-                <li>Invitez votre équipe à collaborer</li>
-              </ol>
-            </div>
-
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${loginUrl}" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Accéder à mon espace admin</a>
-            </div>
-
-            <p>Si vous avez des questions, n'hésitez pas à nous contacter.</p>
-            <p>Cordialement,</p>
-            <p><strong>L'équipe MY EDEN X</strong></p>
-          </div>
-        </div>`;
-
-        const welcomeEmailEn = `
-        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 10px; overflow: hidden;">
-          <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; padding: 30px; text-align: center;">
-            <h1 style="margin: 0; font-size: 28px;">🎉 Welcome to MY EDEN X</h1>
-            <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">Your church management platform</p>
-          </div>
-          <div style="padding: 25px;">
-            <p>Hello ${adminName},</p>
-            <p>Congratulations! Your church <strong>${churchName}</strong> has been successfully created on MY EDEN X.</p>
-
-            <div style="background-color: #f0f9ff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4f46e5;">
-              <h3 style="margin-top: 0; color: #4f46e5;">📋 Account Summary</h3>
-              <ul style="margin: 0; padding-left: 20px;">
-                <li><strong>Church name:</strong> ${churchName}</li>
-                <li><strong>Subdomain:</strong> ${subdomain}</li>
-                <li><strong>Login email:</strong> ${invitation.email}</li>
-              </ul>
-            </div>
-
-            <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="margin-top: 0;">🚀 Next Steps</h3>
-              <ol style="margin: 0; padding-left: 20px;">
-                <li>Log in to your admin dashboard</li>
-                <li>Customize your church settings</li>
-                <li>Create your first event</li>
-                <li>Invite your team to collaborate</li>
-              </ol>
-            </div>
-
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${loginUrl}" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Access my admin dashboard</a>
-            </div>
-
-            <p>If you have any questions, feel free to contact us.</p>
-            <p>Sincerely,</p>
-            <p><strong>The MY EDEN X Team</strong></p>
-          </div>
-        </div>`;
+        const welcomeEmailEn = generateWelcomeChurchAdminEmail({
+            churchName,
+            adminName,
+            loginUrl,
+            language: 'en'
+        });
 
         const welcomeMailOptions = {
             from: process.env.NODEMAILER_EMAIL,
             to: invitation.email,
             subject: `🎉 Bienvenue sur MY EDEN X - ${churchName} / Welcome to MY EDEN X - ${churchName}`,
-            html: `${welcomeEmailFr}<hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">${welcomeEmailEn}<div style="text-align: center; margin-top: 20px; font-style: italic; font-size:12px; color: #777;"><p>Car là où deux ou trois sont assemblés en mon nom, je suis au milieu d'eux. - Matthieu 18:20</p><p>For where two or three gather in my name, there am I with them. - Matthew 18:20</p></div>`,
+            html: `${welcomeEmailFr}<hr style="border: 0; border-top: 1px solid #374151; margin: 30px 0;">${welcomeEmailEn}`,
         };
 
         try {
@@ -808,39 +704,33 @@ router.post('/:churchId/members/register', async (req, res) => {
                 .eq('id', linkId);
         }
 
-        // Envoyer un email de bienvenue
+        // Envoyer un email de bienvenue avec le template professionnel
         const frontendUrl = process.env.FRONTEND_BASE_URL || 'http://localhost:3000';
         const loginUrl = `${frontendUrl}/member/login`;
 
-        const welcomeEmailHtml = `
-        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 10px; overflow: hidden;">
-          <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; padding: 30px; text-align: center;">
-            <h1 style="margin: 0; font-size: 24px;">Bienvenue chez ${church.name}!</h1>
-          </div>
-          <div style="padding: 25px;">
-            <p>Bonjour ${full_name},</p>
-            <p>Votre compte membre a été créé avec succès!</p>
-            <p>Vous pouvez maintenant vous connecter pour accéder à:</p>
-            <ul>
-              <li>Votre profil personnel</li>
-              <li>Les événements de l'église</li>
-              <li>Les annonces et notifications</li>
-            </ul>
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${loginUrl}" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">Me connecter</a>
-            </div>
-            <p>Bienvenue dans notre communauté!</p>
-            <p><strong>L'équipe ${church.name}</strong></p>
-          </div>
-        </div>`;
+        // Générer les emails avec les templates professionnels (bilingue)
+        const welcomeEmailFr = generateMemberWelcomeEmail({
+            memberName: full_name,
+            churchName: church.name,
+            loginUrl,
+            language: 'fr'
+        });
+
+        const welcomeEmailEn = generateMemberWelcomeEmail({
+            memberName: full_name,
+            churchName: church.name,
+            loginUrl,
+            language: 'en'
+        });
 
         try {
             await transporter.sendMail({
                 from: process.env.NODEMAILER_EMAIL,
                 to: email,
-                subject: `Bienvenue chez ${church.name}!`,
-                html: welcomeEmailHtml
+                subject: `Bienvenue chez ${church.name}! / Welcome to ${church.name}!`,
+                html: `${welcomeEmailFr}<hr style="border: 0; border-top: 1px solid #374151; margin: 30px 0;">${welcomeEmailEn}`
             });
+            console.log('Welcome email sent to new member:', email);
         } catch (mailError) {
             console.error('Error sending welcome email:', mailError);
         }
