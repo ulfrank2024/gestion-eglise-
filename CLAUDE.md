@@ -2591,3 +2591,71 @@ api.member.getDashboard, getProfile, updateProfile, getEvents, getRoles, getNoti
 - ✅ Commit: `6aaa0b6`
 
 ---
+
+### 2026-01-28 - Implémentation du Module Gestion de la Chorale
+
+**Nouveau module complet pour la gestion de la chorale de l'église:**
+
+1. **Base de données** (`/server/db/add_choir_tables.sql`)
+   - ✅ `choir_managers_v2` - Responsables/sous-admins de la chorale
+   - ✅ `choir_members_v2` - Choristes avec type de voix (soprano, alto, tenor, basse)
+   - ✅ `choir_song_categories_v2` - Catégories de chants
+   - ✅ `choir_songs_v2` - Répertoire des chants
+   - ✅ `choriste_repertoire_v2` - Chants qu'un lead peut diriger
+   - ✅ `choir_planning_v2` - Planning des événements musicaux
+   - ✅ `choir_planning_songs_v2` - Chants assignés à un planning avec lead
+
+2. **Routes Backend** (`/server/routes/choirRoutes.js`)
+   - ✅ CRUD complet pour managers, choristes, catégories, chants, planning
+   - ✅ Gestion du répertoire par choriste lead
+   - ✅ Statistiques de la chorale
+   - ✅ Middleware personnalisé `isChoirManagerOrAdmin`
+
+3. **API Client** (`/client/src/api/api.js`)
+   - ✅ 25+ méthodes API pour le module chorale
+   - ✅ Gestion managers, choristes, songs, categories, planning
+
+4. **Pages Frontend:**
+   - ✅ `AdminChoirDashboardPage.jsx` - Dashboard avec stats, plannings à venir, leads
+   - ✅ `AdminChoirMembersPage.jsx` - Gestion des choristes (ajout, édition, suppression)
+   - ✅ `AdminChoirSongsPage.jsx` - Répertoire des chants avec catégories
+   - ✅ `AdminChoirPlanningPage.jsx` - Planning avec assignation de chants et leads
+
+5. **Intégration Sidebar** (`/client/src/layouts/AdminLayout.jsx`)
+   - ✅ Nouveau module "Chorale" dans le sélecteur de modules
+   - ✅ Section Gestion Chorale avec sous-menus:
+     - Dashboard
+     - Choristes
+     - Répertoire
+     - Planning
+   - ✅ Icônes MdMusicNote, MdLibraryMusic, MdCalendarMonth
+
+6. **Routes** (`/client/src/main.jsx`)
+   - ✅ `/admin/choir` - Dashboard chorale
+   - ✅ `/admin/choir/members` - Gestion choristes
+   - ✅ `/admin/choir/songs` - Répertoire
+   - ✅ `/admin/choir/planning` - Planning musical
+
+7. **Traductions FR/EN:**
+   - ✅ 100+ clés de traduction pour le module chorale
+   - ✅ Types de voix: soprano, alto, ténor, basse
+   - ✅ Types d'événements: culte, répétition, concert
+   - ✅ Messages d'erreur, labels, placeholders
+
+**Fonctionnalités clés:**
+- Pasteur assigne un responsable de chorale (sous-admin)
+- Responsable sélectionne les membres de l'église comme choristes
+- Attribution du type de voix à chaque choriste
+- Désignation des choristes leads (peuvent diriger des chants)
+- Répertoire de chants avec catégories, paroles, tonalité, tempo
+- Planning annuel des événements musicaux
+- Attribution des chants et leads pour chaque événement
+
+**Design:**
+- Thème dark cohérent avec l'interface admin
+- Cards avec gradients colorés
+- Badges pour types de voix et rôles
+- Modals pour ajout/édition
+- Filtres de recherche
+
+---

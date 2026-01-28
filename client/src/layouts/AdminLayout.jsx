@@ -6,7 +6,7 @@ import {
   MdEvent, MdLeaderboard, MdExpandMore, MdExpandLess, MdSettings,
   MdGroupAdd, MdHistory, MdLogout, MdDashboard, MdPeople,
   MdPersonAdd, MdBadge, MdAnnouncement, MdMail, MdAccountCircle,
-  MdEventAvailable
+  MdEventAvailable, MdMusicNote, MdLibraryMusic, MdCalendarMonth
 } from 'react-icons/md';
 import { api } from '../api/api';
 import { supabase } from '../supabaseClient';
@@ -36,6 +36,7 @@ function AdminLayout() {
   const [openSections, setOpenSections] = useState({
     events: true,
     members: true,
+    choir: true,
     reportsAndStats: false,
     mySpace: true,
   });
@@ -154,6 +155,8 @@ function AdminLayout() {
       navigate('/admin/dashboard');
     } else if (module === 'members') {
       navigate('/admin/members-dashboard');
+    } else if (module === 'choir') {
+      navigate('/admin/choir');
     }
   };
 
@@ -398,10 +401,19 @@ function AdminLayout() {
                 {t('members_module') || 'Membres'}
               </button>
             )}
+            {hasPermission('choir') && (
+              <button
+                onClick={() => handleModuleChange('choir')}
+                style={getModuleButtonStyle('choir')}
+              >
+                <MdMusicNote size={16} />
+                {t('choir_module') || 'Chorale'}
+              </button>
+            )}
           </div>
 
           {/* Message si aucun module autorisé */}
-          {!hasPermission('events') && !hasPermission('members') && (
+          {!hasPermission('events') && !hasPermission('members') && !hasPermission('choir') && (
             <div style={{
               padding: '15px',
               backgroundColor: '#374151',
@@ -588,6 +600,76 @@ function AdminLayout() {
                         >
                           <MdAnnouncement style={iconStyle} />
                           {t('announcements') || 'Annonces'}
+                        </NavLink>
+                      </li>
+                    </ul>
+                  )}
+                </li>
+              </>
+            )}
+
+            {/* Module Chorale - Visible uniquement si autorisé */}
+            {activeModule === 'choir' && hasPermission('choir') && (
+              <>
+                {/* Section Gestion de la Chorale */}
+                <li style={{ marginBottom: '10px' }}>
+                  <div
+                    onClick={() => toggleSection('choir')}
+                    style={{ ...getLinkStyle({ itemName: 'choir', isParent: true }), cursor: 'pointer' }}
+                  >
+                    <MdMusicNote style={iconStyle} />
+                    {t('choir_management') || 'Gestion Chorale'}
+                    {openSections.choir ? (
+                      <MdExpandLess style={toggleIconStyle} />
+                    ) : (
+                      <MdExpandMore style={toggleIconStyle} />
+                    )}
+                  </div>
+                  {openSections.choir && (
+                    <ul style={{ listStyle: 'none', paddingLeft: '20px', marginTop: '5px' }}>
+                      <li style={{ marginBottom: '5px' }}>
+                        <NavLink
+                          to="/admin/choir"
+                          end
+                          onMouseEnter={() => setHoveredItem('choir-dashboard')}
+                          onMouseLeave={() => setHoveredItem(null)}
+                          style={({ isActive }) => getLinkStyle({ isActive, itemName: 'choir-dashboard' })}
+                        >
+                          <MdDashboard style={iconStyle} />
+                          {t('dashboard')}
+                        </NavLink>
+                      </li>
+                      <li style={{ marginBottom: '5px' }}>
+                        <NavLink
+                          to="/admin/choir/members"
+                          onMouseEnter={() => setHoveredItem('choir-members')}
+                          onMouseLeave={() => setHoveredItem(null)}
+                          style={({ isActive }) => getLinkStyle({ isActive, itemName: 'choir-members' })}
+                        >
+                          <MdPeople style={iconStyle} />
+                          {t('choir.choristers') || 'Choristes'}
+                        </NavLink>
+                      </li>
+                      <li style={{ marginBottom: '5px' }}>
+                        <NavLink
+                          to="/admin/choir/songs"
+                          onMouseEnter={() => setHoveredItem('choir-songs')}
+                          onMouseLeave={() => setHoveredItem(null)}
+                          style={({ isActive }) => getLinkStyle({ isActive, itemName: 'choir-songs' })}
+                        >
+                          <MdLibraryMusic style={iconStyle} />
+                          {t('choir.repertoire') || 'Répertoire'}
+                        </NavLink>
+                      </li>
+                      <li style={{ marginBottom: '5px' }}>
+                        <NavLink
+                          to="/admin/choir/planning"
+                          onMouseEnter={() => setHoveredItem('choir-planning')}
+                          onMouseLeave={() => setHoveredItem(null)}
+                          style={({ isActive }) => getLinkStyle({ isActive, itemName: 'choir-planning' })}
+                        >
+                          <MdCalendarMonth style={iconStyle} />
+                          {t('choir.planning') || 'Planning'}
                         </NavLink>
                       </li>
                     </ul>

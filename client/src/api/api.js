@@ -373,6 +373,142 @@ export const api = {
     deleteNotification: async (notificationId) => {
       await apiClient.delete(`/admin/notifications/${notificationId}`);
     },
+
+    // --- Choir/Chorale ---
+    // Managers (Responsables)
+    getChoirManagers: async () => {
+      const { data } = await apiClient.get('/admin/choir/managers');
+      return data;
+    },
+    addChoirManager: async (managerData) => {
+      const { data } = await apiClient.post('/admin/choir/managers', managerData);
+      return data;
+    },
+    updateChoirManager: async (managerId, managerData) => {
+      const { data } = await apiClient.put(`/admin/choir/managers/${managerId}`, managerData);
+      return data;
+    },
+    removeChoirManager: async (managerId) => {
+      await apiClient.delete(`/admin/choir/managers/${managerId}`);
+    },
+
+    // Choir Members (Choristes)
+    getChoirMembers: async (params = {}) => {
+      const { data } = await apiClient.get('/admin/choir/members', { params });
+      return data;
+    },
+    getChoirMember: async (memberId) => {
+      const { data } = await apiClient.get(`/admin/choir/members/${memberId}`);
+      return data;
+    },
+    addChoirMember: async (memberData) => {
+      const { data } = await apiClient.post('/admin/choir/members', memberData);
+      return data;
+    },
+    updateChoirMember: async (memberId, memberData) => {
+      const { data } = await apiClient.put(`/admin/choir/members/${memberId}`, memberData);
+      return data;
+    },
+    removeChoirMember: async (memberId) => {
+      await apiClient.delete(`/admin/choir/members/${memberId}`);
+    },
+    getChoirStatistics: async () => {
+      const { data } = await apiClient.get('/admin/choir/members/statistics');
+      return data;
+    },
+
+    // Song Categories
+    getSongCategories: async () => {
+      const { data } = await apiClient.get('/admin/choir/categories');
+      return data;
+    },
+    createSongCategory: async (categoryData) => {
+      const { data } = await apiClient.post('/admin/choir/categories', categoryData);
+      return data;
+    },
+    updateSongCategory: async (categoryId, categoryData) => {
+      const { data } = await apiClient.put(`/admin/choir/categories/${categoryId}`, categoryData);
+      return data;
+    },
+    deleteSongCategory: async (categoryId) => {
+      await apiClient.delete(`/admin/choir/categories/${categoryId}`);
+    },
+
+    // Songs (Répertoire)
+    getSongs: async (params = {}) => {
+      const { data } = await apiClient.get('/admin/choir/songs', { params });
+      return data;
+    },
+    getSong: async (songId) => {
+      const { data } = await apiClient.get(`/admin/choir/songs/${songId}`);
+      return data;
+    },
+    createSong: async (songData) => {
+      const { data } = await apiClient.post('/admin/choir/songs', songData);
+      return data;
+    },
+    updateSong: async (songId, songData) => {
+      const { data } = await apiClient.put(`/admin/choir/songs/${songId}`, songData);
+      return data;
+    },
+    deleteSong: async (songId) => {
+      await apiClient.delete(`/admin/choir/songs/${songId}`);
+    },
+
+    // Choriste Repertoire (Chants qu'un lead peut diriger)
+    getChoristeRepertoire: async (choirMemberId) => {
+      const { data } = await apiClient.get(`/admin/choir/members/${choirMemberId}/repertoire`);
+      return data;
+    },
+    addSongToRepertoire: async (choirMemberId, songId, repertoireData = {}) => {
+      const { data } = await apiClient.post(`/admin/choir/members/${choirMemberId}/repertoire`, { song_id: songId, ...repertoireData });
+      return data;
+    },
+    updateRepertoireSong: async (repertoireId, repertoireData) => {
+      const { data } = await apiClient.put(`/admin/choir/repertoire/${repertoireId}`, repertoireData);
+      return data;
+    },
+    removeSongFromRepertoire: async (repertoireId) => {
+      await apiClient.delete(`/admin/choir/repertoire/${repertoireId}`);
+    },
+
+    // Planning
+    getChoirPlannings: async (params = {}) => {
+      const { data } = await apiClient.get('/admin/choir/planning', { params });
+      return data;
+    },
+    getChoirPlanning: async (planningId) => {
+      const { data } = await apiClient.get(`/admin/choir/planning/${planningId}`);
+      return data;
+    },
+    createChoirPlanning: async (planningData) => {
+      const { data } = await apiClient.post('/admin/choir/planning', planningData);
+      return data;
+    },
+    updateChoirPlanning: async (planningId, planningData) => {
+      const { data } = await apiClient.put(`/admin/choir/planning/${planningId}`, planningData);
+      return data;
+    },
+    deleteChoirPlanning: async (planningId) => {
+      await apiClient.delete(`/admin/choir/planning/${planningId}`);
+    },
+
+    // Planning Songs (Chants dans un planning)
+    getPlanninsongsAsync: async (planningId) => {
+      const { data } = await apiClient.get(`/admin/choir/planning/${planningId}/songs`);
+      return data;
+    },
+    addSongToPlanning: async (planningId, songData) => {
+      const { data } = await apiClient.post(`/admin/choir/planning/${planningId}/songs`, songData);
+      return data;
+    },
+    updatePlanningSong: async (planningSongId, songData) => {
+      const { data } = await apiClient.put(`/admin/choir/planning-songs/${planningSongId}`, songData);
+      return data;
+    },
+    removeSongFromPlanning: async (planningSongId) => {
+      await apiClient.delete(`/admin/choir/planning-songs/${planningSongId}`);
+    },
   },
 
   public: {

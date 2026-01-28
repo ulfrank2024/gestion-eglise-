@@ -36,6 +36,12 @@ import AdminRolesPage from './pages/AdminRolesPage';
 import AdminMemberInvitationsPage from './pages/AdminMemberInvitationsPage';
 import AdminAnnouncementsPage from './pages/AdminAnnouncementsPage';
 
+// Admin Pages - Module Chorale
+import AdminChoirDashboardPage from './pages/AdminChoirDashboardPage';
+import AdminChoirMembersPage from './pages/AdminChoirMembersPage';
+import AdminChoirSongsPage from './pages/AdminChoirSongsPage';
+import AdminChoirPlanningPage from './pages/AdminChoirPlanningPage';
+
 // Member Pages
 import MemberRegistrationPage from './pages/MemberRegistrationPage';
 import MemberLayout from './layouts/MemberLayout';
@@ -112,6 +118,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="roles" element={<AdminRolesPage />} />
             <Route path="member-invitations" element={<AdminMemberInvitationsPage />} />
             <Route path="announcements" element={<AdminAnnouncementsPage />} />
+            {/* Module Chorale */}
+            <Route path="choir" element={<AdminChoirDashboardPage />} />
+            <Route path="choir/members" element={<AdminChoirMembersPage />} />
+            <Route path="choir/songs" element={<AdminChoirSongsPage />} />
+            <Route path="choir/planning" element={<AdminChoirPlanningPage />} />
           </Route>
 
           {/* Super Admin Routes with Layout */}
