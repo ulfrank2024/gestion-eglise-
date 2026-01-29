@@ -26,18 +26,34 @@ const AdminChoirDashboardPage = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        setError('');
 
         // Récupérer les statistiques
-        const statsData = await api.admin.getChoirStatistics();
-        setStatistics(statsData);
+        try {
+          const statsData = await api.admin.getChoirStatistics();
+          setStatistics(statsData || { total_members: 0, total_songs: 0, upcoming_plannings: 0, lead_singers: 0 });
+        } catch (statsErr) {
+          console.error('Error fetching choir statistics:', statsErr);
+          setStatistics({ total_members: 0, total_songs: 0, upcoming_plannings: 0, lead_singers: 0 });
+        }
 
         // Récupérer les plannings récents (3 prochains)
-        const planningsData = await api.admin.getChoirPlannings({ upcoming: true, limit: 3 });
-        setRecentPlannings(planningsData);
+        try {
+          const planningsData = await api.admin.getChoirPlannings({ upcoming: true, limit: 3 });
+          setRecentPlannings(Array.isArray(planningsData) ? planningsData : []);
+        } catch (planErr) {
+          console.error('Error fetching choir plannings:', planErr);
+          setRecentPlannings([]);
+        }
 
         // Récupérer les choristes leads (top performers)
-        const membersData = await api.admin.getChoirMembers({ is_lead: true, limit: 5 });
-        setTopChoristers(membersData);
+        try {
+          const membersData = await api.admin.getChoirMembers({ is_lead: true, limit: 5 });
+          setTopChoristers(Array.isArray(membersData) ? membersData : []);
+        } catch (membersErr) {
+          console.error('Error fetching choir members:', membersErr);
+          setTopChoristers([]);
+        }
 
       } catch (err) {
         console.error('Error fetching choir data:', err);
@@ -169,7 +185,7 @@ const AdminChoirDashboardPage = () => {
               {recentPlannings.map((planning) => (
                 <Link
                   key={planning.id}
-                  to={`/admin/choir/planning/${planning.id}`}
+                  to="/admin/choir/planning"
                   className="block p-4 bg-gray-700/50 rounded-lg hover:bg-gray-700 transition-colors"
                 >
                   <div className="flex items-center justify-between">
@@ -209,7 +225,7 @@ const AdminChoirDashboardPage = () => {
               <MdCalendarMonth className="text-4xl mx-auto mb-2 opacity-50" />
               <p>{t('choir.no_upcoming_plannings')}</p>
               <Link
-                to="/admin/choir/planning/new"
+                to="/admin/choir/planning"
                 className="text-indigo-400 hover:text-indigo-300 text-sm mt-2 inline-block"
               >
                 {t('choir.create_planning')}
@@ -293,7 +309,7 @@ const AdminChoirDashboardPage = () => {
       {/* Quick Actions */}
       <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
         <Link
-          to="/admin/choir/members/add"
+          to="/admin/choir/members"
           className="flex items-center gap-3 p-4 bg-gray-800 border border-gray-700 rounded-xl hover:border-indigo-500 transition-colors group"
         >
           <div className="p-3 rounded-lg bg-indigo-500/20 group-hover:bg-indigo-500/30 transition-colors">
@@ -306,7 +322,7 @@ const AdminChoirDashboardPage = () => {
         </Link>
 
         <Link
-          to="/admin/choir/songs/add"
+          to="/admin/choir/songs"
           className="flex items-center gap-3 p-4 bg-gray-800 border border-gray-700 rounded-xl hover:border-emerald-500 transition-colors group"
         >
           <div className="p-3 rounded-lg bg-emerald-500/20 group-hover:bg-emerald-500/30 transition-colors">
@@ -319,7 +335,7 @@ const AdminChoirDashboardPage = () => {
         </Link>
 
         <Link
-          to="/admin/choir/planning/new"
+          to="/admin/choir/planning"
           className="flex items-center gap-3 p-4 bg-gray-800 border border-gray-700 rounded-xl hover:border-amber-500 transition-colors group"
         >
           <div className="p-3 rounded-lg bg-amber-500/20 group-hover:bg-amber-500/30 transition-colors">

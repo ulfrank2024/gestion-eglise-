@@ -48,17 +48,32 @@ const AdminChoirMembersPage = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      setError('');
 
       // Récupérer les choristes
-      const choirData = await api.admin.getChoirMembers();
-      setChoirMembers(choirData);
+      try {
+        const choirData = await api.admin.getChoirMembers();
+        // S'assurer que c'est un tableau
+        setChoirMembers(Array.isArray(choirData) ? choirData : []);
+      } catch (choirErr) {
+        console.error('Error fetching choir members:', choirErr);
+        // Si les tables choir n'existent pas, initialiser à tableau vide
+        setChoirMembers([]);
+      }
 
       // Récupérer les membres de l'église (pour le select d'ajout)
-      const membersData = await api.admin.getMembers({ is_active: true });
-      setChurchMembers(membersData);
+      try {
+        const membersData = await api.admin.getMembers({ is_active: true });
+        // L'API retourne { members: [...], total, ... } - extraire le tableau
+        const membersArray = membersData?.members || membersData || [];
+        setChurchMembers(Array.isArray(membersArray) ? membersArray : []);
+      } catch (membersErr) {
+        console.error('Error fetching church members:', membersErr);
+        setChurchMembers([]);
+      }
 
     } catch (err) {
-      console.error('Error fetching choir members:', err);
+      console.error('Error fetching data:', err);
       setError(t('choir.error_loading'));
     } finally {
       setLoading(false);
@@ -277,13 +292,10 @@ const AdminChoirMembersPage = () => {
               </div>
 
               {chorister.repertoire_count > 0 && (
-                <Link
-                  to={`/admin/choir/members/${chorister.id}/repertoire`}
-                  className="mt-3 flex items-center gap-2 text-sm text-gray-400 hover:text-indigo-400 transition-colors"
-                >
+                <div className="mt-3 flex items-center gap-2 text-sm text-gray-400">
                   <MdLibraryMusic />
                   {chorister.repertoire_count} {t('choir.songs_in_repertoire')}
-                </Link>
+                </div>
               )}
 
               {chorister.notes && (

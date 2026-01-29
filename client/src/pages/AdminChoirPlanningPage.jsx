@@ -66,22 +66,41 @@ const AdminChoirPlanningPage = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      setError('');
 
       const params = {};
       if (dateFilter === 'upcoming') params.upcoming = true;
       if (dateFilter === 'past') params.past = true;
 
-      const [planningsData, songsData, membersData] = await Promise.all([
-        api.admin.getChoirPlannings(params),
-        api.admin.getSongs(),
-        api.admin.getChoirMembers({ is_lead: true })
-      ]);
+      // Récupérer les plannings
+      try {
+        const planningsData = await api.admin.getChoirPlannings(params);
+        setPlannings(Array.isArray(planningsData) ? planningsData : []);
+      } catch (planErr) {
+        console.error('Error fetching plannings:', planErr);
+        setPlannings([]);
+      }
 
-      setPlannings(planningsData);
-      setSongs(songsData);
-      setChoirMembers(membersData);
+      // Récupérer les chants
+      try {
+        const songsData = await api.admin.getSongs();
+        setSongs(Array.isArray(songsData) ? songsData : []);
+      } catch (songsErr) {
+        console.error('Error fetching songs:', songsErr);
+        setSongs([]);
+      }
+
+      // Récupérer les choristes leads
+      try {
+        const membersData = await api.admin.getChoirMembers({ is_lead: true });
+        setChoirMembers(Array.isArray(membersData) ? membersData : []);
+      } catch (membersErr) {
+        console.error('Error fetching choir members:', membersErr);
+        setChoirMembers([]);
+      }
+
     } catch (err) {
-      console.error('Error fetching plannings:', err);
+      console.error('Error fetching data:', err);
       setError(t('choir.error_loading'));
     } finally {
       setLoading(false);

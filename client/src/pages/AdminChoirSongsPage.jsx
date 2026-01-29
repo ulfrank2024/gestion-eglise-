@@ -61,16 +61,28 @@ const AdminChoirSongsPage = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      setError('');
 
-      const [songsData, categoriesData] = await Promise.all([
-        api.admin.getSongs(),
-        api.admin.getSongCategories()
-      ]);
+      // Récupérer les chants
+      try {
+        const songsData = await api.admin.getSongs();
+        setSongs(Array.isArray(songsData) ? songsData : []);
+      } catch (songsErr) {
+        console.error('Error fetching songs:', songsErr);
+        setSongs([]);
+      }
 
-      setSongs(songsData);
-      setCategories(categoriesData);
+      // Récupérer les catégories
+      try {
+        const categoriesData = await api.admin.getSongCategories();
+        setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+      } catch (catErr) {
+        console.error('Error fetching categories:', catErr);
+        setCategories([]);
+      }
+
     } catch (err) {
-      console.error('Error fetching songs:', err);
+      console.error('Error fetching data:', err);
       setError(t('choir.error_loading'));
     } finally {
       setLoading(false);
