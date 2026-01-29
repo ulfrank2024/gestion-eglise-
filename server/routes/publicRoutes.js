@@ -8,10 +8,45 @@ const {
   generateMemberWelcomeEmail
 } = require('../services/mailer');
 
+/**
+ * Résout un churchId qui peut être soit un UUID soit un subdomain
+ * @param {string} churchIdOrSubdomain - UUID ou subdomain de l'église
+ * @returns {Promise<string|null>} - L'UUID de l'église ou null si non trouvé
+ */
+async function resolveChurchId(churchIdOrSubdomain) {
+  // Regex pour vérifier si c'est un UUID valide
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  if (uuidRegex.test(churchIdOrSubdomain)) {
+    // C'est déjà un UUID, le retourner directement
+    return churchIdOrSubdomain;
+  }
+
+  // C'est un subdomain, chercher l'église correspondante
+  const { data: church, error } = await supabaseAdmin
+    .from('churches_v2')
+    .select('id')
+    .eq('subdomain', churchIdOrSubdomain)
+    .maybeSingle();
+
+  if (error || !church) {
+    console.log(`Church not found for subdomain: ${churchIdOrSubdomain}`);
+    return null;
+  }
+
+  return church.id;
+}
+
 // GET /api/public/:churchId/events - Lister tous les événements publics actifs pour une église
 router.get('/:churchId/events', async (req, res) => {
-  const { churchId } = req.params;
+  const { churchId: churchIdOrSubdomain } = req.params;
   try {
+    // Résoudre le churchId (peut être UUID ou subdomain)
+    const churchId = await resolveChurchId(churchIdOrSubdomain);
+    if (!churchId) {
+      return res.status(404).json({ error: 'Church not found' });
+    }
+
     // Utiliser supabaseAdmin pour bypasser RLS (route publique)
     const { data, error } = await supabaseAdmin
       .from('events_v2')
@@ -29,8 +64,14 @@ router.get('/:churchId/events', async (req, res) => {
 
 // GET /api/public/:churchId/events/:id - Obtenir les détails d'un événement spécifique (PUBLIC)
 router.get('/:churchId/events/:id', async (req, res) => {
-  const { churchId, id } = req.params;
+  const { churchId: churchIdOrSubdomain, id } = req.params;
   try {
+    // Résoudre le churchId (peut être UUID ou subdomain)
+    const churchId = await resolveChurchId(churchIdOrSubdomain);
+    if (!churchId) {
+      return res.status(404).json({ error: 'Church not found' });
+    }
+
     // Utiliser supabaseAdmin pour bypasser RLS (route publique)
     const { data, error } = await supabaseAdmin
       .from('events_v2')
@@ -50,8 +91,14 @@ router.get('/:churchId/events/:id', async (req, res) => {
 
 // GET /api/public/:churchId/events/:eventId/form-fields - Récupérer les champs de formulaire pour un événement (PUBLIC)
 router.get('/:churchId/events/:eventId/form-fields', async (req, res) => {
-    const { churchId, eventId } = req.params;
+    const { churchId: churchIdOrSubdomain, eventId } = req.params;
     try {
+      // Résoudre le churchId (peut être UUID ou subdomain)
+      const churchId = await resolveChurchId(churchIdOrSubdomain);
+      if (!churchId) {
+        return res.status(404).json({ error: 'Church not found' });
+      }
+
       // Utiliser supabaseAdmin pour bypasser RLS (route publique pour l'inscription)
       const { data, error } = await supabaseAdmin
         .from('form_fields_v2')
@@ -69,7 +116,7 @@ router.get('/:churchId/events/:eventId/form-fields', async (req, res) => {
 
 // POST /api/public/:churchId/events/:eventId/register - Enregistrer une nouvelle participation à un événement (PUBLIC)
 router.post('/:churchId/events/:eventId/register', async (req, res) => {
-  const { churchId, eventId } = req.params;
+  const { churchId: churchIdOrSubdomain, eventId } = req.params;
   const { fullName, email, formResponses } = req.body;
 
   if (!fullName || !email || !formResponses) {
@@ -77,6 +124,12 @@ router.post('/:churchId/events/:eventId/register', async (req, res) => {
   }
 
   try {
+    // Résoudre le churchId (peut être UUID ou subdomain)
+    const churchId = await resolveChurchId(churchIdOrSubdomain);
+    if (!churchId) {
+      return res.status(404).json({ error: 'Church not found' });
+    }
+
     // Utiliser supabaseAdmin pour bypasser RLS (route publique)
     const { data: eventCheck, error: eventCheckError } = await supabaseAdmin
       .from('events_v2')
@@ -182,8 +235,14 @@ router.post('/:churchId/events/:eventId/register', async (req, res) => {
 
 // GET /api/public/:churchId/checkin/:eventId - Endpoint public pour le scan de QR code
 router.get('/:churchId/checkin/:eventId', async (req, res) => {
-  const { churchId, eventId } = req.params;
+  const { churchId: churchIdOrSubdomain, eventId } = req.params;
   try {
+    // Résoudre le churchId (peut être UUID ou subdomain)
+    const churchId = await resolveChurchId(churchIdOrSubdomain);
+    if (!churchId) {
+      return res.status(404).send('Church not found.');
+    }
+
     // Utiliser supabaseAdmin pour lire et écrire afin de contourner RLS pour cette opération publique de check-in
     const { data: event, error: fetchError } = await supabaseAdmin
       .from('events_v2')
@@ -217,7 +276,8 @@ router.get('/:churchId/checkin/:eventId', async (req, res) => {
     console.log(`Check-in successful for event ${eventId}. New count: ${newCheckinCount}`);
 
     const frontendBaseUrl = process.env.FRONTEND_BASE_URL || 'http://localhost:3000';
-    res.redirect(`${frontendBaseUrl}/${churchId}/welcome/${eventId}`); 
+    // Utiliser le subdomain original pour la redirection (pas l'UUID)
+    res.redirect(`${frontendBaseUrl}/${churchIdOrSubdomain}/welcome/${eventId}`);
 
   } catch (error) {
     console.error('Error during public check-in:', error.message);
