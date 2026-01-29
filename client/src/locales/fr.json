@@ -791,7 +791,12 @@
       "selected": "sélectionné(s)",
       "select_all": "Tout sélectionner",
       "deselect_all": "Tout désélectionner",
-      "view_lyrics": "Voir les paroles"
+      "view_lyrics": "Voir les paroles",
+
+      "medley": "Compilation",
+      "medley_compilation": "Compilation / Medley",
+      "medley_placeholder": "Ex: Louange d'ouverture, Medley adoration...",
+      "medley_hint": "Laissez vide pour un chant individuel. Utilisez le même nom pour regrouper plusieurs chants sous un même lead."
     }
   }
 }

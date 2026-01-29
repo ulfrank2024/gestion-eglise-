@@ -842,7 +842,12 @@
       "selected": "selected",
       "select_all": "Select All",
       "deselect_all": "Deselect All",
-      "view_lyrics": "View Lyrics"
+      "view_lyrics": "View Lyrics",
+
+      "medley": "Medley",
+      "medley_compilation": "Compilation / Medley",
+      "medley_placeholder": "Ex: Opening Worship, Praise Medley...",
+      "medley_hint": "Leave empty for a single song. Use the same name to group multiple songs under one lead."
     }
   }
 }

@@ -817,6 +817,7 @@ router.get('/planning/:id', isChoirManagerOrAdmin, async (req, res) => {
           id,
           order_position,
           notes,
+          medley_name,
           song:choir_songs_v2 (
             id,
             title,
@@ -985,12 +986,12 @@ router.delete('/planning/:id', isChoirManagerOrAdmin, async (req, res) => {
 
 /**
  * POST /api/admin/choir/planning/:planningId/songs
- * Ajouter un chant au planning
+ * Ajouter un chant au planning (peut faire partie d'une compilation/medley)
  */
 router.post('/planning/:planningId/songs', isChoirManagerOrAdmin, async (req, res) => {
   try {
     const { planningId } = req.params;
-    const { song_id, lead_choriste_id, order_position, notes } = req.body;
+    const { song_id, lead_choriste_id, order_position, notes, medley_name } = req.body;
 
     if (!song_id) {
       return res.status(400).json({ error: 'ID du chant requis' });
@@ -1003,16 +1004,20 @@ router.post('/planning/:planningId/songs', isChoirManagerOrAdmin, async (req, re
         song_id,
         lead_choriste_id,
         order_position: order_position || 0,
-        notes
+        notes,
+        medley_name: medley_name || null
       })
       .select(`
         *,
-        choir_songs_v2 (
+        song:choir_songs_v2 (
           id,
           title,
-          author
+          author,
+          key_signature,
+          tempo,
+          lyrics
         ),
-        choir_members_v2 (
+        lead_choriste:choir_members_v2 (
           id,
           voice_type,
           member:members_v2 (
@@ -1035,17 +1040,18 @@ router.post('/planning/:planningId/songs', isChoirManagerOrAdmin, async (req, re
 
 /**
  * PUT /api/admin/choir/planning-songs/:id
- * Modifier un chant dans le planning
+ * Modifier un chant dans le planning (inclut support medley)
  */
 router.put('/planning-songs/:id', isChoirManagerOrAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { lead_choriste_id, order_position, notes } = req.body;
+    const { lead_choriste_id, order_position, notes, medley_name } = req.body;
 
     const updateData = {};
     if (lead_choriste_id !== undefined) updateData.lead_choriste_id = lead_choriste_id;
     if (order_position !== undefined) updateData.order_position = order_position;
     if (notes !== undefined) updateData.notes = notes;
+    if (medley_name !== undefined) updateData.medley_name = medley_name;
 
     const { data: entry, error } = await supabaseAdmin
       .from('choir_planning_songs_v2')
