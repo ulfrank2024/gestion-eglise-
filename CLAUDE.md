@@ -2698,3 +2698,49 @@ api.member.getDashboard, getProfile, updateProfile, getEvents, getRoles, getNoti
 - ✅ Navigation de retour fonctionnelle
 
 ---
+
+### 2026-01-28 - Corrections du module Chorale
+
+**Problèmes identifiés:**
+1. Erreur `h.filter is not a function` lors de l'ajout d'un choriste
+2. Redirection 404 lors du clic sur "créer un planning" ou "ajouter un chant"
+
+**Causes:**
+1. L'API `getMembers()` retourne `{ members: [...], total, ... }` mais le code attendait un tableau
+2. Les liens du dashboard pointaient vers des routes inexistantes (`/admin/choir/planning/new`, etc.)
+3. Les tables choir peuvent ne pas exister si le script SQL n'a pas été exécuté
+
+**Corrections apportées:**
+
+1. **AdminChoirMembersPage.jsx**
+   - Extraction correcte du tableau: `membersData.members || []`
+   - Gestion erreurs avec try/catch pour chaque appel API
+   - Initialisation à tableau vide si erreur
+   - Changement du lien répertoire (Link → div statique)
+
+2. **AdminChoirSongsPage.jsx**
+   - Try/catch séparé pour songs et categories
+   - Vérification `Array.isArray()` avant assignation
+
+3. **AdminChoirPlanningPage.jsx**
+   - Try/catch séparé pour plannings, songs et choir members
+   - Gestion robuste des erreurs API
+
+4. **AdminChoirDashboardPage.jsx**
+   - Try/catch pour statistics, plannings et members
+   - Correction des liens Quick Actions:
+     - `/admin/choir/members/add` → `/admin/choir/members`
+     - `/admin/choir/songs/add` → `/admin/choir/songs`
+     - `/admin/choir/planning/new` → `/admin/choir/planning`
+   - Correction liens plannings: suppression des IDs dynamiques
+
+**Rappel important:**
+Pour que le module Chorale fonctionne complètement, il faut exécuter le script SQL:
+`/server/db/add_choir_tables.sql` dans Supabase SQL Editor
+
+**Résultat:**
+- ✅ Plus d'erreur `filter is not a function`
+- ✅ Plus de redirection 404 sur les boutons d'action
+- ✅ Module chorale fonctionne même si les tables n'existent pas encore
+
+---
