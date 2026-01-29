@@ -166,23 +166,21 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           {/* Not Found - Explicit route to prevent /not-found being captured as /:churchId */}
           <Route path="/not-found" element={<NotFoundPage />} />
 
-          {/* Public Routes - MUST be after admin/super-admin routes to avoid capturing /admin as /:churchId */}
+          {/* Public Routes - Church-specific pages */}
           <Route path="/:churchId" element={<PublicLayout />}>
             <Route index element={<PublicEventsListPage />} />
             <Route path="event/:id" element={<EventPage />} />
             <Route path="welcome/:id" element={<WelcomeCheckinPage />} />
             <Route path="checkin-success" element={<CheckinSuccessPage />} />
-            <Route path="*" element={<NotFoundPage />} />
           </Route>
 
-          {/* Root fallback */}
+          {/* Root fallback - Homepage without churchId */}
           <Route path="/" element={<PublicLayout />}>
             <Route index element={<PublicEventsListPage />} />
-            <Route path="event/:id" element={<EventPage />} />
-            <Route path="welcome/:id" element={<WelcomeCheckinPage />} />
-            <Route path="checkin-success" element={<CheckinSuccessPage />} />
-            <Route path="*" element={<NotFoundPage />} />
           </Route>
+
+          {/* Global 404 catch-all - MUST be last */}
+          <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </BrowserRouter>
       </ToastProvider>
