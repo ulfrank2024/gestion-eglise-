@@ -14,7 +14,14 @@ import {
   MdMusicNote,
   MdPerson,
   MdAccessTime,
-  MdEvent
+  MdEvent,
+  MdPeople,
+  MdStar,
+  MdKeyboardArrowDown,
+  MdKeyboardArrowUp,
+  MdCheckCircle,
+  MdRadioButtonUnchecked,
+  MdLibraryMusic
 } from 'react-icons/md';
 
 const AdminChoirPlanningPage = () => {
@@ -57,6 +64,16 @@ const AdminChoirPlanningPage = () => {
     notes: ''
   });
 
+  // Participants in planning
+  const [planningParticipants, setPlanningParticipants] = useState([]);
+  const [allChoirMembers, setAllChoirMembers] = useState([]);
+  const [isSelectParticipantsOpen, setIsSelectParticipantsOpen] = useState(false);
+  const [selectedParticipantIds, setSelectedParticipantIds] = useState([]);
+
+  // Detail modal tabs and song lyrics viewer
+  const [activeDetailTab, setActiveDetailTab] = useState('songs'); // 'songs' | 'participants'
+  const [expandedSongId, setExpandedSongId] = useState(null);
+
   const eventTypes = ['culte', 'repetition', 'concert', 'autre'];
 
   useEffect(() => {
@@ -97,6 +114,15 @@ const AdminChoirPlanningPage = () => {
       } catch (membersErr) {
         console.error('Error fetching choir members:', membersErr);
         setChoirMembers([]);
+      }
+
+      // Récupérer tous les choristes (pour la sélection des participants)
+      try {
+        const allMembersData = await api.admin.getChoirMembers();
+        setAllChoirMembers(Array.isArray(allMembersData) ? allMembersData : []);
+      } catch (allMembersErr) {
+        console.error('Error fetching all choir members:', allMembersErr);
+        setAllChoirMembers([]);
       }
 
     } catch (err) {
@@ -169,11 +195,59 @@ const AdminChoirPlanningPage = () => {
     }
   };
 
+  // Gestion des participants
+  const handleSaveParticipants = async () => {
+    try {
+      // Ajouter les nouveaux participants sélectionnés
+      if (selectedParticipantIds.length > 0) {
+        await api.admin.addPlanningParticipants(selectedPlanning.id, selectedParticipantIds);
+      }
+      // Supprimer ceux qui ne sont plus sélectionnés
+      await api.admin.clearPlanningParticipants(selectedPlanning.id, selectedParticipantIds);
+
+      setIsSelectParticipantsOpen(false);
+      fetchPlanningDetails(selectedPlanning.id);
+    } catch (err) {
+      console.error('Error saving participants:', err);
+      setError(err.response?.data?.error || t('choir.error_saving_participants'));
+    }
+  };
+
+  const toggleParticipantSelection = (choirMemberId) => {
+    setSelectedParticipantIds(prev => {
+      if (prev.includes(choirMemberId)) {
+        return prev.filter(id => id !== choirMemberId);
+      } else {
+        return [...prev, choirMemberId];
+      }
+    });
+  };
+
+  const toggleSongLyrics = (songId) => {
+    setExpandedSongId(prev => prev === songId ? null : songId);
+  };
+
+  // Fonction pour obtenir la couleur de la voix
+  const getVoiceTypeBadge = (voiceType) => {
+    const colors = {
+      soprano: 'bg-pink-500/20 text-pink-400',
+      alto: 'bg-purple-500/20 text-purple-400',
+      tenor: 'bg-blue-500/20 text-blue-400',
+      basse: 'bg-emerald-500/20 text-emerald-400',
+      autre: 'bg-gray-500/20 text-gray-400'
+    };
+    return colors[voiceType] || colors.autre;
+  };
+
   const fetchPlanningDetails = async (planningId) => {
     try {
       const data = await api.admin.getChoirPlanning(planningId);
       setSelectedPlanning(data);
       setPlanningSongs(data.songs || []);
+      setPlanningParticipants(data.participants || []);
+      // Pré-sélectionner les participants existants
+      const existingParticipantIds = (data.participants || []).map(p => p.choir_member?.id).filter(Boolean);
+      setSelectedParticipantIds(existingParticipantIds);
     } catch (err) {
       console.error('Error fetching planning details:', err);
     }
@@ -515,73 +589,356 @@ const AdminChoirPlanningPage = () => {
         </div>
       )}
 
-      {/* Planning Detail Modal (Songs) */}
+      {/* Planning Detail Modal (Songs & Participants) */}
       {isDetailModalOpen && selectedPlanning && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm overflow-y-auto py-6">
-          <div className="bg-gray-800 border border-gray-700 rounded-xl w-full max-w-2xl mx-4 shadow-2xl">
-            <div className="flex items-center justify-between p-4 border-b border-gray-700">
+          <div className="bg-gray-800 border border-gray-700 rounded-xl w-full max-w-4xl mx-4 shadow-2xl max-h-[90vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-700 shrink-0">
               <div>
                 <h3 className="text-lg font-semibold text-white">
                   {i18n.language === 'fr' ? selectedPlanning.event_name_fr : selectedPlanning.event_name_en}
                 </h3>
-                <p className="text-sm text-gray-400">{formatDate(selectedPlanning.event_date)}</p>
+                <div className="flex items-center gap-3 text-sm text-gray-400">
+                  <span className="flex items-center gap-1">
+                    <MdEvent />
+                    {formatDate(selectedPlanning.event_date)}
+                  </span>
+                  {selectedPlanning.event_time && (
+                    <span className="flex items-center gap-1">
+                      <MdAccessTime />
+                      {selectedPlanning.event_time.slice(0, 5)}
+                    </span>
+                  )}
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${getEventTypeBadge(selectedPlanning.event_type)}`}>
+                    {t(`choir.event_type_${selectedPlanning.event_type}`)}
+                  </span>
+                </div>
               </div>
               <button
-                onClick={() => setIsDetailModalOpen(false)}
+                onClick={() => {
+                  setIsDetailModalOpen(false);
+                  setActiveDetailTab('songs');
+                  setExpandedSongId(null);
+                }}
                 className="p-1 text-gray-400 hover:text-white"
               >
                 <MdClose className="text-xl" />
               </button>
             </div>
 
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-white font-medium">{t('choir.songs_in_planning')}</h4>
+            {/* Tabs */}
+            <div className="flex border-b border-gray-700 shrink-0">
+              <button
+                onClick={() => setActiveDetailTab('songs')}
+                className={`flex-1 px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
+                  activeDetailTab === 'songs'
+                    ? 'text-indigo-400 border-b-2 border-indigo-400 bg-indigo-500/10'
+                    : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+                }`}
+              >
+                <MdLibraryMusic />
+                {t('choir.songs_tab')} ({planningSongs.length})
+              </button>
+              <button
+                onClick={() => setActiveDetailTab('participants')}
+                className={`flex-1 px-4 py-3 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
+                  activeDetailTab === 'participants'
+                    ? 'text-indigo-400 border-b-2 border-indigo-400 bg-indigo-500/10'
+                    : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+                }`}
+              >
+                <MdPeople />
+                {t('choir.participants_tab')} ({planningParticipants.length})
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-4 overflow-y-auto flex-1">
+              {/* Songs Tab */}
+              {activeDetailTab === 'songs' && (
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-white font-medium">{t('choir.songs_in_planning')}</h4>
+                    <button
+                      onClick={() => setIsAddSongModalOpen(true)}
+                      className="flex items-center gap-1 px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                    >
+                      <MdAdd />
+                      {t('choir.add_song')}
+                    </button>
+                  </div>
+
+                  {planningSongs.length > 0 ? (
+                    <div className="space-y-3">
+                      {planningSongs.map((ps, index) => (
+                        <div
+                          key={ps.id}
+                          className="bg-gray-700/50 rounded-lg overflow-hidden"
+                        >
+                          {/* Song Header */}
+                          <div className="flex items-center justify-between p-3">
+                            <div className="flex items-center gap-3 flex-1">
+                              <span className="w-8 h-8 flex items-center justify-center bg-indigo-500/20 text-indigo-400 rounded-lg text-sm font-bold">
+                                {index + 1}
+                              </span>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <p className="text-white font-medium">{ps.song?.title}</p>
+                                  {ps.song?.key_signature && (
+                                    <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400">
+                                      {t('choir.key')}: {ps.song.key_signature}
+                                    </span>
+                                  )}
+                                  {ps.song?.tempo && (
+                                    <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400">
+                                      {t(`choir.tempo_${ps.song.tempo}`)}
+                                    </span>
+                                  )}
+                                </div>
+                                {ps.song?.author && (
+                                  <p className="text-xs text-gray-500">{ps.song.author}</p>
+                                )}
+                                {ps.lead_choriste && (
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <MdStar className="text-amber-400 text-sm" />
+                                    <span className="text-sm text-gray-300">{ps.lead_choriste?.member?.full_name}</span>
+                                    <span className={`text-xs px-2 py-0.5 rounded-full ${getVoiceTypeBadge(ps.lead_choriste?.voice_type)}`}>
+                                      {t(`choir.voice_${ps.lead_choriste?.voice_type}`)}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {ps.song?.lyrics && (
+                                <button
+                                  onClick={() => toggleSongLyrics(ps.id)}
+                                  className="p-2 text-gray-400 hover:text-indigo-400 hover:bg-gray-600 rounded-lg transition-colors"
+                                  title={t('choir.view_lyrics')}
+                                >
+                                  {expandedSongId === ps.id ? <MdKeyboardArrowUp /> : <MdKeyboardArrowDown />}
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleRemoveSongFromPlanning(ps.id)}
+                                className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-600 rounded-lg transition-colors"
+                              >
+                                <MdDelete />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Song Lyrics (Expanded) */}
+                          {expandedSongId === ps.id && ps.song?.lyrics && (
+                            <div className="px-4 pb-4 border-t border-gray-600">
+                              <div className="mt-3 p-3 bg-gray-800 rounded-lg">
+                                <h5 className="text-sm font-medium text-indigo-400 mb-2">{t('choir.lyrics')}</h5>
+                                <pre className="text-sm text-gray-300 whitespace-pre-wrap font-sans">
+                                  {ps.song.lyrics}
+                                </pre>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-400">
+                      <MdMusicNote className="text-4xl mx-auto mb-2 opacity-50" />
+                      <p>{t('choir.no_songs_in_planning')}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Participants Tab */}
+              {activeDetailTab === 'participants' && (
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-white font-medium">{t('choir.participants_in_planning')}</h4>
+                    <button
+                      onClick={() => setIsSelectParticipantsOpen(true)}
+                      className="flex items-center gap-1 px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                    >
+                      <MdEdit />
+                      {t('choir.select_participants')}
+                    </button>
+                  </div>
+
+                  {planningParticipants.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {/* Grouper par type de voix */}
+                      {['soprano', 'alto', 'tenor', 'basse', 'autre'].map(voiceType => {
+                        const voiceParticipants = planningParticipants.filter(
+                          p => p.choir_member?.voice_type === voiceType
+                        );
+                        if (voiceParticipants.length === 0) return null;
+
+                        return (
+                          <div key={voiceType} className="bg-gray-700/30 rounded-lg p-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${getVoiceTypeBadge(voiceType)}`}>
+                                {t(`choir.voice_${voiceType}`)}
+                              </span>
+                              <span className="text-xs text-gray-500">({voiceParticipants.length})</span>
+                            </div>
+                            <div className="space-y-2">
+                              {voiceParticipants.map(participant => (
+                                <div
+                                  key={participant.id}
+                                  className="flex items-center gap-2 p-2 bg-gray-700/50 rounded-lg"
+                                >
+                                  {participant.choir_member?.member?.profile_photo_url ? (
+                                    <img
+                                      src={participant.choir_member.member.profile_photo_url}
+                                      alt={participant.choir_member.member.full_name}
+                                      className="w-8 h-8 rounded-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center">
+                                      <MdPerson className="text-gray-400" />
+                                    </div>
+                                  )}
+                                  <div className="flex-1">
+                                    <p className="text-sm text-white">{participant.choir_member?.member?.full_name}</p>
+                                    {participant.choir_member?.is_lead && (
+                                      <span className="text-xs text-amber-400 flex items-center gap-1">
+                                        <MdStar className="text-xs" /> Lead
+                                      </span>
+                                    )}
+                                  </div>
+                                  {participant.confirmed && (
+                                    <MdCheckCircle className="text-green-400" />
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-400">
+                      <MdPeople className="text-4xl mx-auto mb-2 opacity-50" />
+                      <p>{t('choir.no_participants_in_planning')}</p>
+                      <button
+                        onClick={() => setIsSelectParticipantsOpen(true)}
+                        className="mt-3 text-indigo-400 hover:text-indigo-300 text-sm"
+                      >
+                        {t('choir.add_participants')}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Select Participants Modal */}
+      {isSelectParticipantsOpen && selectedPlanning && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 backdrop-blur-sm overflow-y-auto py-6">
+          <div className="bg-gray-800 border border-gray-700 rounded-xl w-full max-w-2xl mx-4 shadow-2xl max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-gray-700 shrink-0">
+              <div>
+                <h3 className="text-lg font-semibold text-white">{t('choir.select_participants')}</h3>
+                <p className="text-sm text-gray-400">
+                  {selectedParticipantIds.length} {t('choir.selected')}
+                </p>
+              </div>
+              <button
+                onClick={() => setIsSelectParticipantsOpen(false)}
+                className="p-1 text-gray-400 hover:text-white"
+              >
+                <MdClose className="text-xl" />
+              </button>
+            </div>
+
+            <div className="p-4 overflow-y-auto flex-1">
+              {/* Select All / Deselect All */}
+              <div className="flex gap-2 mb-4">
                 <button
-                  onClick={() => setIsAddSongModalOpen(true)}
-                  className="flex items-center gap-1 px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                  onClick={() => setSelectedParticipantIds(allChoirMembers.map(m => m.id))}
+                  className="px-3 py-1.5 text-sm bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600"
                 >
-                  <MdAdd />
-                  {t('choir.add_song')}
+                  {t('choir.select_all')}
+                </button>
+                <button
+                  onClick={() => setSelectedParticipantIds([])}
+                  className="px-3 py-1.5 text-sm bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600"
+                >
+                  {t('choir.deselect_all')}
                 </button>
               </div>
 
-              {planningSongs.length > 0 ? (
-                <div className="space-y-2">
-                  {planningSongs.map((ps, index) => (
-                    <div
-                      key={ps.id}
-                      className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="w-6 h-6 flex items-center justify-center bg-indigo-500/20 text-indigo-400 rounded text-sm font-medium">
-                          {index + 1}
-                        </span>
-                        <div>
-                          <p className="text-white font-medium">{ps.song?.title}</p>
-                          {ps.lead_choriste && (
-                            <p className="text-sm text-gray-400 flex items-center gap-1">
-                              <MdPerson className="text-amber-400" />
-                              {ps.lead_choriste?.member?.full_name}
-                            </p>
+              {/* Liste des choristes groupés par voix */}
+              {['soprano', 'alto', 'tenor', 'basse', 'autre'].map(voiceType => {
+                const voiceMembers = allChoirMembers.filter(m => m.voice_type === voiceType);
+                if (voiceMembers.length === 0) return null;
+
+                return (
+                  <div key={voiceType} className="mb-4">
+                    <h5 className={`text-sm font-medium mb-2 px-2 py-1 rounded ${getVoiceTypeBadge(voiceType)}`}>
+                      {t(`choir.voice_${voiceType}`)} ({voiceMembers.length})
+                    </h5>
+                    <div className="space-y-1">
+                      {voiceMembers.map(cm => (
+                        <button
+                          key={cm.id}
+                          onClick={() => toggleParticipantSelection(cm.id)}
+                          className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors ${
+                            selectedParticipantIds.includes(cm.id)
+                              ? 'bg-indigo-600/20 border border-indigo-500'
+                              : 'bg-gray-700/50 hover:bg-gray-700 border border-transparent'
+                          }`}
+                        >
+                          {selectedParticipantIds.includes(cm.id) ? (
+                            <MdCheckCircle className="text-indigo-400 text-xl" />
+                          ) : (
+                            <MdRadioButtonUnchecked className="text-gray-500 text-xl" />
                           )}
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => handleRemoveSongFromPlanning(ps.id)}
-                        className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-600 rounded-lg transition-colors"
-                      >
-                        <MdDelete />
-                      </button>
+                          {cm.member?.profile_photo_url ? (
+                            <img
+                              src={cm.member.profile_photo_url}
+                              alt={cm.member?.full_name}
+                              className="w-8 h-8 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center">
+                              <MdPerson className="text-gray-400" />
+                            </div>
+                          )}
+                          <div className="flex-1 text-left">
+                            <p className="text-sm text-white">{cm.member?.full_name}</p>
+                            {cm.is_lead && (
+                              <span className="text-xs text-amber-400 flex items-center gap-1">
+                                <MdStar className="text-xs" /> Lead
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-400">
-                  <MdMusicNote className="text-4xl mx-auto mb-2 opacity-50" />
-                  <p>{t('choir.no_songs_in_planning')}</p>
-                </div>
-              )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex gap-3 p-4 border-t border-gray-700 shrink-0">
+              <button
+                onClick={() => setIsSelectParticipantsOpen(false)}
+                className="flex-1 px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                {t('cancel')}
+              </button>
+              <button
+                onClick={handleSaveParticipants}
+                className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                {t('save')} ({selectedParticipantIds.length})
+              </button>
             </div>
           </div>
         </div>

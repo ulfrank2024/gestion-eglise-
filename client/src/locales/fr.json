@@ -779,7 +779,19 @@
       "error_updating_planning": "Erreur lors de la mise à jour du planning",
       "error_deleting_planning": "Erreur lors de la suppression du planning",
       "error_adding_song": "Erreur lors de l'ajout du chant",
-      "error_removing_song": "Erreur lors du retrait du chant"
+      "error_removing_song": "Erreur lors du retrait du chant",
+      "error_saving_participants": "Erreur lors de l'enregistrement des participants",
+
+      "songs_tab": "Chants",
+      "participants_tab": "Participants",
+      "participants_in_planning": "Participants au planning",
+      "no_participants_in_planning": "Aucun participant sélectionné pour ce planning",
+      "select_participants": "Sélectionner les participants",
+      "add_participants": "Ajouter des participants",
+      "selected": "sélectionné(s)",
+      "select_all": "Tout sélectionner",
+      "deselect_all": "Tout désélectionner",
+      "view_lyrics": "Voir les paroles"
     }
   }
 }

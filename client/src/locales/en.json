@@ -830,7 +830,19 @@
       "error_updating_planning": "Error updating planning",
       "error_deleting_planning": "Error deleting planning",
       "error_adding_song": "Error adding song",
-      "error_removing_song": "Error removing song"
+      "error_removing_song": "Error removing song",
+      "error_saving_participants": "Error saving participants",
+
+      "songs_tab": "Songs",
+      "participants_tab": "Participants",
+      "participants_in_planning": "Planning Participants",
+      "no_participants_in_planning": "No participants selected for this planning",
+      "select_participants": "Select Participants",
+      "add_participants": "Add Participants",
+      "selected": "selected",
+      "select_all": "Select All",
+      "deselect_all": "Deselect All",
+      "view_lyrics": "View Lyrics"
     }
   }
 }

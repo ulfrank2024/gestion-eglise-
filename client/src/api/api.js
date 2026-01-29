@@ -509,6 +509,30 @@ export const api = {
     removeSongFromPlanning: async (planningSongId) => {
       await apiClient.delete(`/admin/choir/planning-songs/${planningSongId}`);
     },
+
+    // Planning Participants (Choristes participant à un événement)
+    getPlanningParticipants: async (planningId) => {
+      const { data } = await apiClient.get(`/admin/choir/planning/${planningId}/participants`);
+      return data;
+    },
+    addPlanningParticipants: async (planningId, choirMemberIds) => {
+      const { data } = await apiClient.post(`/admin/choir/planning/${planningId}/participants`, {
+        choir_member_ids: choirMemberIds
+      });
+      return data;
+    },
+    updatePlanningParticipant: async (participantId, participantData) => {
+      const { data } = await apiClient.put(`/admin/choir/planning-participants/${participantId}`, participantData);
+      return data;
+    },
+    removePlanningParticipant: async (participantId) => {
+      await apiClient.delete(`/admin/choir/planning-participants/${participantId}`);
+    },
+    clearPlanningParticipants: async (planningId, exceptIds = []) => {
+      await apiClient.delete(`/admin/choir/planning/${planningId}/participants`, {
+        data: { except_ids: exceptIds }
+      });
+    },
   },
 
   public: {

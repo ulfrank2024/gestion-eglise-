@@ -802,7 +802,7 @@ router.get('/planning', isChoirManagerOrAdmin, async (req, res) => {
 
 /**
  * GET /api/admin/choir/planning/:id
- * Détails d'un planning
+ * Détails d'un planning avec chants et participants
  */
 router.get('/planning/:id', isChoirManagerOrAdmin, async (req, res) => {
   try {
@@ -813,19 +813,25 @@ router.get('/planning/:id', isChoirManagerOrAdmin, async (req, res) => {
       .from('choir_planning_v2')
       .select(`
         *,
-        choir_planning_songs_v2 (
+        songs:choir_planning_songs_v2 (
           id,
           order_position,
           notes,
-          choir_songs_v2 (
+          song:choir_songs_v2 (
             id,
             title,
             author,
             tempo,
             key_signature,
-            lyrics
+            lyrics,
+            category:choir_song_categories_v2 (
+              id,
+              name_fr,
+              name_en,
+              color
+            )
           ),
-          choir_members_v2 (
+          lead_choriste:choir_members_v2 (
             id,
             voice_type,
             member:members_v2 (
@@ -844,12 +850,37 @@ router.get('/planning/:id', isChoirManagerOrAdmin, async (req, res) => {
       return res.status(404).json({ error: 'Planning non trouvé' });
     }
 
+    // Récupérer les participants au planning
+    const { data: participants } = await supabaseAdmin
+      .from('choir_planning_participants_v2')
+      .select(`
+        id,
+        confirmed,
+        notes,
+        added_at,
+        choir_member:choir_members_v2 (
+          id,
+          voice_type,
+          is_lead,
+          member:members_v2 (
+            id,
+            full_name,
+            email,
+            profile_photo_url
+          )
+        )
+      `)
+      .eq('planning_id', id);
+
     // Trier les chants par ordre
-    if (planning.choir_planning_songs_v2) {
-      planning.choir_planning_songs_v2.sort((a, b) => a.order_position - b.order_position);
+    if (planning.songs) {
+      planning.songs.sort((a, b) => a.order_position - b.order_position);
     }
 
-    res.json(planning);
+    res.json({
+      ...planning,
+      participants: participants || []
+    });
   } catch (err) {
     console.error('Error fetching planning:', err);
     res.status(500).json({ error: 'Erreur serveur' });
@@ -1066,6 +1097,195 @@ router.delete('/planning-songs/:id', isChoirManagerOrAdmin, async (req, res) => 
     res.json({ message: 'Chant retiré du planning' });
   } catch (err) {
     console.error('Error removing song from planning:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// =====================================================
+// GESTION DES PARTICIPANTS AU PLANNING
+// =====================================================
+
+/**
+ * GET /api/admin/choir/planning/:planningId/participants
+ * Liste des participants à un planning
+ */
+router.get('/planning/:planningId/participants', isChoirManagerOrAdmin, async (req, res) => {
+  try {
+    const { planningId } = req.params;
+
+    const { data: participants, error } = await supabaseAdmin
+      .from('choir_planning_participants_v2')
+      .select(`
+        id,
+        confirmed,
+        notes,
+        added_at,
+        choir_member:choir_members_v2 (
+          id,
+          voice_type,
+          is_lead,
+          member:members_v2 (
+            id,
+            full_name,
+            email,
+            profile_photo_url
+          )
+        )
+      `)
+      .eq('planning_id', planningId);
+
+    if (error) throw error;
+
+    res.json(participants || []);
+  } catch (err) {
+    console.error('Error fetching planning participants:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+/**
+ * POST /api/admin/choir/planning/:planningId/participants
+ * Ajouter des participants au planning
+ */
+router.post('/planning/:planningId/participants', isChoirManagerOrAdmin, async (req, res) => {
+  try {
+    const { planningId } = req.params;
+    const { choir_member_ids } = req.body;
+
+    if (!choir_member_ids || !Array.isArray(choir_member_ids)) {
+      return res.status(400).json({ error: 'Liste des IDs de choristes requise' });
+    }
+
+    // Préparer les données pour l'insertion
+    const participantsData = choir_member_ids.map(choir_member_id => ({
+      planning_id: planningId,
+      choir_member_id,
+      confirmed: false
+    }));
+
+    const { data: participants, error } = await supabaseAdmin
+      .from('choir_planning_participants_v2')
+      .upsert(participantsData, { onConflict: 'planning_id,choir_member_id' })
+      .select(`
+        id,
+        confirmed,
+        notes,
+        added_at,
+        choir_member:choir_members_v2 (
+          id,
+          voice_type,
+          is_lead,
+          member:members_v2 (
+            id,
+            full_name,
+            email,
+            profile_photo_url
+          )
+        )
+      `);
+
+    if (error) throw error;
+
+    res.status(201).json(participants);
+  } catch (err) {
+    console.error('Error adding participants to planning:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+/**
+ * PUT /api/admin/choir/planning-participants/:id
+ * Mettre à jour un participant (confirmation, notes)
+ */
+router.put('/planning-participants/:id', isChoirManagerOrAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { confirmed, notes } = req.body;
+
+    const updateData = {};
+    if (confirmed !== undefined) updateData.confirmed = confirmed;
+    if (notes !== undefined) updateData.notes = notes;
+
+    const { data: participant, error } = await supabaseAdmin
+      .from('choir_planning_participants_v2')
+      .update(updateData)
+      .eq('id', id)
+      .select(`
+        id,
+        confirmed,
+        notes,
+        added_at,
+        choir_member:choir_members_v2 (
+          id,
+          voice_type,
+          is_lead,
+          member:members_v2 (
+            id,
+            full_name,
+            email,
+            profile_photo_url
+          )
+        )
+      `)
+      .single();
+
+    if (error) throw error;
+
+    res.json(participant);
+  } catch (err) {
+    console.error('Error updating planning participant:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+/**
+ * DELETE /api/admin/choir/planning-participants/:id
+ * Retirer un participant du planning
+ */
+router.delete('/planning-participants/:id', isChoirManagerOrAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { error } = await supabaseAdmin
+      .from('choir_planning_participants_v2')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    res.json({ message: 'Participant retiré du planning' });
+  } catch (err) {
+    console.error('Error removing participant from planning:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+/**
+ * DELETE /api/admin/choir/planning/:planningId/participants
+ * Supprimer tous les participants d'un planning (pour reset)
+ */
+router.delete('/planning/:planningId/participants', isChoirManagerOrAdmin, async (req, res) => {
+  try {
+    const { planningId } = req.params;
+    const { except_ids } = req.body; // IDs à conserver
+
+    let query = supabaseAdmin
+      .from('choir_planning_participants_v2')
+      .delete()
+      .eq('planning_id', planningId);
+
+    // Si on a des IDs à conserver, les exclure
+    if (except_ids && Array.isArray(except_ids) && except_ids.length > 0) {
+      query = query.not('choir_member_id', 'in', `(${except_ids.join(',')})`);
+    }
+
+    const { error } = await query;
+
+    if (error) throw error;
+
+    res.json({ message: 'Participants mis à jour' });
+  } catch (err) {
+    console.error('Error clearing planning participants:', err);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
