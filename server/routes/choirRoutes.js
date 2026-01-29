@@ -57,7 +57,7 @@ router.get('/managers', isSuperAdminOrChurchAdmin, async (req, res) => {
       .from('choir_managers_v2')
       .select(`
         *,
-        members_v2 (
+        member:members_v2 (
           id,
           full_name,
           email,
@@ -114,7 +114,7 @@ router.post('/managers', isSuperAdminOrChurchAdmin, async (req, res) => {
       }, { onConflict: 'church_id,member_id' })
       .select(`
         *,
-        members_v2 (
+        member:members_v2 (
           id,
           full_name,
           email,
@@ -172,7 +172,7 @@ router.get('/members', isChoirManagerOrAdmin, async (req, res) => {
       .from('choir_members_v2')
       .select(`
         *,
-        members_v2 (
+        member:members_v2 (
           id,
           full_name,
           email,
@@ -288,7 +288,7 @@ router.post('/members', isChoirManagerOrAdmin, async (req, res) => {
       }, { onConflict: 'church_id,member_id' })
       .select(`
         *,
-        members_v2 (
+        member:members_v2 (
           id,
           full_name,
           email,
@@ -328,7 +328,7 @@ router.put('/members/:id', isChoirManagerOrAdmin, async (req, res) => {
       .eq('church_id', church_id)
       .select(`
         *,
-        members_v2 (
+        member:members_v2 (
           id,
           full_name,
           email,
@@ -508,7 +508,7 @@ router.get('/songs/:id', isChoirManagerOrAdmin, async (req, res) => {
         choir_members_v2 (
           id,
           voice_type,
-          members_v2 (
+          member:members_v2 (
             id,
             full_name,
             profile_photo_url
@@ -771,7 +771,7 @@ router.get('/planning', isChoirManagerOrAdmin, async (req, res) => {
           choir_members_v2 (
             id,
             voice_type,
-            members_v2 (
+            member:members_v2 (
               id,
               full_name,
               profile_photo_url
@@ -828,7 +828,7 @@ router.get('/planning/:id', isChoirManagerOrAdmin, async (req, res) => {
           choir_members_v2 (
             id,
             voice_type,
-            members_v2 (
+            member:members_v2 (
               id,
               full_name,
               profile_photo_url
@@ -984,7 +984,7 @@ router.post('/planning/:planningId/songs', isChoirManagerOrAdmin, async (req, re
         choir_members_v2 (
           id,
           voice_type,
-          members_v2 (
+          member:members_v2 (
             id,
             full_name,
             profile_photo_url
@@ -1030,7 +1030,7 @@ router.put('/planning-songs/:id', isChoirManagerOrAdmin, async (req, res) => {
         choir_members_v2 (
           id,
           voice_type,
-          members_v2 (
+          member:members_v2 (
             id,
             full_name,
             profile_photo_url
