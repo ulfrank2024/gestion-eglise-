@@ -2744,3 +2744,31 @@ Pour que le module Chorale fonctionne complètement, il faut exécuter le script
 - ✅ Module chorale fonctionne même si les tables n'existent pas encore
 
 ---
+
+### 2026-01-28 - Support des subdomains dans les URLs publiques
+
+**Problème identifié:**
+- L'email de notification d'événement contient un lien avec le subdomain de l'église
+- Exemple: `https://app.com/even-eden.eglise.com/event/uuid`
+- Le backend attendait un UUID mais recevait un subdomain → erreur 500
+
+**Solution implémentée:**
+
+1. **Fonction `resolveChurchId()`** dans `/server/routes/publicRoutes.js`
+   - Accepte soit un UUID soit un subdomain
+   - Si UUID → retourne directement
+   - Si subdomain → cherche l'église et retourne son UUID
+
+2. **Routes modifiées pour utiliser `resolveChurchId()`:**
+   - `GET /:churchId/events` - Liste des événements
+   - `GET /:churchId/events/:id` - Détails événement
+   - `GET /:churchId/events/:eventId/form-fields` - Champs formulaire
+   - `POST /:churchId/events/:eventId/register` - Inscription
+   - `GET /:churchId/checkin/:eventId` - Check-in par QR code
+
+**Résultat:**
+- ✅ Les liens dans les emails fonctionnent avec le subdomain
+- ✅ Les URLs sont plus lisibles (subdomain au lieu d'UUID)
+- ✅ Rétrocompatibilité avec les UUIDs maintenue
+
+---
