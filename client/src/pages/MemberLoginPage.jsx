@@ -6,6 +6,7 @@ import defaultLogo from '../assets/logo_eden.png';
 import AlertMessage from '../components/AlertMessage';
 import { getErrorMessage } from '../utils/errorHandler';
 import { MdEmail, MdLock, MdLogin } from 'react-icons/md';
+import InstallPWA from '../components/InstallPWA';
 
 function MemberLoginPage() {
   const { t, i18n } = useTranslation();
@@ -161,6 +162,9 @@ function MemberLoginPage() {
           </div>
         </div>
       </div>
+
+      {/* PWA Install Banner */}
+      <InstallPWA />
     </div>
   );
 }

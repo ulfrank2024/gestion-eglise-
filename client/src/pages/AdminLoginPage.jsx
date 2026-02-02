@@ -6,6 +6,7 @@ import { api } from '../api/api';
 import logo from '../assets/logo_eden.png';
 import AlertMessage from '../components/AlertMessage';
 import { getErrorMessage } from '../utils/errorHandler';
+import InstallPWA from '../components/InstallPWA';
 
 function AdminLoginPage() {
   const { t, i18n } = useTranslation();
@@ -167,6 +168,9 @@ function AdminLoginPage() {
           </form>
         </div>
       </div>
+
+      {/* PWA Install Banner */}
+      <InstallPWA />
     </div>
   );
 }
