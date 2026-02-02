@@ -3,6 +3,8 @@ Réponds toujours en français.
 a chaque modification ou avancement du projet note ca dans ton fichier 
 chaque fois tu fait une mise ajour ou ajustement a la fin deploi sur github
 
+a chaque fois que tu cree une nouvelle page ajuste ca aussi pour le mode mobile 
+
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -2831,5 +2833,54 @@ Pour que le module Chorale fonctionne complètement, il faut exécuter le script
 - ✅ Assignation de lead différent par événement
 - ✅ Preview des chants lors de la sélection
 - ✅ Interface cohérente avec le thème dark
+
+---
+
+### 2026-02-02 - Adaptation Mobile des Layouts Admin et Membre
+
+**Demande utilisateur:**
+- Adapter les dashboards admin et membre pour l'affichage mobile
+- Rendre les sidebars responsives
+
+**Modifications effectuées:**
+
+1. **AdminLayout.jsx - Refonte complète pour mobile**
+   - Conversion des styles inline vers Tailwind CSS
+   - Ajout d'un overlay semi-transparent pour fermer la sidebar
+   - Sidebar coulissante avec animation de translation
+   - Header mobile sticky avec:
+     - Bouton hamburger (MdMenu)
+     - Logo de l'église
+     - Avatar de l'admin
+   - Sidebar qui se ferme automatiquement après navigation sur mobile
+   - Bouton de fermeture (X) visible uniquement sur mobile
+   - Classes responsives: `lg:hidden`, `lg:static`, `lg:translate-x-0`
+
+2. **MemberLayout.jsx**
+   - Déjà responsive (vérifié)
+   - Sidebar coulissante avec overlay
+   - Header mobile avec bouton hamburger
+
+3. **Pages Dashboard**
+   - AdminDashboardPage: Grilles `grid-cols-1 md:grid-cols-2 lg:grid-cols-4`
+   - MemberDashboardPage: Grilles `grid-cols-2 lg:grid-cols-4`
+   - AdminEventsListPage: Tableau avec `overflow-x-auto`, colonnes cachées sur mobile
+
+**Comportement mobile:**
+- La sidebar est cachée par défaut (`-translate-x-full`)
+- Cliquer sur le hamburger → sidebar apparaît avec overlay
+- Cliquer sur l'overlay ou un lien → sidebar se ferme
+- Header mobile sticky pour navigation facile
+
+**Breakpoints utilisés:**
+- `sm:` - 640px+ (petit écran)
+- `md:` - 768px+ (tablette)
+- `lg:` - 1024px+ (desktop) - sidebar fixe visible
+
+**Résultat:**
+- ✅ Interface admin 100% mobile-friendly
+- ✅ Interface membre 100% mobile-friendly
+- ✅ Navigation fluide sur tous les appareils
+- ✅ Animations de transition smooth
 
 ---

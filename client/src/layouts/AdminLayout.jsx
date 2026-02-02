@@ -6,7 +6,8 @@ import {
   MdEvent, MdLeaderboard, MdExpandMore, MdExpandLess, MdSettings,
   MdGroupAdd, MdHistory, MdLogout, MdDashboard, MdPeople,
   MdPersonAdd, MdBadge, MdAnnouncement, MdMail, MdAccountCircle,
-  MdEventAvailable, MdMusicNote, MdLibraryMusic, MdCalendarMonth
+  MdEventAvailable, MdMusicNote, MdLibraryMusic, MdCalendarMonth,
+  MdMenu, MdClose, MdPlaylistPlay
 } from 'react-icons/md';
 import { api } from '../api/api';
 import { supabase } from '../supabaseClient';
@@ -27,9 +28,11 @@ function AdminLayout() {
   const [adminName, setAdminName] = useState('');
   const [adminPhotoUrl, setAdminPhotoUrl] = useState(null);
 
+  // Mobile sidebar state
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   // État pour le module actif (events ou members)
   const [activeModule, setActiveModule] = useState(() => {
-    // Récupérer le module actif depuis localStorage
     return localStorage.getItem('adminActiveModule') || 'events';
   });
 
@@ -77,7 +80,6 @@ function AdminLayout() {
         setAdminName(userInfo.full_name || userInfo.email);
         setAdminPhotoUrl(userInfo.profile_photo_url || null);
 
-        // Si l'utilisateur n'a pas accès au module actif, rediriger vers un module autorisé
         const currentModule = localStorage.getItem('adminActiveModule') || 'events';
         const userPermissions = userInfo.permissions || ['all'];
         if (!userPermissions.includes('all') && !userPermissions.includes(currentModule)) {
@@ -140,17 +142,14 @@ function AdminLayout() {
     setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
-  // Vérifier si l'utilisateur a accès à un module
   const hasPermission = (module) => {
     if (permissions.includes('all')) return true;
     return permissions.includes(module);
   };
 
-  // Changer de module et sauvegarder dans localStorage + rediriger vers le dashboard du module
   const handleModuleChange = (module) => {
     setActiveModule(module);
     localStorage.setItem('adminActiveModule', module);
-    // Rediriger vers le tableau de bord du module sélectionné
     if (module === 'events') {
       navigate('/admin/dashboard');
     } else if (module === 'members') {
@@ -158,6 +157,7 @@ function AdminLayout() {
     } else if (module === 'choir') {
       navigate('/admin/choir');
     }
+    setSidebarOpen(false);
   };
 
   const handleLogout = async () => {
@@ -173,666 +173,565 @@ function AdminLayout() {
     }
   };
 
-  const [hoveredItem, setHoveredItem] = useState(null);
-
-  const getLinkStyle = ({ isActive, itemName, isParent = false }) => {
-    const isHovered = hoveredItem === itemName;
-    const baseStyle = {
-      textDecoration: 'none',
-      padding: '8px 10px',
-      borderRadius: '4px',
-      display: 'flex',
-      alignItems: 'center',
-      transition: 'background-color 0.2s, color 0.2s',
-      color: '#d1d5db',
-    };
-
-    if (isParent) {
-      return {
-        ...baseStyle,
-        backgroundColor: '#374151',
-        fontWeight: 'bold',
-        marginBottom: '5px',
-        color: '#f3f4f6',
-      };
-    }
-
-    if (isActive) {
-      return {
-        ...baseStyle,
-        backgroundColor: '#3b82f6',
-        color: '#fff',
-      };
-    }
-    if (isHovered) {
-      return {
-        ...baseStyle,
-        backgroundColor: '#374151',
-        color: '#fff',
-      };
-    }
-    return {
-      ...baseStyle,
-      backgroundColor: 'transparent',
-    };
+  const closeSidebarOnMobile = () => {
+    setSidebarOpen(false);
   };
-
-  const getModuleButtonStyle = (module) => ({
-    flex: '1 1 auto',
-    minWidth: '70px',
-    padding: '8px 6px',
-    cursor: 'pointer',
-    backgroundColor: activeModule === module ? '#4f46e5' : '#374151',
-    color: '#fff',
-    border: 'none',
-    borderRadius: activeModule === module ? '6px' : '4px',
-    fontSize: '11px',
-    fontWeight: activeModule === module ? 'bold' : 'normal',
-    transition: 'all 0.2s',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '4px',
-    boxShadow: activeModule === module ? '0 2px 8px rgba(79, 70, 229, 0.4)' : 'none',
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-  });
-
-  const iconStyle = { marginRight: '10px' };
-  const toggleIconStyle = { marginLeft: 'auto', fontSize: '1.2em', color: '#f3f4f6' };
 
   if (loading) {
     return (
-      <div style={{
-        padding: '20px',
-        color: '#f3f4f6',
-        background: '#111827',
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        {t('loading')}...
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-gray-300 text-lg">{t('loading')}...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{
-        padding: '20px',
-        color: '#ef4444',
-        background: '#111827',
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        {error}
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-red-400 text-lg">{error}</div>
       </div>
     );
   }
 
   if (userRole !== 'super_admin' && userRole !== 'church_admin') {
-      return (
-        <div style={{
-          padding: '20px',
-          color: '#ef4444',
-          background: '#111827',
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          {t('forbidden_access')}
-        </div>
-      );
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-red-400 text-lg">{t('forbidden_access')}</div>
+      </div>
+    );
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#111827' }}>
-      <nav style={{
-        width: '280px',
-        background: '#1f2937',
-        padding: '20px',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        borderRight: '1px solid #374151',
-        position: 'sticky',
-        top: 0,
-        height: '100vh',
-        overflowY: 'auto'
-      }}>
-        <div>
+    <div className="min-h-screen bg-gray-900 flex">
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`
+        fixed lg:static inset-y-0 left-0 z-50
+        w-72 bg-gray-800 border-r border-gray-700
+        transform transition-transform duration-300 ease-in-out
+        flex flex-col
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
+        {/* Close button mobile */}
+        <button
+          onClick={() => setSidebarOpen(false)}
+          className="lg:hidden absolute top-4 right-4 text-gray-400 hover:text-white z-10"
+        >
+          <MdClose size={24} />
+        </button>
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto p-4">
           {/* Logo église et profil admin */}
-          <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-            {/* Logo et photo admin côte à côte */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              gap: '10px',
-              marginBottom: '10px'
-            }}>
-              {/* Logo de l'église */}
+          <div className="text-center mb-5">
+            <div className="flex justify-center items-center gap-2 mb-2">
               <img
                 src={churchDetails?.logo_url || defaultLogo}
                 alt={churchDetails?.name || 'MY EDEN X'}
-                style={{
-                  width: '55px',
-                  height: '55px',
-                  borderRadius: '50%',
-                  objectFit: 'cover',
-                  border: '2px solid #4f46e5'
-                }}
+                className="w-12 h-12 lg:w-14 lg:h-14 rounded-full object-cover border-2 border-indigo-500"
               />
-              {/* Photo de l'admin */}
               {adminPhotoUrl ? (
                 <img
                   src={adminPhotoUrl}
                   alt={adminName}
-                  style={{
-                    width: '55px',
-                    height: '55px',
-                    borderRadius: '50%',
-                    objectFit: 'cover',
-                    border: '2px solid #22c55e'
-                  }}
+                  className="w-12 h-12 lg:w-14 lg:h-14 rounded-full object-cover border-2 border-green-500"
                 />
               ) : (
-                <div style={{
-                  width: '55px',
-                  height: '55px',
-                  borderRadius: '50%',
-                  backgroundColor: '#374151',
-                  border: '2px solid #22c55e',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#9ca3af',
-                  fontSize: '18px',
-                  fontWeight: 'bold'
-                }}>
+                <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-gray-700 border-2 border-green-500 flex items-center justify-center text-gray-400 font-bold">
                   {adminName?.charAt(0)?.toUpperCase() || 'A'}
                 </div>
               )}
             </div>
-            {/* Nom de l'église */}
-            <h3 style={{
-              color: '#f3f4f6',
-              marginTop: '5px',
-              marginBottom: '2px',
-              fontSize: '14px',
-              fontWeight: 'bold'
-            }}>
+            <h3 className="text-gray-100 text-sm font-bold truncate px-2">
               {churchDetails?.name || 'MY EDEN X'}
             </h3>
-            {/* Nom de l'admin */}
-            <p style={{ color: '#22c55e', fontSize: '12px', fontWeight: '500', margin: '2px 0' }}>
-              {adminName}
-            </p>
-            <p style={{ color: '#9ca3af', fontSize: '10px' }}>
-              {t('church_management_platform')}
-            </p>
+            <p className="text-green-400 text-xs font-medium truncate px-2">{adminName}</p>
+            <p className="text-gray-500 text-[10px]">{t('church_management_platform')}</p>
           </div>
 
-          {/* Sélecteur de Module - Affiche uniquement les modules autorisés */}
-          <div style={{
-            marginBottom: '20px',
-            padding: '4px',
-            backgroundColor: '#111827',
-            borderRadius: '8px',
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '4px'
-          }}>
+          {/* Sélecteur de Module */}
+          <div className="mb-5 p-1 bg-gray-900 rounded-lg flex flex-wrap gap-1">
             {hasPermission('events') && (
               <button
                 onClick={() => handleModuleChange('events')}
-                style={getModuleButtonStyle('events')}
+                className={`flex-1 min-w-[60px] py-2 px-2 rounded-md text-xs font-medium flex items-center justify-center gap-1 transition-all ${
+                  activeModule === 'events'
+                    ? 'bg-indigo-600 text-white shadow-lg'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
               >
-                <MdEvent size={16} />
-                {t('events_module') || 'Événements'}
+                <MdEvent size={14} />
+                <span className="hidden sm:inline">{t('events_module') || 'Événements'}</span>
+                <span className="sm:hidden">Évén.</span>
               </button>
             )}
             {hasPermission('members') && (
               <button
                 onClick={() => handleModuleChange('members')}
-                style={getModuleButtonStyle('members')}
+                className={`flex-1 min-w-[60px] py-2 px-2 rounded-md text-xs font-medium flex items-center justify-center gap-1 transition-all ${
+                  activeModule === 'members'
+                    ? 'bg-indigo-600 text-white shadow-lg'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
               >
-                <MdPeople size={16} />
-                {t('members_module') || 'Membres'}
+                <MdPeople size={14} />
+                <span className="hidden sm:inline">{t('members_module') || 'Membres'}</span>
+                <span className="sm:hidden">Memb.</span>
               </button>
             )}
             {hasPermission('choir') && (
               <button
                 onClick={() => handleModuleChange('choir')}
-                style={getModuleButtonStyle('choir')}
+                className={`flex-1 min-w-[60px] py-2 px-2 rounded-md text-xs font-medium flex items-center justify-center gap-1 transition-all ${
+                  activeModule === 'choir'
+                    ? 'bg-indigo-600 text-white shadow-lg'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
               >
-                <MdMusicNote size={16} />
-                {t('choir_module') || 'Chorale'}
+                <MdMusicNote size={14} />
+                <span className="hidden sm:inline">{t('choir_module') || 'Chorale'}</span>
+                <span className="sm:hidden">Chor.</span>
               </button>
             )}
           </div>
 
           {/* Message si aucun module autorisé */}
           {!hasPermission('events') && !hasPermission('members') && !hasPermission('choir') && (
-            <div style={{
-              padding: '15px',
-              backgroundColor: '#374151',
-              borderRadius: '8px',
-              marginBottom: '20px',
-              textAlign: 'center'
-            }}>
-              <p style={{ color: '#fbbf24', fontSize: '13px', margin: 0 }}>
+            <div className="p-4 bg-gray-700 rounded-lg mb-5 text-center">
+              <p className="text-yellow-400 text-sm">
                 {t('no_module_access') || 'Aucun module autorisé. Contactez l\'administrateur principal.'}
               </p>
             </div>
           )}
 
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {/* Module Événements - Visible uniquement si autorisé */}
+          {/* Navigation */}
+          <nav className="space-y-2">
+            {/* Module Événements */}
             {activeModule === 'events' && hasPermission('events') && (
               <>
                 {/* Section Gestion des Événements */}
-                <li style={{ marginBottom: '10px' }}>
-                  <div
+                <div className="mb-2">
+                  <button
                     onClick={() => toggleSection('events')}
-                    style={{ ...getLinkStyle({ itemName: 'events', isParent: true }), cursor: 'pointer' }}
+                    className="w-full flex items-center justify-between px-3 py-2 bg-gray-700 rounded-lg text-gray-100 font-semibold text-sm"
                   >
-                    <MdEvent style={iconStyle} />
-                    {t('event_management') || 'Gestion Événements'}
-                    {openSections.events ? (
-                      <MdExpandLess style={toggleIconStyle} />
-                    ) : (
-                      <MdExpandMore style={toggleIconStyle} />
-                    )}
-                  </div>
+                    <span className="flex items-center gap-2">
+                      <MdEvent size={18} />
+                      {t('event_management') || 'Gestion Événements'}
+                    </span>
+                    {openSections.events ? <MdExpandLess /> : <MdExpandMore />}
+                  </button>
                   {openSections.events && (
-                    <ul style={{ listStyle: 'none', paddingLeft: '20px', marginTop: '5px' }}>
-                      <li style={{ marginBottom: '5px' }}>
-                        <NavLink
-                          to="/admin/dashboard"
-                          onMouseEnter={() => setHoveredItem('dashboard')}
-                          onMouseLeave={() => setHoveredItem(null)}
-                          style={({ isActive }) => getLinkStyle({ isActive, itemName: 'dashboard' })}
-                        >
-                          <MdDashboard style={iconStyle} />
-                          {t('dashboard')}
-                        </NavLink>
-                      </li>
-                      <li style={{ marginBottom: '5px' }}>
-                        <NavLink
-                          to="/admin/events"
-                          onMouseEnter={() => setHoveredItem('events')}
-                          onMouseLeave={() => setHoveredItem(null)}
-                          style={({ isActive }) => getLinkStyle({ isActive, itemName: 'events' })}
-                        >
-                          <MdEvent style={iconStyle} />
-                          {t('events')}
-                        </NavLink>
-                      </li>
-                      <li style={{ marginBottom: '5px' }}>
-                        <NavLink
-                          to="/admin/all-attendees"
-                          onMouseEnter={() => setHoveredItem('all-attendees')}
-                          onMouseLeave={() => setHoveredItem(null)}
-                          style={({ isActive }) => getLinkStyle({ isActive, itemName: 'all-attendees' })}
-                        >
-                          <MdPeople style={iconStyle} />
-                          {t('all_attendees')}
-                        </NavLink>
-                      </li>
-                    </ul>
+                    <div className="mt-1 ml-2 space-y-1">
+                      <NavLink
+                        to="/admin/dashboard"
+                        onClick={closeSidebarOnMobile}
+                        className={({ isActive }) =>
+                          `flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                            isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                          }`
+                        }
+                      >
+                        <MdDashboard size={18} />
+                        {t('dashboard')}
+                      </NavLink>
+                      <NavLink
+                        to="/admin/events"
+                        onClick={closeSidebarOnMobile}
+                        className={({ isActive }) =>
+                          `flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                            isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                          }`
+                        }
+                      >
+                        <MdEvent size={18} />
+                        {t('events')}
+                      </NavLink>
+                      <NavLink
+                        to="/admin/all-attendees"
+                        onClick={closeSidebarOnMobile}
+                        className={({ isActive }) =>
+                          `flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                            isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                          }`
+                        }
+                      >
+                        <MdPeople size={18} />
+                        {t('all_attendees')}
+                      </NavLink>
+                    </div>
                   )}
-                </li>
+                </div>
 
                 {/* Section Rapports et Statistiques */}
-                <li style={{ marginBottom: '10px' }}>
-                  <div
+                <div className="mb-2">
+                  <button
                     onClick={() => toggleSection('reportsAndStats')}
-                    style={{ ...getLinkStyle({ itemName: 'reportsAndStats', isParent: true }), cursor: 'pointer' }}
+                    className="w-full flex items-center justify-between px-3 py-2 bg-gray-700 rounded-lg text-gray-100 font-semibold text-sm"
                   >
-                    <MdLeaderboard style={iconStyle} />
-                    {t('reports_and_stats')}
-                    {openSections.reportsAndStats ? (
-                      <MdExpandLess style={toggleIconStyle} />
-                    ) : (
-                      <MdExpandMore style={toggleIconStyle} />
-                    )}
-                  </div>
+                    <span className="flex items-center gap-2">
+                      <MdLeaderboard size={18} />
+                      {t('reports_and_stats')}
+                    </span>
+                    {openSections.reportsAndStats ? <MdExpandLess /> : <MdExpandMore />}
+                  </button>
                   {openSections.reportsAndStats && (
-                    <ul style={{ listStyle: 'none', paddingLeft: '20px', marginTop: '5px' }}>
-                      <li style={{ marginBottom: '5px' }}>
-                        <NavLink
-                          to="/admin/statistics"
-                          onMouseEnter={() => setHoveredItem('statistics')}
-                          onMouseLeave={() => setHoveredItem(null)}
-                          style={({ isActive }) => getLinkStyle({ isActive, itemName: 'statistics' })}
-                        >
-                          <MdLeaderboard style={iconStyle} />
-                          {t('statistics')}
-                        </NavLink>
-                      </li>
-                      <li style={{ marginBottom: '5px' }}>
-                        <NavLink
-                          to="/admin/history"
-                          onMouseEnter={() => setHoveredItem('event-history')}
-                          onMouseLeave={() => setHoveredItem(null)}
-                          style={({ isActive }) => getLinkStyle({ isActive, itemName: 'event-history' })}
-                        >
-                          <MdHistory style={iconStyle} />
-                          {t('event_history')}
-                        </NavLink>
-                      </li>
-                    </ul>
+                    <div className="mt-1 ml-2 space-y-1">
+                      <NavLink
+                        to="/admin/statistics"
+                        onClick={closeSidebarOnMobile}
+                        className={({ isActive }) =>
+                          `flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                            isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                          }`
+                        }
+                      >
+                        <MdLeaderboard size={18} />
+                        {t('statistics')}
+                      </NavLink>
+                      <NavLink
+                        to="/admin/history"
+                        onClick={closeSidebarOnMobile}
+                        className={({ isActive }) =>
+                          `flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                            isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                          }`
+                        }
+                      >
+                        <MdHistory size={18} />
+                        {t('event_history')}
+                      </NavLink>
+                    </div>
                   )}
-                </li>
+                </div>
               </>
             )}
 
-            {/* Module Membres - Visible uniquement si autorisé */}
+            {/* Module Membres */}
             {activeModule === 'members' && hasPermission('members') && (
-              <>
-                {/* Section Gestion des Membres */}
-                <li style={{ marginBottom: '10px' }}>
-                  <div
-                    onClick={() => toggleSection('members')}
-                    style={{ ...getLinkStyle({ itemName: 'members', isParent: true }), cursor: 'pointer' }}
-                  >
-                    <MdPeople style={iconStyle} />
+              <div className="mb-2">
+                <button
+                  onClick={() => toggleSection('members')}
+                  className="w-full flex items-center justify-between px-3 py-2 bg-gray-700 rounded-lg text-gray-100 font-semibold text-sm"
+                >
+                  <span className="flex items-center gap-2">
+                    <MdPeople size={18} />
                     {t('member_management') || 'Gestion Membres'}
-                    {openSections.members ? (
-                      <MdExpandLess style={toggleIconStyle} />
-                    ) : (
-                      <MdExpandMore style={toggleIconStyle} />
-                    )}
+                  </span>
+                  {openSections.members ? <MdExpandLess /> : <MdExpandMore />}
+                </button>
+                {openSections.members && (
+                  <div className="mt-1 ml-2 space-y-1">
+                    <NavLink
+                      to="/admin/members-dashboard"
+                      onClick={closeSidebarOnMobile}
+                      className={({ isActive }) =>
+                        `flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                          isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                        }`
+                      }
+                    >
+                      <MdDashboard size={18} />
+                      {t('dashboard')}
+                    </NavLink>
+                    <NavLink
+                      to="/admin/members"
+                      onClick={closeSidebarOnMobile}
+                      className={({ isActive }) =>
+                        `flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                          isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                        }`
+                      }
+                    >
+                      <MdPeople size={18} />
+                      {t('members') || 'Membres'}
+                    </NavLink>
+                    <NavLink
+                      to="/admin/roles"
+                      onClick={closeSidebarOnMobile}
+                      className={({ isActive }) =>
+                        `flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                          isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                        }`
+                      }
+                    >
+                      <MdBadge size={18} />
+                      {t('roles') || 'Rôles'}
+                    </NavLink>
+                    <NavLink
+                      to="/admin/member-invitations"
+                      onClick={closeSidebarOnMobile}
+                      className={({ isActive }) =>
+                        `flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                          isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                        }`
+                      }
+                    >
+                      <MdMail size={18} />
+                      {t('invitations') || 'Invitations'}
+                    </NavLink>
+                    <NavLink
+                      to="/admin/announcements"
+                      onClick={closeSidebarOnMobile}
+                      className={({ isActive }) =>
+                        `flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                          isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                        }`
+                      }
+                    >
+                      <MdAnnouncement size={18} />
+                      {t('announcements') || 'Annonces'}
+                    </NavLink>
                   </div>
-                  {openSections.members && (
-                    <ul style={{ listStyle: 'none', paddingLeft: '20px', marginTop: '5px' }}>
-                      <li style={{ marginBottom: '5px' }}>
-                        <NavLink
-                          to="/admin/members-dashboard"
-                          onMouseEnter={() => setHoveredItem('members-dashboard')}
-                          onMouseLeave={() => setHoveredItem(null)}
-                          style={({ isActive }) => getLinkStyle({ isActive, itemName: 'members-dashboard' })}
-                        >
-                          <MdDashboard style={iconStyle} />
-                          {t('dashboard')}
-                        </NavLink>
-                      </li>
-                      <li style={{ marginBottom: '5px' }}>
-                        <NavLink
-                          to="/admin/members"
-                          onMouseEnter={() => setHoveredItem('members-list')}
-                          onMouseLeave={() => setHoveredItem(null)}
-                          style={({ isActive }) => getLinkStyle({ isActive, itemName: 'members-list' })}
-                        >
-                          <MdPeople style={iconStyle} />
-                          {t('members') || 'Membres'}
-                        </NavLink>
-                      </li>
-                      <li style={{ marginBottom: '5px' }}>
-                        <NavLink
-                          to="/admin/roles"
-                          onMouseEnter={() => setHoveredItem('roles')}
-                          onMouseLeave={() => setHoveredItem(null)}
-                          style={({ isActive }) => getLinkStyle({ isActive, itemName: 'roles' })}
-                        >
-                          <MdBadge style={iconStyle} />
-                          {t('roles') || 'Rôles'}
-                        </NavLink>
-                      </li>
-                      <li style={{ marginBottom: '5px' }}>
-                        <NavLink
-                          to="/admin/member-invitations"
-                          onMouseEnter={() => setHoveredItem('invitations')}
-                          onMouseLeave={() => setHoveredItem(null)}
-                          style={({ isActive }) => getLinkStyle({ isActive, itemName: 'invitations' })}
-                        >
-                          <MdMail style={iconStyle} />
-                          {t('invitations') || 'Invitations'}
-                        </NavLink>
-                      </li>
-                      <li style={{ marginBottom: '5px' }}>
-                        <NavLink
-                          to="/admin/announcements"
-                          onMouseEnter={() => setHoveredItem('announcements')}
-                          onMouseLeave={() => setHoveredItem(null)}
-                          style={({ isActive }) => getLinkStyle({ isActive, itemName: 'announcements' })}
-                        >
-                          <MdAnnouncement style={iconStyle} />
-                          {t('announcements') || 'Annonces'}
-                        </NavLink>
-                      </li>
-                    </ul>
-                  )}
-                </li>
-              </>
-            )}
-
-            {/* Module Chorale - Visible uniquement si autorisé */}
-            {activeModule === 'choir' && hasPermission('choir') && (
-              <>
-                {/* Section Gestion de la Chorale */}
-                <li style={{ marginBottom: '10px' }}>
-                  <div
-                    onClick={() => toggleSection('choir')}
-                    style={{ ...getLinkStyle({ itemName: 'choir', isParent: true }), cursor: 'pointer' }}
-                  >
-                    <MdMusicNote style={iconStyle} />
-                    {t('choir_management') || 'Gestion Chorale'}
-                    {openSections.choir ? (
-                      <MdExpandLess style={toggleIconStyle} />
-                    ) : (
-                      <MdExpandMore style={toggleIconStyle} />
-                    )}
-                  </div>
-                  {openSections.choir && (
-                    <ul style={{ listStyle: 'none', paddingLeft: '20px', marginTop: '5px' }}>
-                      <li style={{ marginBottom: '5px' }}>
-                        <NavLink
-                          to="/admin/choir"
-                          end
-                          onMouseEnter={() => setHoveredItem('choir-dashboard')}
-                          onMouseLeave={() => setHoveredItem(null)}
-                          style={({ isActive }) => getLinkStyle({ isActive, itemName: 'choir-dashboard' })}
-                        >
-                          <MdDashboard style={iconStyle} />
-                          {t('dashboard')}
-                        </NavLink>
-                      </li>
-                      <li style={{ marginBottom: '5px' }}>
-                        <NavLink
-                          to="/admin/choir/members"
-                          onMouseEnter={() => setHoveredItem('choir-members')}
-                          onMouseLeave={() => setHoveredItem(null)}
-                          style={({ isActive }) => getLinkStyle({ isActive, itemName: 'choir-members' })}
-                        >
-                          <MdPeople style={iconStyle} />
-                          {t('choir.choristers') || 'Choristes'}
-                        </NavLink>
-                      </li>
-                      <li style={{ marginBottom: '5px' }}>
-                        <NavLink
-                          to="/admin/choir/songs"
-                          onMouseEnter={() => setHoveredItem('choir-songs')}
-                          onMouseLeave={() => setHoveredItem(null)}
-                          style={({ isActive }) => getLinkStyle({ isActive, itemName: 'choir-songs' })}
-                        >
-                          <MdLibraryMusic style={iconStyle} />
-                          {t('choir.repertoire') || 'Répertoire'}
-                        </NavLink>
-                      </li>
-                      <li style={{ marginBottom: '5px' }}>
-                        <NavLink
-                          to="/admin/choir/planning"
-                          onMouseEnter={() => setHoveredItem('choir-planning')}
-                          onMouseLeave={() => setHoveredItem(null)}
-                          style={({ isActive }) => getLinkStyle({ isActive, itemName: 'choir-planning' })}
-                        >
-                          <MdCalendarMonth style={iconStyle} />
-                          {t('choir.planning') || 'Planning'}
-                        </NavLink>
-                      </li>
-                    </ul>
-                  )}
-                </li>
-              </>
-            )}
-
-            {/* Section Mon Espace - Visible pour tous les admins */}
-            <li style={{ marginTop: '20px', borderTop: '1px solid #374151', paddingTop: '15px', marginBottom: '10px' }}>
-              <div
-                onClick={() => toggleSection('mySpace')}
-                style={{ ...getLinkStyle({ itemName: 'mySpace', isParent: true }), cursor: 'pointer' }}
-              >
-                <MdAccountCircle style={iconStyle} />
-                {t('my_space') || 'Mon Espace'}
-                {openSections.mySpace ? (
-                  <MdExpandLess style={toggleIconStyle} />
-                ) : (
-                  <MdExpandMore style={toggleIconStyle} />
                 )}
               </div>
-              {openSections.mySpace && (
-                <ul style={{ listStyle: 'none', paddingLeft: '20px', marginTop: '5px' }}>
-                  <li style={{ marginBottom: '5px' }}>
-                    <NavLink
-                      to="/admin/my-profile"
-                      onMouseEnter={() => setHoveredItem('my-profile')}
-                      onMouseLeave={() => setHoveredItem(null)}
-                      style={({ isActive }) => getLinkStyle({ isActive, itemName: 'my-profile' })}
-                    >
-                      <MdAccountCircle style={iconStyle} />
-                      {t('my_profile') || 'Mon Profil'}
-                    </NavLink>
-                  </li>
-                  <li style={{ marginBottom: '5px' }}>
-                    <NavLink
-                      to="/admin/my-events"
-                      onMouseEnter={() => setHoveredItem('my-events')}
-                      onMouseLeave={() => setHoveredItem(null)}
-                      style={({ isActive }) => getLinkStyle({ isActive, itemName: 'my-events' })}
-                    >
-                      <MdEventAvailable style={iconStyle} />
-                      {t('my_events') || 'Mes Événements'}
-                    </NavLink>
-                  </li>
-                </ul>
-              )}
-            </li>
-
-            {/* Section commune : Paramètres */}
-            {/* Membres de l'équipe - Visible uniquement pour l'admin principal */}
-            {isMainAdmin && (
-              <>
-                <li style={{ marginTop: '10px', marginBottom: '5px' }}>
-                  <NavLink
-                    to="/admin/church-users"
-                    onMouseEnter={() => setHoveredItem('church-users')}
-                    onMouseLeave={() => setHoveredItem(null)}
-                    style={({ isActive }) => getLinkStyle({ isActive, itemName: 'church-users' })}
-                  >
-                    <MdGroupAdd style={iconStyle} />
-                    {t('team_members')}
-                  </NavLink>
-                </li>
-                <li style={{ marginBottom: '5px' }}>
-                  <NavLink
-                    to="/admin/activity-logs"
-                    onMouseEnter={() => setHoveredItem('activity-logs')}
-                    onMouseLeave={() => setHoveredItem(null)}
-                    style={({ isActive }) => getLinkStyle({ isActive, itemName: 'activity-logs' })}
-                  >
-                    <MdHistory style={iconStyle} />
-                    {t('activity_logs') || 'Journaux d\'activité'}
-                  </NavLink>
-                </li>
-              </>
             )}
-            {/* Paramètres de l'église - Visible uniquement pour l'admin principal */}
+
+            {/* Module Chorale */}
+            {activeModule === 'choir' && hasPermission('choir') && (
+              <div className="mb-2">
+                <button
+                  onClick={() => toggleSection('choir')}
+                  className="w-full flex items-center justify-between px-3 py-2 bg-gray-700 rounded-lg text-gray-100 font-semibold text-sm"
+                >
+                  <span className="flex items-center gap-2">
+                    <MdMusicNote size={18} />
+                    {t('choir_management') || 'Gestion Chorale'}
+                  </span>
+                  {openSections.choir ? <MdExpandLess /> : <MdExpandMore />}
+                </button>
+                {openSections.choir && (
+                  <div className="mt-1 ml-2 space-y-1">
+                    <NavLink
+                      to="/admin/choir"
+                      end
+                      onClick={closeSidebarOnMobile}
+                      className={({ isActive }) =>
+                        `flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                          isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                        }`
+                      }
+                    >
+                      <MdDashboard size={18} />
+                      {t('dashboard')}
+                    </NavLink>
+                    <NavLink
+                      to="/admin/choir/members"
+                      onClick={closeSidebarOnMobile}
+                      className={({ isActive }) =>
+                        `flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                          isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                        }`
+                      }
+                    >
+                      <MdPeople size={18} />
+                      {t('choir.choristers') || 'Choristes'}
+                    </NavLink>
+                    <NavLink
+                      to="/admin/choir/songs"
+                      onClick={closeSidebarOnMobile}
+                      className={({ isActive }) =>
+                        `flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                          isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                        }`
+                      }
+                    >
+                      <MdLibraryMusic size={18} />
+                      {t('choir.repertoire') || 'Répertoire'}
+                    </NavLink>
+                    <NavLink
+                      to="/admin/choir/compilations"
+                      onClick={closeSidebarOnMobile}
+                      className={({ isActive }) =>
+                        `flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                          isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                        }`
+                      }
+                    >
+                      <MdPlaylistPlay size={18} />
+                      {t('choir.compilations') || 'Compilations'}
+                    </NavLink>
+                    <NavLink
+                      to="/admin/choir/planning"
+                      onClick={closeSidebarOnMobile}
+                      className={({ isActive }) =>
+                        `flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                          isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                        }`
+                      }
+                    >
+                      <MdCalendarMonth size={18} />
+                      {t('choir.planning') || 'Planning'}
+                    </NavLink>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Section Mon Espace */}
+            <div className="mt-4 pt-4 border-t border-gray-700">
+              <button
+                onClick={() => toggleSection('mySpace')}
+                className="w-full flex items-center justify-between px-3 py-2 bg-gray-700 rounded-lg text-gray-100 font-semibold text-sm"
+              >
+                <span className="flex items-center gap-2">
+                  <MdAccountCircle size={18} />
+                  {t('my_space') || 'Mon Espace'}
+                </span>
+                {openSections.mySpace ? <MdExpandLess /> : <MdExpandMore />}
+              </button>
+              {openSections.mySpace && (
+                <div className="mt-1 ml-2 space-y-1">
+                  <NavLink
+                    to="/admin/my-profile"
+                    onClick={closeSidebarOnMobile}
+                    className={({ isActive }) =>
+                      `flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                        isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                      }`
+                    }
+                  >
+                    <MdAccountCircle size={18} />
+                    {t('my_profile') || 'Mon Profil'}
+                  </NavLink>
+                  <NavLink
+                    to="/admin/my-events"
+                    onClick={closeSidebarOnMobile}
+                    className={({ isActive }) =>
+                      `flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                        isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                      }`
+                    }
+                  >
+                    <MdEventAvailable size={18} />
+                    {t('my_events') || 'Mes Événements'}
+                  </NavLink>
+                </div>
+              )}
+            </div>
+
+            {/* Équipe et Paramètres (Admin principal uniquement) */}
             {isMainAdmin && (
-              <li style={{
-                marginBottom: '5px',
-                marginTop: '5px'
-              }}>
+              <div className="mt-2 space-y-1">
+                <NavLink
+                  to="/admin/church-users"
+                  onClick={closeSidebarOnMobile}
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                      isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                    }`
+                  }
+                >
+                  <MdGroupAdd size={18} />
+                  {t('team_members')}
+                </NavLink>
+                <NavLink
+                  to="/admin/activity-logs"
+                  onClick={closeSidebarOnMobile}
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                      isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                    }`
+                  }
+                >
+                  <MdHistory size={18} />
+                  {t('activity_logs') || 'Journaux d\'activité'}
+                </NavLink>
                 <NavLink
                   to="/admin/church-settings"
-                  onMouseEnter={() => setHoveredItem('church-settings')}
-                  onMouseLeave={() => setHoveredItem(null)}
-                  style={({ isActive }) => getLinkStyle({ isActive, itemName: 'church-settings' })}
+                  onClick={closeSidebarOnMobile}
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                      isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                    }`
+                  }
                 >
-                  <MdSettings style={iconStyle} />
+                  <MdSettings size={18} />
                   {t('church_settings')}
                 </NavLink>
-              </li>
+              </div>
             )}
-          </ul>
+          </nav>
         </div>
 
         {/* Footer avec déconnexion et langue */}
-        <div style={{ marginTop: 'auto', paddingTop: '20px', borderTop: '1px solid #374151' }}>
+        <div className="p-4 border-t border-gray-700 bg-gray-800">
           <button
             onClick={handleLogout}
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              cursor: 'pointer',
-              backgroundColor: '#dc2626',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '4px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '15px',
-              fontSize: '14px',
-              fontWeight: '500',
-              transition: 'background-color 0.2s'
-            }}
-            onMouseEnter={(e) => e.target.style.backgroundColor = '#b91c1c'}
-            onMouseLeave={(e) => e.target.style.backgroundColor = '#dc2626'}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors mb-3"
           >
-            <MdLogout style={{ marginRight: '8px', fontSize: '18px' }} />
+            <MdLogout size={18} />
             {t('logout')}
           </button>
 
-          <p style={{ marginBottom: '10px', fontSize: '14px', color: '#d1d5db' }}>{t('language_switcher')}:</p>
-          <button
-            onClick={() => handleLanguageChange('fr')}
-            style={{
-              marginRight: '5px',
-              padding: '8px 12px',
-              cursor: 'pointer',
-              fontWeight: i18n.language === 'fr' ? 'bold' : 'normal',
-              backgroundColor: i18n.language === 'fr' ? '#3b82f6' : '#374151',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '4px',
-              transition: 'background-color 0.2s'
-            }}
-          >FR</button>
-          <button
-            onClick={() => handleLanguageChange('en')}
-            style={{
-              padding: '8px 12px',
-              cursor: 'pointer',
-              fontWeight: i18n.language === 'en' ? 'bold' : 'normal',
-              backgroundColor: i18n.language === 'en' ? '#3b82f6' : '#374151',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '4px',
-              transition: 'background-color 0.2s'
-            }}
-          >EN</button>
+          <div className="flex justify-center gap-2">
+            <button
+              onClick={() => handleLanguageChange('fr')}
+              className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+                i18n.language === 'fr'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              FR
+            </button>
+            <button
+              onClick={() => handleLanguageChange('en')}
+              className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+                i18n.language === 'en'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              EN
+            </button>
+          </div>
         </div>
-      </nav>
-      <main style={{ flex: 1, padding: '20px', color: '#ffffff' }}>
-        <Outlet />
-      </main>
+      </aside>
+
+      {/* Main content */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Mobile header */}
+        <header className="lg:hidden bg-gray-800 border-b border-gray-700 p-4 flex items-center gap-4 sticky top-0 z-30">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="text-gray-300 hover:text-white"
+          >
+            <MdMenu size={24} />
+          </button>
+          <img
+            src={churchDetails?.logo_url || defaultLogo}
+            alt={churchDetails?.name || 'MY EDEN X'}
+            className="w-8 h-8 rounded-full object-cover border border-indigo-500"
+          />
+          <span className="text-white font-medium truncate flex-1">
+            {churchDetails?.name || 'MY EDEN X'}
+          </span>
+          {adminPhotoUrl ? (
+            <img
+              src={adminPhotoUrl}
+              alt={adminName}
+              className="w-8 h-8 rounded-full object-cover border border-green-500"
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-gray-700 border border-green-500 flex items-center justify-center text-gray-400 text-xs font-bold">
+              {adminName?.charAt(0)?.toUpperCase() || 'A'}
+            </div>
+          )}
+        </header>
+
+        {/* Page content */}
+        <main className="flex-1 overflow-auto p-4 lg:p-6 text-white">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }
