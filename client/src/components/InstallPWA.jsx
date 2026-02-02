@@ -56,6 +56,17 @@ function InstallPWA() {
       }, 3000);
     }
 
+    // Sur desktop/Android sans événement beforeinstallprompt, afficher après 5 secondes
+    // Cela permet aussi de voir la bannière en mode développement
+    if (!isIOSDevice) {
+      setTimeout(() => {
+        setShowBanner((prev) => {
+          // N'afficher que si pas encore visible
+          return prev ? prev : true;
+        });
+      }, 5000);
+    }
+
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
