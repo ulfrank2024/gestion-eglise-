@@ -533,6 +533,44 @@ export const api = {
         data: { except_ids: exceptIds }
       });
     },
+
+    // Compilations / Medleys
+    getCompilations: async () => {
+      const { data } = await apiClient.get('/admin/choir/compilations');
+      return data;
+    },
+    getCompilation: async (compilationId) => {
+      const { data } = await apiClient.get(`/admin/choir/compilations/${compilationId}`);
+      return data;
+    },
+    createCompilation: async (compilationData) => {
+      const { data } = await apiClient.post('/admin/choir/compilations', compilationData);
+      return data;
+    },
+    updateCompilation: async (compilationId, compilationData) => {
+      const { data } = await apiClient.put(`/admin/choir/compilations/${compilationId}`, compilationData);
+      return data;
+    },
+    deleteCompilation: async (compilationId) => {
+      await apiClient.delete(`/admin/choir/compilations/${compilationId}`);
+    },
+    addSongToCompilation: async (compilationId, songData) => {
+      const { data } = await apiClient.post(`/admin/choir/compilations/${compilationId}/songs`, songData);
+      return data;
+    },
+    reorderCompilationSongs: async (compilationId, songOrder) => {
+      const { data } = await apiClient.put(`/admin/choir/compilations/${compilationId}/songs/reorder`, {
+        song_order: songOrder
+      });
+      return data;
+    },
+    removeSongFromCompilation: async (compilationSongId) => {
+      await apiClient.delete(`/admin/choir/compilation-songs/${compilationSongId}`);
+    },
+    addCompilationToPlanning: async (planningId, compilationData) => {
+      const { data } = await apiClient.post(`/admin/choir/planning/${planningId}/compilations`, compilationData);
+      return data;
+    },
   },
 
   public: {

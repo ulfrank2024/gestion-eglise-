@@ -21,7 +21,8 @@ import {
   MdKeyboardArrowUp,
   MdCheckCircle,
   MdRadioButtonUnchecked,
-  MdLibraryMusic
+  MdLibraryMusic,
+  MdPlaylistPlay
 } from 'react-icons/md';
 
 const AdminChoirPlanningPage = () => {
@@ -78,6 +79,17 @@ const AdminChoirPlanningPage = () => {
   const [activeDetailTab, setActiveDetailTab] = useState('songs'); // 'songs' | 'participants'
   const [expandedSongId, setExpandedSongId] = useState(null);
 
+  // Compilations
+  const [compilations, setCompilations] = useState([]);
+  const [isAddCompilationModalOpen, setIsAddCompilationModalOpen] = useState(false);
+  const [compilationFormData, setCompilationFormData] = useState({
+    compilation_id: '',
+    lead_choriste_id: '',
+    order_position: 0,
+    notes: ''
+  });
+  const [expandedCompilationId, setExpandedCompilationId] = useState(null);
+
   const eventTypes = ['culte', 'repetition', 'concert', 'autre'];
 
   useEffect(() => {
@@ -127,6 +139,15 @@ const AdminChoirPlanningPage = () => {
       } catch (allMembersErr) {
         console.error('Error fetching all choir members:', allMembersErr);
         setAllChoirMembers([]);
+      }
+
+      // Récupérer les compilations
+      try {
+        const compilationsData = await api.admin.getCompilations();
+        setCompilations(Array.isArray(compilationsData) ? compilationsData : []);
+      } catch (compErr) {
+        console.error('Error fetching compilations:', compErr);
+        setCompilations([]);
       }
 
     } catch (err) {
@@ -197,6 +218,25 @@ const AdminChoirPlanningPage = () => {
       console.error('Error removing song from planning:', err);
       setError(err.response?.data?.error || t('choir.error_removing_song'));
     }
+  };
+
+  const handleAddCompilationToPlanning = async () => {
+    try {
+      await api.admin.addCompilationToPlanning(selectedPlanning.id, {
+        ...compilationFormData,
+        order_position: planningSongs.length + 1
+      });
+      setIsAddCompilationModalOpen(false);
+      setCompilationFormData({ compilation_id: '', lead_choriste_id: '', order_position: 0, notes: '' });
+      fetchPlanningDetails(selectedPlanning.id);
+    } catch (err) {
+      console.error('Error adding compilation to planning:', err);
+      setError(err.response?.data?.error || t('choir.error_adding_compilation'));
+    }
+  };
+
+  const toggleCompilationExpand = (compilationId) => {
+    setExpandedCompilationId(prev => prev === compilationId ? null : compilationId);
   };
 
   // Gestion des participants
@@ -664,30 +704,45 @@ const AdminChoirPlanningPage = () => {
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="text-white font-medium">{t('choir.songs_in_planning')}</h4>
-                    <button
-                      onClick={() => setIsAddSongModalOpen(true)}
-                      className="flex items-center gap-1 px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                    >
-                      <MdAdd />
-                      {t('choir.add_song')}
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setIsAddCompilationModalOpen(true)}
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                      >
+                        <MdPlaylistPlay />
+                        {t('choir.add_compilation')}
+                      </button>
+                      <button
+                        onClick={() => setIsAddSongModalOpen(true)}
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                      >
+                        <MdAdd />
+                        {t('choir.add_song')}
+                      </button>
+                    </div>
                   </div>
 
                   {planningSongs.length > 0 ? (
                     <div className="space-y-4">
-                      {/* Regrouper les chants : d'abord les medleys, puis les chants individuels */}
+                      {/* Regrouper les chants : d'abord les compilations du répertoire, puis les medleys ad-hoc, puis les chants individuels */}
                       {(() => {
-                        // Séparer les medleys des chants individuels
-                        const medleyGroups = {};
+                        // Séparer les compilations, les medleys ad-hoc et les chants individuels
+                        const compilationItems = []; // Compilations du répertoire
+                        const medleyGroups = {}; // Medleys ad-hoc (via medley_name)
                         const individualSongs = [];
 
                         planningSongs.forEach((ps) => {
-                          if (ps.medley_name) {
+                          if (ps.compilation_id && ps.compilation) {
+                            // C'est une compilation du répertoire
+                            compilationItems.push(ps);
+                          } else if (ps.medley_name) {
+                            // C'est un medley ad-hoc
                             if (!medleyGroups[ps.medley_name]) {
                               medleyGroups[ps.medley_name] = [];
                             }
                             medleyGroups[ps.medley_name].push(ps);
                           } else {
+                            // Chant individuel
                             individualSongs.push(ps);
                           }
                         });
@@ -696,7 +751,91 @@ const AdminChoirPlanningPage = () => {
 
                         return (
                           <>
-                            {/* Afficher les medleys */}
+                            {/* Afficher les compilations du répertoire */}
+                            {compilationItems.map((ps) => {
+                              globalIndex++;
+                              const compilation = ps.compilation;
+                              const compilationSongs = compilation?.songs || [];
+                              const isExpanded = expandedCompilationId === ps.id;
+
+                              return (
+                                <div key={ps.id} className="bg-gradient-to-r from-purple-900/30 to-pink-900/30 rounded-xl overflow-hidden border border-purple-700/50">
+                                  {/* Compilation Header */}
+                                  <div
+                                    className="p-3 bg-purple-800/30 border-b border-purple-700/50 cursor-pointer hover:bg-purple-800/40 transition-colors"
+                                    onClick={() => toggleCompilationExpand(ps.id)}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-3">
+                                        <span className="w-8 h-8 flex items-center justify-center bg-purple-500/30 text-purple-300 rounded-lg text-sm font-bold">
+                                          {globalIndex}
+                                        </span>
+                                        <div>
+                                          <div className="flex items-center gap-2">
+                                            <MdPlaylistPlay className="text-purple-400 text-lg" />
+                                            <p className="text-white font-semibold">{compilation?.name}</p>
+                                            <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/30 text-purple-300">
+                                              {t('choir.compilation')} • {compilationSongs.length} {t('choir.songs')}
+                                            </span>
+                                          </div>
+                                          {ps.lead_choriste && (
+                                            <div className="flex items-center gap-2 mt-1">
+                                              <MdStar className="text-amber-400 text-sm" />
+                                              <span className="text-sm text-gray-300">{ps.lead_choriste?.member?.full_name}</span>
+                                              <span className={`text-xs px-2 py-0.5 rounded-full ${getVoiceTypeBadge(ps.lead_choriste?.voice_type)}`}>
+                                                {t(`choir.voice_${ps.lead_choriste?.voice_type}`)}
+                                              </span>
+                                            </div>
+                                          )}
+                                          {compilation?.description && (
+                                            <p className="text-xs text-gray-400 mt-1">{compilation.description}</p>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        {isExpanded ? <MdKeyboardArrowUp className="text-gray-400" /> : <MdKeyboardArrowDown className="text-gray-400" />}
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); handleRemoveSongFromPlanning(ps.id); }}
+                                          className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-gray-600 rounded transition-colors"
+                                        >
+                                          <MdDelete className="text-sm" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Compilation Songs (si expanded) */}
+                                  {isExpanded && compilationSongs.length > 0 && (
+                                    <div className="divide-y divide-purple-700/30">
+                                      {compilationSongs.map((cs, songIdx) => (
+                                        <div key={cs.id} className="p-3 hover:bg-purple-800/20 transition-colors">
+                                          <div className="flex items-center gap-3">
+                                            <span className="w-6 h-6 flex items-center justify-center bg-gray-700/50 text-gray-400 rounded text-xs">
+                                              {songIdx + 1}
+                                            </span>
+                                            <div className="flex-1">
+                                              <div className="flex items-center gap-2">
+                                                <p className="text-white">{cs.song?.title}</p>
+                                                {cs.song?.key_signature && (
+                                                  <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400">
+                                                    {cs.song.key_signature}
+                                                  </span>
+                                                )}
+                                              </div>
+                                              {cs.song?.author && (
+                                                <p className="text-xs text-gray-500">{cs.song.author}</p>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+
+                            {/* Afficher les medleys ad-hoc */}
                             {Object.entries(medleyGroups).map(([medleyName, medleySongs]) => {
                               const firstSong = medleySongs[0];
                               const leadChoriste = firstSong?.lead_choriste;
@@ -704,19 +843,19 @@ const AdminChoirPlanningPage = () => {
                               const medleyIndex = globalIndex;
 
                               return (
-                                <div key={medleyName} className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 rounded-xl overflow-hidden border border-purple-700/50">
+                                <div key={medleyName} className="bg-gradient-to-r from-indigo-900/30 to-blue-900/30 rounded-xl overflow-hidden border border-indigo-700/50">
                                   {/* Medley Header */}
-                                  <div className="p-3 bg-purple-800/30 border-b border-purple-700/50">
+                                  <div className="p-3 bg-indigo-800/30 border-b border-indigo-700/50">
                                     <div className="flex items-center justify-between">
                                       <div className="flex items-center gap-3">
-                                        <span className="w-8 h-8 flex items-center justify-center bg-purple-500/30 text-purple-300 rounded-lg text-sm font-bold">
+                                        <span className="w-8 h-8 flex items-center justify-center bg-indigo-500/30 text-indigo-300 rounded-lg text-sm font-bold">
                                           {medleyIndex}
                                         </span>
                                         <div>
                                           <div className="flex items-center gap-2">
-                                            <MdLibraryMusic className="text-purple-400" />
+                                            <MdLibraryMusic className="text-indigo-400" />
                                             <p className="text-white font-semibold">{medleyName}</p>
-                                            <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/30 text-purple-300">
+                                            <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-500/30 text-indigo-300">
                                               {t('choir.medley')} • {medleySongs.length} {t('choir.songs')}
                                             </span>
                                           </div>
@@ -735,9 +874,9 @@ const AdminChoirPlanningPage = () => {
                                   </div>
 
                                   {/* Medley Songs */}
-                                  <div className="divide-y divide-purple-700/30">
+                                  <div className="divide-y divide-indigo-700/30">
                                     {medleySongs.map((ps, songIdx) => (
-                                      <div key={ps.id} className="p-3 hover:bg-purple-800/20 transition-colors">
+                                      <div key={ps.id} className="p-3 hover:bg-indigo-800/20 transition-colors">
                                         <div className="flex items-center justify-between">
                                           <div className="flex items-center gap-3 flex-1">
                                             <span className="w-6 h-6 flex items-center justify-center bg-gray-700/50 text-gray-400 rounded text-xs">
@@ -800,7 +939,7 @@ const AdminChoirPlanningPage = () => {
                                   {/* Song Header */}
                                   <div className="flex items-center justify-between p-3">
                                     <div className="flex items-center gap-3 flex-1">
-                                      <span className="w-8 h-8 flex items-center justify-center bg-indigo-500/20 text-indigo-400 rounded-lg text-sm font-bold">
+                                      <span className="w-8 h-8 flex items-center justify-center bg-emerald-500/20 text-emerald-400 rounded-lg text-sm font-bold">
                                         {globalIndex}
                                       </span>
                                       <div className="flex-1">
@@ -1159,6 +1298,110 @@ const AdminChoirPlanningPage = () => {
                 onClick={handleAddSongToPlanning}
                 disabled={!songFormData.song_id}
                 className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {t('add')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Compilation to Planning Modal */}
+      {isAddCompilationModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 backdrop-blur-sm">
+          <div className="bg-gray-800 border border-gray-700 rounded-xl w-full max-w-md mx-4 shadow-2xl">
+            <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-gradient-to-r from-purple-600 to-pink-600 rounded-t-xl">
+              <div className="flex items-center gap-2">
+                <MdPlaylistPlay className="text-white text-xl" />
+                <h3 className="text-lg font-semibold text-white">{t('choir.add_compilation_to_planning')}</h3>
+              </div>
+              <button
+                onClick={() => setIsAddCompilationModalOpen(false)}
+                className="p-1 text-white/80 hover:text-white"
+              >
+                <MdClose className="text-xl" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-4">
+              <div>
+                <label className="block text-sm text-gray-300 mb-2">{t('choir.select_compilation')} *</label>
+                <select
+                  value={compilationFormData.compilation_id}
+                  onChange={(e) => setCompilationFormData({ ...compilationFormData, compilation_id: e.target.value })}
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  <option value="">{t('choir.choose_compilation')}</option>
+                  {compilations.map(comp => (
+                    <option key={comp.id} value={comp.id}>
+                      {comp.name} ({comp.songs?.length || 0} {t('choir.songs')})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Preview de la compilation sélectionnée */}
+              {compilationFormData.compilation_id && (() => {
+                const selectedComp = compilations.find(c => c.id === compilationFormData.compilation_id);
+                if (!selectedComp) return null;
+                return (
+                  <div className="bg-purple-900/20 border border-purple-700/50 rounded-lg p-3">
+                    <p className="text-sm font-medium text-purple-300 mb-2">{t('choir.songs_in_compilation')}:</p>
+                    <div className="space-y-1">
+                      {selectedComp.songs?.map((cs, idx) => (
+                        <div key={cs.id} className="flex items-center gap-2 text-sm text-gray-300">
+                          <span className="text-gray-500">{idx + 1}.</span>
+                          <span>{cs.song?.title}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {selectedComp.description && (
+                      <p className="text-xs text-gray-400 mt-2 italic">{selectedComp.description}</p>
+                    )}
+                  </div>
+                );
+              })()}
+
+              <div>
+                <label className="block text-sm text-gray-300 mb-2">{t('choir.lead_for_compilation')}</label>
+                <select
+                  value={compilationFormData.lead_choriste_id}
+                  onChange={(e) => setCompilationFormData({ ...compilationFormData, lead_choriste_id: e.target.value })}
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  <option value="">{t('choir.no_lead')}</option>
+                  {choirMembers.map(cm => (
+                    <option key={cm.id} value={cm.id}>
+                      {cm.member?.full_name} ({t(`choir.voice_${cm.voice_type}`)})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">{t('choir.lead_compilation_hint')}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-300 mb-2">{t('choir.notes')}</label>
+                <input
+                  type="text"
+                  value={compilationFormData.notes}
+                  onChange={(e) => setCompilationFormData({ ...compilationFormData, notes: e.target.value })}
+                  placeholder={t('choir.compilation_notes_placeholder')}
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 p-4 border-t border-gray-700">
+              <button
+                onClick={() => setIsAddCompilationModalOpen(false)}
+                className="flex-1 px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                {t('cancel')}
+              </button>
+              <button
+                onClick={handleAddCompilationToPlanning}
+                disabled={!compilationFormData.compilation_id}
+                className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {t('add')}
               </button>

@@ -2772,3 +2772,64 @@ Pour que le module Chorale fonctionne complètement, il faut exécuter le script
 - ✅ Rétrocompatibilité avec les UUIDs maintenue
 
 ---
+
+### 2026-02-02 - Implémentation des Compilations de Chants (Chorale)
+
+**Demande utilisateur:**
+- Permettre de créer des compilations/medleys de chants dans le répertoire
+- Les compilations sont réutilisables pour plusieurs événements
+- Chaque compilation peut avoir un lead différent par événement
+- Un événement peut avoir plusieurs compilations avec différents leads
+
+**Implémentation:**
+
+1. **Nouvelles tables SQL** (`/server/db/add_compilations_tables.sql`)
+   - `choir_compilations_v2` - Table principale des compilations (nom, description, catégorie)
+   - `choir_compilation_songs_v2` - Chants dans une compilation avec ordre
+   - Ajout de `compilation_id` dans `choir_planning_songs_v2` pour lier au planning
+
+2. **Routes backend** (`/server/routes/choirRoutes.js`)
+   - `GET /api/admin/choir/compilations` - Liste des compilations
+   - `GET /api/admin/choir/compilations/:id` - Détails compilation
+   - `POST /api/admin/choir/compilations` - Créer compilation
+   - `PUT /api/admin/choir/compilations/:id` - Modifier compilation
+   - `DELETE /api/admin/choir/compilations/:id` - Supprimer compilation
+   - `POST /api/admin/choir/compilations/:id/songs` - Ajouter chant
+   - `DELETE /api/admin/choir/compilation-songs/:id` - Retirer chant
+   - `PUT /api/admin/choir/compilations/:id/reorder` - Réorganiser ordre
+   - `POST /api/admin/choir/planning/:planningId/compilations` - Ajouter compilation au planning
+
+3. **API client** (`/client/src/api/api.js`)
+   - Toutes les méthodes CRUD pour les compilations
+
+4. **Nouvelle page** (`/client/src/pages/AdminChoirCompilationsPage.jsx`)
+   - Liste des compilations avec chants expandables
+   - Modal de création avec sélection de chants
+   - Ajout/suppression de chants
+   - Suppression de compilation
+
+5. **Modification du planning** (`/client/src/pages/AdminChoirPlanningPage.jsx`)
+   - Bouton "Ajouter compilation" dans le modal de détail
+   - Modal de sélection de compilation avec preview des chants
+   - Assignation d'un lead pour la compilation
+   - Affichage distinct: compilations (violet), medleys ad-hoc (indigo), chants (vert)
+
+6. **Dashboard chorale** (`/client/src/pages/AdminChoirDashboardPage.jsx`)
+   - Ajout du lien vers les compilations dans les actions rapides
+
+7. **Traductions** (`fr.json` et `en.json`)
+   - Toutes les clés pour les fonctionnalités de compilation
+
+**Types d'éléments dans le planning:**
+- **Compilations** (violet) - Groupes de chants créés dans le répertoire, réutilisables
+- **Medleys ad-hoc** (indigo) - Regroupement via `medley_name` pendant le planning
+- **Chants individuels** (vert) - Chants simples
+
+**Résultat:**
+- ✅ Page dédiée pour créer et gérer les compilations dans le répertoire
+- ✅ Compilations réutilisables pour plusieurs événements
+- ✅ Assignation de lead différent par événement
+- ✅ Preview des chants lors de la sélection
+- ✅ Interface cohérente avec le thème dark
+
+---

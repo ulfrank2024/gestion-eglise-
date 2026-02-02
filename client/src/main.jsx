@@ -41,6 +41,7 @@ import AdminChoirDashboardPage from './pages/AdminChoirDashboardPage';
 import AdminChoirMembersPage from './pages/AdminChoirMembersPage';
 import AdminChoirSongsPage from './pages/AdminChoirSongsPage';
 import AdminChoirPlanningPage from './pages/AdminChoirPlanningPage';
+import AdminChoirCompilationsPage from './pages/AdminChoirCompilationsPage';
 
 // Member Pages
 import MemberRegistrationPage from './pages/MemberRegistrationPage';
@@ -122,6 +123,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="choir" element={<AdminChoirDashboardPage />} />
             <Route path="choir/members" element={<AdminChoirMembersPage />} />
             <Route path="choir/songs" element={<AdminChoirSongsPage />} />
+            <Route path="choir/compilations" element={<AdminChoirCompilationsPage />} />
             <Route path="choir/planning" element={<AdminChoirPlanningPage />} />
           </Route>
 

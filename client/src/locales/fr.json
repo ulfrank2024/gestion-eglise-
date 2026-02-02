@@ -793,10 +793,41 @@
       "deselect_all": "Tout désélectionner",
       "view_lyrics": "Voir les paroles",
 
-      "medley": "Compilation",
+      "medley": "Medley",
       "medley_compilation": "Compilation / Medley",
       "medley_placeholder": "Ex: Louange d'ouverture, Medley adoration...",
-      "medley_hint": "Laissez vide pour un chant individuel. Utilisez le même nom pour regrouper plusieurs chants sous un même lead."
+      "medley_hint": "Laissez vide pour un chant individuel. Utilisez le même nom pour regrouper plusieurs chants sous un même lead.",
+
+      "compilations": "Compilations",
+      "compilations_desc": "Créer des groupes de chants réutilisables",
+      "compilation": "Compilation",
+      "compilation_title": "Gestion des Compilations",
+      "compilation_subtitle": "Créez et gérez vos compilations de chants",
+      "create_compilation": "Créer une compilation",
+      "edit_compilation": "Modifier la compilation",
+      "delete_compilation": "Supprimer la compilation",
+      "delete_compilation_confirm": "Êtes-vous sûr de vouloir supprimer la compilation \"{{name}}\" ? Cette action est irréversible.",
+      "compilation_name": "Nom de la compilation",
+      "compilation_description": "Description (optionnel)",
+      "compilation_category": "Catégorie",
+      "no_compilations": "Aucune compilation créée",
+      "create_first_compilation": "Créer votre première compilation",
+      "songs_in_compilation": "Chants dans cette compilation",
+      "add_song_to_compilation": "Ajouter un chant",
+      "select_songs": "Sélectionner les chants",
+      "no_songs_in_compilation": "Aucun chant dans cette compilation",
+      "drag_to_reorder": "Glisser pour réorganiser l'ordre",
+      "compilation_created": "Compilation créée avec succès",
+      "compilation_updated": "Compilation mise à jour",
+      "compilation_deleted": "Compilation supprimée",
+      "add_compilation": "Ajouter compilation",
+      "add_compilation_to_planning": "Ajouter une compilation au planning",
+      "select_compilation": "Sélectionner une compilation",
+      "choose_compilation": "Choisir une compilation...",
+      "lead_for_compilation": "Lead pour cette compilation",
+      "lead_compilation_hint": "Le lead assigné dirigera toute la compilation lors de cet événement",
+      "compilation_notes_placeholder": "Notes pour cette compilation...",
+      "error_adding_compilation": "Erreur lors de l'ajout de la compilation"
     }
   }
 }

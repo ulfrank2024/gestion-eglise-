@@ -10,7 +10,8 @@ import {
   MdArrowForward,
   MdStar,
   MdPerson,
-  MdCategory
+  MdCategory,
+  MdPlaylistPlay
 } from 'react-icons/md';
 
 const AdminChoirDashboardPage = () => {
@@ -307,7 +308,7 @@ const AdminChoirDashboardPage = () => {
       </div>
 
       {/* Quick Actions */}
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Link
           to="/admin/choir/members"
           className="flex items-center gap-3 p-4 bg-gray-800 border border-gray-700 rounded-xl hover:border-indigo-500 transition-colors group"
@@ -331,6 +332,19 @@ const AdminChoirDashboardPage = () => {
           <div>
             <p className="font-medium text-white">{t('choir.add_song')}</p>
             <p className="text-sm text-gray-400">{t('choir.add_song_desc')}</p>
+          </div>
+        </Link>
+
+        <Link
+          to="/admin/choir/compilations"
+          className="flex items-center gap-3 p-4 bg-gray-800 border border-gray-700 rounded-xl hover:border-purple-500 transition-colors group"
+        >
+          <div className="p-3 rounded-lg bg-purple-500/20 group-hover:bg-purple-500/30 transition-colors">
+            <MdPlaylistPlay className="text-purple-400 text-xl" />
+          </div>
+          <div>
+            <p className="font-medium text-white">{t('choir.compilations')}</p>
+            <p className="text-sm text-gray-400">{t('choir.compilations_desc')}</p>
           </div>
         </Link>
 

@@ -832,6 +832,23 @@ router.get('/planning/:id', isChoirManagerOrAdmin, async (req, res) => {
               color
             )
           ),
+          compilation:choir_compilations_v2 (
+            id,
+            name,
+            description,
+            songs:choir_compilation_songs_v2 (
+              id,
+              order_position,
+              song:choir_songs_v2 (
+                id,
+                title,
+                author,
+                key_signature,
+                tempo,
+                lyrics
+              )
+            )
+          ),
           lead_choriste:choir_members_v2 (
             id,
             voice_type,
@@ -1292,6 +1309,413 @@ router.delete('/planning/:planningId/participants', isChoirManagerOrAdmin, async
     res.json({ message: 'Participants mis à jour' });
   } catch (err) {
     console.error('Error clearing planning participants:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// =====================================================
+// GESTION DES COMPILATIONS / MEDLEYS
+// =====================================================
+
+/**
+ * GET /api/admin/choir/compilations
+ * Liste des compilations
+ */
+router.get('/compilations', isChoirManagerOrAdmin, async (req, res) => {
+  try {
+    const { church_id } = req.user;
+
+    const { data: compilations, error } = await supabaseAdmin
+      .from('choir_compilations_v2')
+      .select(`
+        *,
+        category:choir_song_categories_v2 (
+          id,
+          name_fr,
+          name_en,
+          color
+        ),
+        songs:choir_compilation_songs_v2 (
+          id,
+          order_position,
+          notes,
+          song:choir_songs_v2 (
+            id,
+            title,
+            author,
+            key_signature,
+            tempo
+          )
+        )
+      `)
+      .eq('church_id', church_id)
+      .eq('is_active', true)
+      .order('name');
+
+    if (error) throw error;
+
+    // Trier les chants de chaque compilation par order_position
+    compilations?.forEach(comp => {
+      if (comp.songs) {
+        comp.songs.sort((a, b) => a.order_position - b.order_position);
+      }
+    });
+
+    res.json(compilations || []);
+  } catch (err) {
+    console.error('Error fetching compilations:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+/**
+ * GET /api/admin/choir/compilations/:id
+ * Détails d'une compilation
+ */
+router.get('/compilations/:id', isChoirManagerOrAdmin, async (req, res) => {
+  try {
+    const { church_id } = req.user;
+    const { id } = req.params;
+
+    const { data: compilation, error } = await supabaseAdmin
+      .from('choir_compilations_v2')
+      .select(`
+        *,
+        category:choir_song_categories_v2 (
+          id,
+          name_fr,
+          name_en,
+          color
+        ),
+        songs:choir_compilation_songs_v2 (
+          id,
+          order_position,
+          notes,
+          song:choir_songs_v2 (
+            id,
+            title,
+            author,
+            key_signature,
+            tempo,
+            lyrics,
+            category:choir_song_categories_v2 (
+              id,
+              name_fr,
+              name_en,
+              color
+            )
+          )
+        )
+      `)
+      .eq('id', id)
+      .eq('church_id', church_id)
+      .single();
+
+    if (error || !compilation) {
+      return res.status(404).json({ error: 'Compilation non trouvée' });
+    }
+
+    // Trier les chants par order_position
+    if (compilation.songs) {
+      compilation.songs.sort((a, b) => a.order_position - b.order_position);
+    }
+
+    res.json(compilation);
+  } catch (err) {
+    console.error('Error fetching compilation:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+/**
+ * POST /api/admin/choir/compilations
+ * Créer une compilation
+ */
+router.post('/compilations', isChoirManagerOrAdmin, async (req, res) => {
+  try {
+    const { church_id, id: userId } = req.user;
+    const { name, description, category_id, song_ids } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ error: 'Nom de la compilation requis' });
+    }
+
+    // Créer la compilation
+    const { data: compilation, error } = await supabaseAdmin
+      .from('choir_compilations_v2')
+      .insert({
+        church_id,
+        name,
+        description,
+        category_id,
+        created_by: userId
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Ajouter les chants si fournis
+    if (song_ids && Array.isArray(song_ids) && song_ids.length > 0) {
+      const songsData = song_ids.map((song_id, index) => ({
+        compilation_id: compilation.id,
+        song_id,
+        order_position: index + 1
+      }));
+
+      await supabaseAdmin
+        .from('choir_compilation_songs_v2')
+        .insert(songsData);
+    }
+
+    // Récupérer la compilation complète
+    const { data: fullCompilation } = await supabaseAdmin
+      .from('choir_compilations_v2')
+      .select(`
+        *,
+        category:choir_song_categories_v2 (
+          id,
+          name_fr,
+          name_en,
+          color
+        ),
+        songs:choir_compilation_songs_v2 (
+          id,
+          order_position,
+          song:choir_songs_v2 (
+            id,
+            title,
+            author
+          )
+        )
+      `)
+      .eq('id', compilation.id)
+      .single();
+
+    res.status(201).json(fullCompilation);
+  } catch (err) {
+    console.error('Error creating compilation:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+/**
+ * PUT /api/admin/choir/compilations/:id
+ * Modifier une compilation
+ */
+router.put('/compilations/:id', isChoirManagerOrAdmin, async (req, res) => {
+  try {
+    const { church_id } = req.user;
+    const { id } = req.params;
+    const { name, description, category_id } = req.body;
+
+    const updateData = { updated_at: new Date().toISOString() };
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (category_id !== undefined) updateData.category_id = category_id;
+
+    const { data: compilation, error } = await supabaseAdmin
+      .from('choir_compilations_v2')
+      .update(updateData)
+      .eq('id', id)
+      .eq('church_id', church_id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json(compilation);
+  } catch (err) {
+    console.error('Error updating compilation:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+/**
+ * DELETE /api/admin/choir/compilations/:id
+ * Supprimer une compilation (soft delete)
+ */
+router.delete('/compilations/:id', isChoirManagerOrAdmin, async (req, res) => {
+  try {
+    const { church_id } = req.user;
+    const { id } = req.params;
+
+    const { error } = await supabaseAdmin
+      .from('choir_compilations_v2')
+      .update({ is_active: false })
+      .eq('id', id)
+      .eq('church_id', church_id);
+
+    if (error) throw error;
+
+    res.json({ message: 'Compilation supprimée avec succès' });
+  } catch (err) {
+    console.error('Error deleting compilation:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+/**
+ * POST /api/admin/choir/compilations/:compilationId/songs
+ * Ajouter un chant à une compilation
+ */
+router.post('/compilations/:compilationId/songs', isChoirManagerOrAdmin, async (req, res) => {
+  try {
+    const { compilationId } = req.params;
+    const { song_id, order_position, notes } = req.body;
+
+    if (!song_id) {
+      return res.status(400).json({ error: 'ID du chant requis' });
+    }
+
+    // Récupérer le nombre de chants actuels pour l'ordre
+    const { count } = await supabaseAdmin
+      .from('choir_compilation_songs_v2')
+      .select('*', { count: 'exact', head: true })
+      .eq('compilation_id', compilationId);
+
+    const { data: entry, error } = await supabaseAdmin
+      .from('choir_compilation_songs_v2')
+      .upsert({
+        compilation_id: compilationId,
+        song_id,
+        order_position: order_position || (count || 0) + 1,
+        notes
+      }, { onConflict: 'compilation_id,song_id' })
+      .select(`
+        id,
+        order_position,
+        notes,
+        song:choir_songs_v2 (
+          id,
+          title,
+          author,
+          key_signature,
+          tempo
+        )
+      `)
+      .single();
+
+    if (error) throw error;
+
+    res.status(201).json(entry);
+  } catch (err) {
+    console.error('Error adding song to compilation:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+/**
+ * PUT /api/admin/choir/compilations/:compilationId/songs/reorder
+ * Réorganiser les chants d'une compilation
+ */
+router.put('/compilations/:compilationId/songs/reorder', isChoirManagerOrAdmin, async (req, res) => {
+  try {
+    const { compilationId } = req.params;
+    const { song_order } = req.body; // Array de { id, order_position }
+
+    if (!song_order || !Array.isArray(song_order)) {
+      return res.status(400).json({ error: 'Ordre des chants requis' });
+    }
+
+    // Mettre à jour chaque position
+    for (const item of song_order) {
+      await supabaseAdmin
+        .from('choir_compilation_songs_v2')
+        .update({ order_position: item.order_position })
+        .eq('id', item.id)
+        .eq('compilation_id', compilationId);
+    }
+
+    res.json({ message: 'Ordre mis à jour' });
+  } catch (err) {
+    console.error('Error reordering compilation songs:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+/**
+ * DELETE /api/admin/choir/compilation-songs/:id
+ * Retirer un chant d'une compilation
+ */
+router.delete('/compilation-songs/:id', isChoirManagerOrAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { error } = await supabaseAdmin
+      .from('choir_compilation_songs_v2')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    res.json({ message: 'Chant retiré de la compilation' });
+  } catch (err) {
+    console.error('Error removing song from compilation:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+/**
+ * POST /api/admin/choir/planning/:planningId/compilations
+ * Ajouter une compilation au planning avec un lead assigné
+ */
+router.post('/planning/:planningId/compilations', isChoirManagerOrAdmin, async (req, res) => {
+  try {
+    const { planningId } = req.params;
+    const { compilation_id, lead_choriste_id, order_position, notes } = req.body;
+
+    if (!compilation_id) {
+      return res.status(400).json({ error: 'ID de la compilation requis' });
+    }
+
+    const { data: entry, error } = await supabaseAdmin
+      .from('choir_planning_songs_v2')
+      .insert({
+        planning_id: planningId,
+        compilation_id,
+        song_id: null, // Pas de chant individuel
+        lead_choriste_id,
+        order_position: order_position || 0,
+        notes
+      })
+      .select(`
+        id,
+        order_position,
+        notes,
+        compilation:choir_compilations_v2 (
+          id,
+          name,
+          description,
+          songs:choir_compilation_songs_v2 (
+            id,
+            order_position,
+            song:choir_songs_v2 (
+              id,
+              title,
+              author,
+              key_signature,
+              tempo
+            )
+          )
+        ),
+        lead_choriste:choir_members_v2 (
+          id,
+          voice_type,
+          member:members_v2 (
+            id,
+            full_name,
+            profile_photo_url
+          )
+        )
+      `)
+      .single();
+
+    if (error) throw error;
+
+    res.status(201).json(entry);
+  } catch (err) {
+    console.error('Error adding compilation to planning:', err);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
