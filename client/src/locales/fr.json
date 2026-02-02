@@ -655,6 +655,10 @@
       "request_new_link": "Demander un nouveau lien"
     },
 
+    "member_login": "Connexion Membre",
+    "enter_church_id": "Entrez l'identifiant de l'église:",
+    "visit_church_page": "Visiter une page d'église",
+
     "install_app": "Installer MY EDEN X",
     "install_app_subtitle": "Accès rapide depuis votre écran",
     "offline_access": "Accès hors ligne",

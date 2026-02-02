@@ -706,6 +706,10 @@
       "request_new_link": "Request a New Link"
     },
 
+    "member_login": "Member Login",
+    "enter_church_id": "Enter the church ID:",
+    "visit_church_page": "Visit a church page",
+
     "install_app": "Install MY EDEN X",
     "install_app_subtitle": "Quick access from your home screen",
     "offline_access": "Offline access",

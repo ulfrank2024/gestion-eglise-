@@ -75,6 +75,7 @@ import ChurchRegistrationPage from './pages/ChurchRegistrationPage';
 import EventPage from './pages/EventPage';
 import NotFoundPage from './pages/NotFoundPage';
 import PublicEventsListPage from './pages/PublicEventsListPage'; // Nouvelle page de liste des événements publics
+import HomePage from './pages/HomePage'; // Page d'accueil PWA
 import CheckinSuccessPage from './pages/CheckinSuccessPage';
 import WelcomeCheckinPage from './pages/WelcomeCheckinPage'; // Importer la nouvelle page
 
@@ -176,10 +177,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="checkin-success" element={<CheckinSuccessPage />} />
           </Route>
 
-          {/* Root fallback - Homepage without churchId */}
-          <Route path="/" element={<PublicLayout />}>
-            <Route index element={<PublicEventsListPage />} />
-          </Route>
+          {/* Root - Homepage with login options */}
+          <Route path="/" element={<HomePage />} />
 
           {/* Global 404 catch-all - MUST be last */}
           <Route path="*" element={<NotFoundPage />} />
