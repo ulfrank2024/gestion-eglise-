@@ -2958,3 +2958,52 @@ Une PWA permet d'installer l'application web directement sur l'appareil avec une
 - ✅ Pas de barre d'adresse (mode standalone)
 
 ---
+
+### 2026-02-02 - Ajout du bouton d'installation PWA dans l'interface
+
+**Demande utilisateur:**
+- L'utilisateur ne trouvait pas comment installer l'application sur Android via le menu Chrome
+- Demande d'ajouter un bouton visible dans l'interface
+
+**Solution:**
+
+1. **Composant InstallPWA.jsx** (`/client/src/components/InstallPWA.jsx`)
+   - Détecte l'événement `beforeinstallprompt` (Android/Chrome)
+   - Bannière fixée en bas de l'écran
+   - Bouton "Installer maintenant" qui déclenche le prompt natif
+   - Instructions iOS spécifiques via modal
+   - Mémorisation du dismiss pendant 24h (localStorage)
+   - Design cohérent avec le thème dark
+
+2. **Traductions ajoutées** (fr.json et en.json)
+   - `install_app` - "Installer MY EDEN X"
+   - `install_app_subtitle` - "Accès rapide depuis votre écran"
+   - `offline_access` - "Accès hors ligne"
+   - `fast_loading` - "Chargement rapide"
+   - `no_store` - "Sans téléchargement"
+   - `see_instructions` / `install_now`
+   - Instructions iOS étape par étape
+
+3. **Intégration dans les layouts**
+   - AdminLayout.jsx - Composant ajouté
+   - MemberLayout.jsx - Composant ajouté
+
+**Fonctionnement:**
+- **Android/Chrome:** Cliquer sur "Installer maintenant" → Prompt natif
+- **iOS:** Cliquer sur "Voir les instructions" → Modal avec les étapes Safari
+- **Dismiss:** Fermer la bannière → Ne réapparaît pas pendant 24h
+- **Déjà installé:** La bannière ne s'affiche pas
+
+**Avantages de la bannière:**
+- Visibilité: L'utilisateur voit clairement l'option d'installation
+- Liste des bénéfices (hors ligne, rapide, sans store)
+- Support iOS avec instructions détaillées
+- UX non intrusive (peut être fermée)
+
+**Résultat:**
+- ✅ Bouton d'installation visible pour tous les utilisateurs
+- ✅ Support Android avec prompt natif
+- ✅ Support iOS avec instructions Safari
+- ✅ Ne gêne pas l'utilisation (dismiss 24h)
+
+---

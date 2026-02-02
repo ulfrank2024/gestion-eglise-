@@ -706,6 +706,23 @@
       "request_new_link": "Request a New Link"
     },
 
+    "install_app": "Install MY EDEN X",
+    "install_app_subtitle": "Quick access from your home screen",
+    "offline_access": "Offline access",
+    "fast_loading": "Fast loading",
+    "no_store": "No download required",
+    "see_instructions": "See instructions",
+    "install_now": "Install now",
+    "install_on_ios": "Install on iPhone/iPad",
+    "ios_step1_title": "Tap Share",
+    "ios_step1_desc": "Tap the ⬆️ icon at the bottom of Safari",
+    "ios_step2_title": "Add to Home Screen",
+    "ios_step2_desc": "Scroll down and tap \"Add to Home Screen\"",
+    "ios_step3_title": "Add",
+    "ios_step3_desc": "Tap \"Add\" in the top right corner",
+    "ios_illustration": "Safari → Share → Add to Home Screen",
+    "understood": "Got it!",
+
     "choir_module": "Choir",
     "choir_management": "Choir Management",
     "choir": {

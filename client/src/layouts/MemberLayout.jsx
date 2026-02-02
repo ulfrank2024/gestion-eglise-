@@ -8,6 +8,7 @@ import {
   MdDashboard, MdPerson, MdEvent, MdBadge, MdNotifications,
   MdAnnouncement, MdLogout, MdMenu, MdClose
 } from 'react-icons/md';
+import InstallPWA from '../components/InstallPWA';
 
 function MemberLayout() {
   const { t, i18n } = useTranslation();
@@ -230,6 +231,9 @@ function MemberLayout() {
           <Outlet context={{ memberInfo, churchInfo }} />
         </main>
       </div>
+
+      {/* PWA Install Banner */}
+      <InstallPWA />
     </div>
   );
 }

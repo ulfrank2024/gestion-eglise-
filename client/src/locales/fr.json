@@ -655,6 +655,23 @@
       "request_new_link": "Demander un nouveau lien"
     },
 
+    "install_app": "Installer MY EDEN X",
+    "install_app_subtitle": "Accès rapide depuis votre écran",
+    "offline_access": "Accès hors ligne",
+    "fast_loading": "Chargement rapide",
+    "no_store": "Sans téléchargement",
+    "see_instructions": "Voir les instructions",
+    "install_now": "Installer maintenant",
+    "install_on_ios": "Installer sur iPhone/iPad",
+    "ios_step1_title": "Appuyer sur Partager",
+    "ios_step1_desc": "Touchez l'icône ⬆️ en bas de Safari",
+    "ios_step2_title": "Sur l'écran d'accueil",
+    "ios_step2_desc": "Faites défiler et touchez \"Sur l'écran d'accueil\"",
+    "ios_step3_title": "Ajouter",
+    "ios_step3_desc": "Touchez \"Ajouter\" en haut à droite",
+    "ios_illustration": "Safari → Partager → Sur l'écran d'accueil",
+    "understood": "Compris !",
+
     "choir_module": "Chorale",
     "choir_management": "Gestion Chorale",
     "choir": {

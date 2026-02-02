@@ -11,6 +11,7 @@ import {
 } from 'react-icons/md';
 import { api } from '../api/api';
 import { supabase } from '../supabaseClient';
+import InstallPWA from '../components/InstallPWA';
 
 function AdminLayout() {
   const { t, i18n } = useTranslation();
@@ -732,6 +733,9 @@ function AdminLayout() {
           <Outlet />
         </main>
       </div>
+
+      {/* PWA Install Banner */}
+      <InstallPWA />
     </div>
   );
 }
