@@ -2884,3 +2884,77 @@ Pour que le module Chorale fonctionne complètement, il faut exécuter le script
 - ✅ Animations de transition smooth
 
 ---
+
+### 2026-02-02 - Implémentation PWA (Progressive Web App)
+
+**Demande utilisateur:**
+- Permettre l'installation de l'application sur téléphone et PC sans passer par les stores (App Store / Play Store)
+
+**Solution: Progressive Web App (PWA)**
+
+Une PWA permet d'installer l'application web directement sur l'appareil avec une icône sur l'écran d'accueil, comme une app native.
+
+**Avantages:**
+- ✅ Gratuit (pas de frais de store)
+- ✅ Une seule base de code
+- ✅ Mises à jour automatiques
+- ✅ Fonctionne hors ligne (cache)
+- ✅ Compatible iOS, Android, Windows, macOS, Linux
+
+**Implémentation:**
+
+1. **Installation de vite-plugin-pwa**
+   ```bash
+   npm install vite-plugin-pwa -D
+   ```
+
+2. **Configuration vite.config.js**
+   - Plugin VitePWA avec manifest intégré
+   - Service Worker avec Workbox pour le cache
+   - Cache des images (30 jours)
+   - Cache des API (NetworkFirst)
+   - Cache des fonts (1 an)
+
+3. **Manifest de l'application**
+   - Nom: "MY EDEN X - Gestion d'Église"
+   - Nom court: "MY EDEN X"
+   - Thème: #111827 (gris foncé)
+   - Affichage: standalone (sans barre d'adresse)
+   - Orientation: portrait
+
+4. **index.html mis à jour**
+   - Meta tags PWA pour iOS (apple-mobile-web-app-capable)
+   - Theme-color pour la barre de statut
+   - Apple touch icon
+
+**Comment installer l'application:**
+
+- **Android (Chrome):**
+  1. Ouvrir le site dans Chrome
+  2. Menu (⋮) → "Ajouter à l'écran d'accueil"
+  3. Confirmer → L'icône apparaît sur l'écran d'accueil
+
+- **iPhone/iPad (Safari):**
+  1. Ouvrir le site dans Safari
+  2. Bouton Partager (⬆️)
+  3. "Sur l'écran d'accueil"
+  4. Confirmer → L'icône apparaît
+
+- **PC (Chrome/Edge):**
+  1. Ouvrir le site
+  2. Icône d'installation (⊕) dans la barre d'adresse
+  3. Ou Menu → "Installer MY EDEN X"
+
+**Fichiers générés lors du build:**
+- `manifest.webmanifest` - Métadonnées de l'app
+- `sw.js` - Service Worker (cache et offline)
+- `registerSW.js` - Script d'enregistrement du SW
+
+**Résultat:**
+- ✅ Application installable sur tous les appareils
+- ✅ Icône MY EDEN X sur l'écran d'accueil
+- ✅ Splash screen au démarrage
+- ✅ Fonctionne hors ligne (données en cache)
+- ✅ Pas de barre d'adresse (mode standalone)
+
+---
