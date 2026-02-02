@@ -108,7 +108,7 @@ function AdminMemberInvitationsPage() {
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <MdMail className="text-3xl text-blue-400" />
-        <h1 className="text-2xl font-bold text-gray-100">
+        <h1 className="text-2xl font-bold text-white">
           {t('invitations') || 'Invitations'}
         </h1>
       </div>
@@ -134,7 +134,7 @@ function AdminMemberInvitationsPage() {
             <MdLink className="text-2xl text-blue-400" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-gray-100">
+            <h2 className="text-lg font-semibold text-white">
               {t('public_registration_link') || 'Lien d\'inscription public'}
             </h2>
             <p className="text-sm text-gray-400">
@@ -186,7 +186,7 @@ function AdminMemberInvitationsPage() {
               <MdSend className="text-2xl text-purple-400" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-100">
+              <h2 className="text-lg font-semibold text-white">
                 {t('invite_by_email') || 'Inviter par email'}
               </h2>
               <p className="text-sm text-gray-400">
@@ -207,7 +207,7 @@ function AdminMemberInvitationsPage() {
       {/* Liste des invitations en attente */}
       <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
         <div className="p-4 border-b border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-100">
+          <h2 className="text-lg font-semibold text-white">
             {t('pending_invitations') || 'Invitations en attente'}
           </h2>
         </div>
@@ -279,7 +279,7 @@ function AdminMemberInvitationsPage() {
                   type="email"
                   value={inviteForm.email}
                   onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="membre@email.com"
                   required
                 />
@@ -291,7 +291,7 @@ function AdminMemberInvitationsPage() {
                   type="text"
                   value={inviteForm.full_name}
                   onChange={(e) => setInviteForm({ ...inviteForm, full_name: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder={t('optional') || 'Optionnel'}
                 />
               </div>

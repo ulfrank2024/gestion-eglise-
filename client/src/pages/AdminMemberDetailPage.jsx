@@ -234,10 +234,10 @@ function AdminMemberDetailPage() {
                       type="text"
                       value={editForm.full_name}
                       onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
-                      className="text-2xl font-bold bg-gray-700 text-gray-100 px-3 py-1 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="text-2xl font-bold bg-gray-700 text-white px-3 py-1 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                   ) : (
-                    <h1 className="text-2xl font-bold text-gray-100">{member.full_name}</h1>
+                    <h1 className="text-2xl font-bold text-white">{member.full_name}</h1>
                   )}
                   <div className="flex items-center gap-2 mt-1">
                     {member.is_archived ? (
@@ -271,10 +271,10 @@ function AdminMemberDetailPage() {
                         type="email"
                         value={editForm.email}
                         onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                        className="w-full mt-1 bg-gray-700 text-gray-100 px-3 py-2 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full mt-1 bg-gray-700 text-white px-3 py-2 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       />
                     ) : (
-                      <p className="text-gray-100">{member.email}</p>
+                      <p className="text-white">{member.email}</p>
                     )}
                   </div>
                 </div>
@@ -291,10 +291,10 @@ function AdminMemberDetailPage() {
                         type="tel"
                         value={editForm.phone}
                         onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                        className="w-full mt-1 bg-gray-700 text-gray-100 px-3 py-2 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full mt-1 bg-gray-700 text-white px-3 py-2 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       />
                     ) : (
-                      <p className="text-gray-100">{member.phone || '-'}</p>
+                      <p className="text-white">{member.phone || '-'}</p>
                     )}
                   </div>
                 </div>
@@ -310,11 +310,11 @@ function AdminMemberDetailPage() {
                       <textarea
                         value={editForm.address}
                         onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
-                        className="w-full mt-1 bg-gray-700 text-gray-100 px-3 py-2 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                        className="w-full mt-1 bg-gray-700 text-white px-3 py-2 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
                         rows="2"
                       />
                     ) : (
-                      <p className="text-gray-100">{member.address || '-'}</p>
+                      <p className="text-white">{member.address || '-'}</p>
                     )}
                   </div>
                 </div>
@@ -331,10 +331,10 @@ function AdminMemberDetailPage() {
                         type="date"
                         value={editForm.date_of_birth}
                         onChange={(e) => setEditForm({ ...editForm, date_of_birth: e.target.value })}
-                        className="w-full mt-1 bg-gray-700 text-gray-100 px-3 py-2 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full mt-1 bg-gray-700 text-white px-3 py-2 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       />
                     ) : (
-                      <p className="text-gray-100">
+                      <p className="text-white">
                         {member.date_of_birth
                           ? new Date(member.date_of_birth).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US')
                           : '-'}
@@ -350,7 +350,7 @@ function AdminMemberDetailPage() {
                   </div>
                   <div className="flex-1">
                     <p className="text-gray-400 text-sm">{t('joined_at')}</p>
-                    <p className="text-gray-100">
+                    <p className="text-white">
                       {member.joined_at
                         ? new Date(member.joined_at).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US')
                         : '-'}
@@ -365,7 +365,7 @@ function AdminMemberDetailPage() {
           {member.recent_events && member.recent_events.length > 0 && (
             <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-700">
-                <h2 className="text-lg font-semibold text-gray-100 flex items-center gap-2">
+                <h2 className="text-lg font-semibold text-white flex items-center gap-2">
                   <MdEvent className="text-blue-400" />
                   {t('recent_events') || 'Événements récents'}
                 </h2>
@@ -374,7 +374,7 @@ function AdminMemberDetailPage() {
                 {member.recent_events.map((event) => (
                   <div key={event.id} className="px-6 py-4 flex items-center justify-between hover:bg-gray-700/50 transition-colors">
                     <div>
-                      <p className="text-gray-100 font-medium">
+                      <p className="text-white font-medium">
                         {lang === 'fr' ? event.name_fr : event.name_en}
                       </p>
                       <p className="text-gray-400 text-sm">
@@ -398,7 +398,7 @@ function AdminMemberDetailPage() {
           {/* Rôles */}
           <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-700 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-100 flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
                 <MdBadge className="text-purple-400" />
                 {t('roles')}
               </h2>
@@ -433,7 +433,7 @@ function AdminMemberDetailPage() {
           {/* Actions */}
           <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-700">
-              <h2 className="text-lg font-semibold text-gray-100">{t('actions')}</h2>
+              <h2 className="text-lg font-semibold text-white">{t('actions')}</h2>
             </div>
             <div className="p-4 space-y-3">
               <button
@@ -505,7 +505,7 @@ function AdminMemberDetailPage() {
                   </div>
                 )}
                 <div>
-                  <p className="text-gray-100 font-medium">{member.full_name}</p>
+                  <p className="text-white font-medium">{member.full_name}</p>
                   <p className="text-gray-400 text-sm">{member.email}</p>
                 </div>
               </div>
@@ -543,7 +543,7 @@ function AdminMemberDetailPage() {
                             className="w-4 h-4 rounded-full"
                             style={{ backgroundColor: role.color || '#6366f1' }}
                           />
-                          <span className="text-gray-100">
+                          <span className="text-white">
                             {lang === 'fr' ? role.name_fr : role.name_en}
                           </span>
                         </div>

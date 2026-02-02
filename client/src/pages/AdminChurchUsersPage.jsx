@@ -263,7 +263,7 @@ function AdminChurchUsersPage() {
                 type="email"
                 value={inviteForm.email}
                 onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="admin@email.com"
                 required
               />
@@ -277,7 +277,7 @@ function AdminChurchUsersPage() {
                 type="text"
                 value={inviteForm.full_name}
                 onChange={(e) => setInviteForm({ ...inviteForm, full_name: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="Jean Dupont"
               />
             </div>
@@ -407,7 +407,7 @@ function AdminChurchUsersPage() {
                             )}
                           </div>
                           <div>
-                            <p className="text-gray-100 font-medium">
+                            <p className="text-white font-medium">
                               {user.full_name || user.auth_users?.email?.split('@')[0] || 'N/A'}
                               {isMainAdmin && (
                                 <span className="ml-2 px-2 py-0.5 bg-yellow-600/20 text-yellow-400 text-xs rounded-full">

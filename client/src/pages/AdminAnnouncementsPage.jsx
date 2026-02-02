@@ -124,7 +124,7 @@ function AdminAnnouncementsPage() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <MdAnnouncement className="text-3xl text-amber-400" />
-          <h1 className="text-2xl font-bold text-gray-100">
+          <h1 className="text-2xl font-bold text-white">
             {t('announcements') || 'Annonces'}
           </h1>
         </div>
@@ -222,7 +222,7 @@ function AdminAnnouncementsPage() {
               </div>
 
               <div className="p-4">
-                <h3 className="text-lg font-semibold text-gray-100 mb-2">
+                <h3 className="text-lg font-semibold text-white mb-2">
                   {lang === 'fr' ? announcement.title_fr : announcement.title_en}
                 </h3>
                 <p className="text-gray-400 text-sm whitespace-pre-wrap">
@@ -266,7 +266,7 @@ function AdminAnnouncementsPage() {
                     type="text"
                     value={formData.title_fr}
                     onChange={(e) => setFormData({ ...formData, title_fr: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                     required
                   />
                 </div>
@@ -276,7 +276,7 @@ function AdminAnnouncementsPage() {
                     type="text"
                     value={formData.title_en}
                     onChange={(e) => setFormData({ ...formData, title_en: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                     required
                   />
                 </div>
@@ -287,7 +287,7 @@ function AdminAnnouncementsPage() {
                 <textarea
                   value={formData.content_fr}
                   onChange={(e) => setFormData({ ...formData, content_fr: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                   rows="4"
                   required
                 />
@@ -298,7 +298,7 @@ function AdminAnnouncementsPage() {
                 <textarea
                   value={formData.content_en}
                   onChange={(e) => setFormData({ ...formData, content_en: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                   rows="4"
                   required
                 />
@@ -310,7 +310,7 @@ function AdminAnnouncementsPage() {
                   type="date"
                   value={formData.expires_at}
                   onChange={(e) => setFormData({ ...formData, expires_at: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   {t('expiration_hint') || 'Laisser vide pour une annonce sans expiration'}

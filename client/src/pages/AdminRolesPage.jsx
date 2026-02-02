@@ -108,7 +108,7 @@ function AdminRolesPage() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <MdBadge className="text-3xl text-purple-400" />
-          <h1 className="text-2xl font-bold text-gray-100">
+          <h1 className="text-2xl font-bold text-white">
             {t('roles') || 'Rôles'}
           </h1>
         </div>
@@ -147,7 +147,7 @@ function AdminRolesPage() {
               <div className="p-4">
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-100">
+                    <h3 className="text-lg font-semibold text-white">
                       {lang === 'fr' ? role.name_fr : role.name_en}
                     </h3>
                     <p className="text-sm text-gray-400">
@@ -211,7 +211,7 @@ function AdminRolesPage() {
                     type="text"
                     value={formData.name_fr}
                     onChange={(e) => setFormData({ ...formData, name_fr: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                     required
                   />
                 </div>
@@ -221,7 +221,7 @@ function AdminRolesPage() {
                     type="text"
                     value={formData.name_en}
                     onChange={(e) => setFormData({ ...formData, name_en: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                     required
                   />
                 </div>
@@ -232,7 +232,7 @@ function AdminRolesPage() {
                 <textarea
                   value={formData.description_fr}
                   onChange={(e) => setFormData({ ...formData, description_fr: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   rows="2"
                 />
               </div>
@@ -242,7 +242,7 @@ function AdminRolesPage() {
                 <textarea
                   value={formData.description_en}
                   onChange={(e) => setFormData({ ...formData, description_en: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   rows="2"
                 />
               </div>

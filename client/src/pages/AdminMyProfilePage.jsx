@@ -249,7 +249,7 @@ function AdminMyProfilePage() {
                     type="text"
                     value={editForm.full_name || ''}
                     onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
-                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
                 <div>
@@ -258,7 +258,7 @@ function AdminMyProfilePage() {
                     type="tel"
                     value={editForm.phone || ''}
                     onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
                 <div>
@@ -267,7 +267,7 @@ function AdminMyProfilePage() {
                     type="text"
                     value={editForm.address || ''}
                     onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
-                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
                 <div>
@@ -276,7 +276,7 @@ function AdminMyProfilePage() {
                     type="text"
                     value={editForm.city || ''}
                     onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
-                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
                 <div>
@@ -285,7 +285,7 @@ function AdminMyProfilePage() {
                     type="date"
                     value={editForm.date_of_birth || ''}
                     onChange={(e) => setEditForm({ ...editForm, date_of_birth: e.target.value })}
-                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
               </div>
@@ -314,42 +314,42 @@ function AdminMyProfilePage() {
                 <MdPerson className="text-gray-400 text-xl" />
                 <div>
                   <p className="text-gray-500 text-sm">{t('full_name') || 'Nom complet'}</p>
-                  <p className="text-gray-100">{profile.full_name || '-'}</p>
+                  <p className="text-white">{profile.full_name || '-'}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <MdEmail className="text-gray-400 text-xl" />
                 <div>
                   <p className="text-gray-500 text-sm">{t('email') || 'Email'}</p>
-                  <p className="text-gray-100">{profile.email || '-'}</p>
+                  <p className="text-white">{profile.email || '-'}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <MdPhone className="text-gray-400 text-xl" />
                 <div>
                   <p className="text-gray-500 text-sm">{t('phone') || 'Téléphone'}</p>
-                  <p className="text-gray-100">{profile.phone || '-'}</p>
+                  <p className="text-white">{profile.phone || '-'}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <MdLocationOn className="text-gray-400 text-xl" />
                 <div>
                   <p className="text-gray-500 text-sm">{t('address') || 'Adresse'}</p>
-                  <p className="text-gray-100">{profile.address || '-'}</p>
+                  <p className="text-white">{profile.address || '-'}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <MdLocationOn className="text-gray-400 text-xl" />
                 <div>
                   <p className="text-gray-500 text-sm">{t('city') || 'Ville'}</p>
-                  <p className="text-gray-100">{profile.city || '-'}</p>
+                  <p className="text-white">{profile.city || '-'}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <MdCake className="text-gray-400 text-xl" />
                 <div>
                   <p className="text-gray-500 text-sm">{t('date_of_birth') || 'Date de naissance'}</p>
-                  <p className="text-gray-100">{formatDate(profile.date_of_birth)}</p>
+                  <p className="text-white">{formatDate(profile.date_of_birth)}</p>
                 </div>
               </div>
             </div>

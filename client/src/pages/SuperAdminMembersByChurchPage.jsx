@@ -118,7 +118,7 @@ function SuperAdminMembersByChurchPage() {
             </div>
           )}
           <div>
-            <h1 className="text-2xl font-bold text-gray-100">{church?.name}</h1>
+            <h1 className="text-2xl font-bold text-white">{church?.name}</h1>
             <p className="text-gray-400">{t('super_admin_members.church_members') || "Membres de l'eglise"}</p>
           </div>
         </div>
@@ -196,7 +196,7 @@ function SuperAdminMembersByChurchPage() {
             placeholder={t('search_members') || 'Rechercher un membre...'}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-10 pr-4 py-3 text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
         <div className="flex gap-2">
@@ -298,7 +298,7 @@ function SuperAdminMembersByChurchPage() {
                           </div>
                         )}
                         <div>
-                          <span className="text-gray-100 font-medium block">{member.full_name}</span>
+                          <span className="text-white font-medium block">{member.full_name}</span>
                           {member.is_admin && (
                             <span className="text-xs text-red-400">{t('church_admin') || "Admin de l'eglise"}</span>
                           )}

@@ -165,7 +165,7 @@ function AdminDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Pie Chart */}
         <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-100 mb-4">{t('events_and_attendees_overview')}</h3>
+          <h3 className="text-lg font-semibold text-white mb-4">{t('events_and_attendees_overview')}</h3>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie
@@ -193,7 +193,7 @@ function AdminDashboardPage() {
 
         {/* Bar Chart */}
         <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-100 mb-4">{t('top_events_by_participants')}</h3>
+          <h3 className="text-lg font-semibold text-white mb-4">{t('top_events_by_participants')}</h3>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={barData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -214,7 +214,7 @@ function AdminDashboardPage() {
       {/* Latest Events */}
       <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-100">{t('latest_events')}</h3>
+          <h3 className="text-lg font-semibold text-white">{t('latest_events')}</h3>
         </div>
         {latestEvents.length === 0 ? (
           <div className="p-6 text-center">
@@ -237,7 +237,7 @@ function AdminDashboardPage() {
                     <div>
                       <Link
                         to={`/admin/events/${event.id}`}
-                        className="text-gray-100 font-medium hover:text-indigo-400 transition-colors"
+                        className="text-white font-medium hover:text-indigo-400 transition-colors"
                       >
                         {event.name_fr}
                       </Link>

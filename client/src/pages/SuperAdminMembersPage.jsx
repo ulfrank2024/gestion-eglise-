@@ -73,7 +73,7 @@ function SuperAdminMembersPage() {
     <div className="p-6">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-100">{t('super_admin_members.title') || 'Supervision des Membres'}</h1>
+        <h1 className="text-2xl font-bold text-white">{t('super_admin_members.title') || 'Supervision des Membres'}</h1>
         <p className="text-gray-400">{t('super_admin_members.subtitle') || 'Vue d\'ensemble des membres de toutes les \u00e9glises'}</p>
       </div>
 
@@ -136,7 +136,7 @@ function SuperAdminMembersPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-100 flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
               <MdChurch className="text-indigo-400" />
               {t('super_admin_members.top_churches') || '\u00c9glises avec le plus de membres'}
             </h3>
@@ -167,7 +167,7 @@ function SuperAdminMembersPage() {
                       </div>
                     )}
                     <div>
-                      <p className="text-gray-100 font-medium">{church.name}</p>
+                      <p className="text-white font-medium">{church.name}</p>
                       <p className="text-sm text-gray-400">{church.location}</p>
                     </div>
                   </div>
@@ -186,7 +186,7 @@ function SuperAdminMembersPage() {
         {/* Recent Members */}
         <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-100 flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
               <MdPersonAdd className="text-green-400" />
               {t('super_admin_members.recent_members') || 'Membres R\u00e9cents'}
             </h3>
@@ -214,7 +214,7 @@ function SuperAdminMembersPage() {
                         </div>
                       )}
                       <div>
-                        <p className="text-gray-100 font-medium">{member.full_name}</p>
+                        <p className="text-white font-medium">{member.full_name}</p>
                         <p className="text-sm text-gray-400">{member.email}</p>
                       </div>
                     </div>

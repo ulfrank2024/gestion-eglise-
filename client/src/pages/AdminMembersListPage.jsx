@@ -187,7 +187,7 @@ function AdminMembersListPage() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <MdPeople className="text-3xl text-indigo-400" />
-            <h1 className="text-2xl font-bold text-gray-100">
+            <h1 className="text-2xl font-bold text-white">
               {t('members') || 'Membres'}
             </h1>
           </div>
@@ -209,7 +209,7 @@ function AdminMembersListPage() {
               </div>
               <div>
                 <p className="text-gray-400 text-sm">{t('active_members') || 'Membres actifs'}</p>
-                <p className="text-2xl font-bold text-gray-100">{statistics.totalActive || 0}</p>
+                <p className="text-2xl font-bold text-white">{statistics.totalActive || 0}</p>
               </div>
             </div>
           </div>
@@ -220,7 +220,7 @@ function AdminMembersListPage() {
               </div>
               <div>
                 <p className="text-gray-400 text-sm">{t('new_this_month') || 'Nouveaux ce mois'}</p>
-                <p className="text-2xl font-bold text-gray-100">{statistics.newThisMonth || 0}</p>
+                <p className="text-2xl font-bold text-white">{statistics.newThisMonth || 0}</p>
               </div>
             </div>
           </div>
@@ -231,7 +231,7 @@ function AdminMembersListPage() {
               </div>
               <div>
                 <p className="text-gray-400 text-sm">{t('archived') || 'Archivés'}</p>
-                <p className="text-2xl font-bold text-gray-100">{statistics.totalArchived || 0}</p>
+                <p className="text-2xl font-bold text-white">{statistics.totalArchived || 0}</p>
               </div>
             </div>
           </div>
@@ -242,7 +242,7 @@ function AdminMembersListPage() {
               </div>
               <div>
                 <p className="text-gray-400 text-sm">{t('total_roles') || 'Rôles'}</p>
-                <p className="text-2xl font-bold text-gray-100">{statistics.totalRoles || 0}</p>
+                <p className="text-2xl font-bold text-white">{statistics.totalRoles || 0}</p>
               </div>
             </div>
           </div>
@@ -258,12 +258,12 @@ function AdminMembersListPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={t('search_members') || 'Rechercher par nom ou email...'}
-                className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
             <button
               type="submit"
-              className="px-4 py-2 bg-gray-700 text-gray-100 rounded-lg hover:bg-gray-600 transition-colors"
+              className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
             >
               {t('search') || 'Rechercher'}
             </button>
@@ -327,7 +327,7 @@ function AdminMembersListPage() {
                         </div>
                       )}
                       <div>
-                        <p className="text-gray-100 font-medium">{member.full_name}</p>
+                        <p className="text-white font-medium">{member.full_name}</p>
                         {!member.is_active && (
                           <span className="text-xs text-amber-400">{t('inactive') || 'Inactif'}</span>
                         )}
@@ -416,7 +416,7 @@ function AdminMembersListPage() {
                   type="text"
                   value={newMember.full_name}
                   onChange={(e) => setNewMember({ ...newMember, full_name: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   required
                 />
               </div>
@@ -426,7 +426,7 @@ function AdminMembersListPage() {
                   type="email"
                   value={newMember.email}
                   onChange={(e) => setNewMember({ ...newMember, email: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   required
                 />
               </div>
@@ -436,7 +436,7 @@ function AdminMembersListPage() {
                   type="tel"
                   value={newMember.phone}
                   onChange={(e) => setNewMember({ ...newMember, phone: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
               <div>
@@ -445,7 +445,7 @@ function AdminMembersListPage() {
                   type="date"
                   value={newMember.date_of_birth}
                   onChange={(e) => setNewMember({ ...newMember, date_of_birth: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
               <div className="flex gap-3 pt-4">
@@ -504,7 +504,7 @@ function AdminMembersListPage() {
                   </div>
                 )}
                 <div>
-                  <p className="text-gray-100 font-medium">{selectedMember.full_name}</p>
+                  <p className="text-white font-medium">{selectedMember.full_name}</p>
                   <p className="text-gray-400 text-sm">{selectedMember.email}</p>
                 </div>
               </div>
@@ -542,7 +542,7 @@ function AdminMembersListPage() {
                             className="w-4 h-4 rounded-full"
                             style={{ backgroundColor: role.color || '#6366f1' }}
                           />
-                          <span className="text-gray-100">
+                          <span className="text-white">
                             {lang === 'fr' ? role.name_fr : role.name_en}
                           </span>
                         </div>

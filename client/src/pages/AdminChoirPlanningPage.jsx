@@ -380,7 +380,7 @@ const AdminChoirPlanningPage = () => {
             <MdArrowBack className="text-xl" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-100 flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
               <MdCalendarMonth className="text-amber-400" />
               {t('choir.planning_title')}
             </h1>
@@ -412,7 +412,7 @@ const AdminChoirPlanningPage = () => {
             placeholder={t('choir.search_planning')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
           />
         </div>
 
@@ -420,7 +420,7 @@ const AdminChoirPlanningPage = () => {
           <select
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
-            className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
           >
             <option value="upcoming">{t('choir.upcoming')}</option>
             <option value="past">{t('choir.past')}</option>
@@ -430,7 +430,7 @@ const AdminChoirPlanningPage = () => {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
           >
             <option value="all">{t('choir.all_types')}</option>
             {eventTypes.map(type => (
@@ -546,7 +546,7 @@ const AdminChoirPlanningPage = () => {
                     type="text"
                     value={formData.event_name_fr}
                     onChange={(e) => setFormData({ ...formData, event_name_fr: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                     placeholder="Culte du dimanche"
                   />
                 </div>
@@ -557,7 +557,7 @@ const AdminChoirPlanningPage = () => {
                     type="text"
                     value={formData.event_name_en}
                     onChange={(e) => setFormData({ ...formData, event_name_en: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                     placeholder="Sunday Service"
                   />
                 </div>
@@ -570,7 +570,7 @@ const AdminChoirPlanningPage = () => {
                     type="date"
                     value={formData.event_date}
                     onChange={(e) => setFormData({ ...formData, event_date: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
 
@@ -580,7 +580,7 @@ const AdminChoirPlanningPage = () => {
                     type="time"
                     value={formData.event_time}
                     onChange={(e) => setFormData({ ...formData, event_time: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
 
@@ -589,7 +589,7 @@ const AdminChoirPlanningPage = () => {
                   <select
                     value={formData.event_type}
                     onChange={(e) => setFormData({ ...formData, event_type: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                   >
                     {eventTypes.map(type => (
                       <option key={type} value={type}>{t(`choir.event_type_${type}`)}</option>
@@ -605,7 +605,7 @@ const AdminChoirPlanningPage = () => {
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   placeholder={t('choir.planning_notes_placeholder')}
                   rows={3}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
               </div>
             </div>
@@ -1228,7 +1228,7 @@ const AdminChoirPlanningPage = () => {
                 <select
                   value={songFormData.song_id}
                   onChange={(e) => setSongFormData({ ...songFormData, song_id: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                   <option value="">{t('choir.choose_song')}</option>
                   {songs.map(song => (
@@ -1244,7 +1244,7 @@ const AdminChoirPlanningPage = () => {
                 <select
                   value={songFormData.lead_choriste_id}
                   onChange={(e) => setSongFormData({ ...songFormData, lead_choriste_id: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                   <option value="">{t('choir.no_lead')}</option>
                   {choirMembers.map(cm => (
@@ -1264,7 +1264,7 @@ const AdminChoirPlanningPage = () => {
                     onChange={(e) => setSongFormData({ ...songFormData, medley_name: e.target.value })}
                     placeholder={t('choir.medley_placeholder')}
                     list="medley-suggestions"
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                   <datalist id="medley-suggestions">
                     {existingMedleys.map((medley, idx) => (
@@ -1282,7 +1282,7 @@ const AdminChoirPlanningPage = () => {
                   value={songFormData.notes}
                   onChange={(e) => setSongFormData({ ...songFormData, notes: e.target.value })}
                   placeholder={t('choir.song_notes_placeholder')}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
             </div>
@@ -1329,7 +1329,7 @@ const AdminChoirPlanningPage = () => {
                 <select
                   value={compilationFormData.compilation_id}
                   onChange={(e) => setCompilationFormData({ ...compilationFormData, compilation_id: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
                   <option value="">{t('choir.choose_compilation')}</option>
                   {compilations.map(comp => (
@@ -1367,7 +1367,7 @@ const AdminChoirPlanningPage = () => {
                 <select
                   value={compilationFormData.lead_choriste_id}
                   onChange={(e) => setCompilationFormData({ ...compilationFormData, lead_choriste_id: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
                   <option value="">{t('choir.no_lead')}</option>
                   {choirMembers.map(cm => (
@@ -1386,7 +1386,7 @@ const AdminChoirPlanningPage = () => {
                   value={compilationFormData.notes}
                   onChange={(e) => setCompilationFormData({ ...compilationFormData, notes: e.target.value })}
                   placeholder={t('choir.compilation_notes_placeholder')}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
             </div>

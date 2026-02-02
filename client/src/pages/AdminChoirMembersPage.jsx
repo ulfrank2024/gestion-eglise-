@@ -184,7 +184,7 @@ const AdminChoirMembersPage = () => {
             <MdArrowBack className="text-xl" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-100 flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
               <MdPeople className="text-indigo-400" />
               {t('choir.members_title')}
             </h1>
@@ -216,7 +216,7 @@ const AdminChoirMembersPage = () => {
             placeholder={t('choir.search_chorister')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
 
@@ -225,7 +225,7 @@ const AdminChoirMembersPage = () => {
           <select
             value={voiceFilter}
             onChange={(e) => setVoiceFilter(e.target.value)}
-            className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <option value="all">{t('choir.all_voices')}</option>
             <option value="lead">{t('choir.leads_only')}</option>
@@ -337,7 +337,7 @@ const AdminChoirMembersPage = () => {
                 <select
                   value={formData.member_id}
                   onChange={(e) => setFormData({ ...formData, member_id: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                   <option value="">{t('choir.choose_member')}</option>
                   {availableMembers.map(member => (
@@ -353,7 +353,7 @@ const AdminChoirMembersPage = () => {
                 <select
                   value={formData.voice_type}
                   onChange={(e) => setFormData({ ...formData, voice_type: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                   {voiceTypes.map(type => (
                     <option key={type} value={type}>{t(`choir.voice_${type}`)}</option>
@@ -382,7 +382,7 @@ const AdminChoirMembersPage = () => {
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   placeholder={t('choir.notes_placeholder')}
                   rows={3}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
             </div>
@@ -444,7 +444,7 @@ const AdminChoirMembersPage = () => {
                 <select
                   value={formData.voice_type}
                   onChange={(e) => setFormData({ ...formData, voice_type: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                   {voiceTypes.map(type => (
                     <option key={type} value={type}>{t(`choir.voice_${type}`)}</option>
@@ -473,7 +473,7 @@ const AdminChoirMembersPage = () => {
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   placeholder={t('choir.notes_placeholder')}
                   rows={3}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
             </div>

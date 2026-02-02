@@ -411,7 +411,7 @@ function AdminEventDetailPage() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold text-gray-100">{event.name_fr}</h1>
+              <h1 className="text-3xl font-bold text-white">{event.name_fr}</h1>
               <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                 event.is_archived ? 'bg-gray-700 text-gray-300' : 'bg-green-900/50 text-green-400'
               }`}>
@@ -461,46 +461,46 @@ function AdminEventDetailPage() {
       {isEditing ? (
         /* Edit Form */
         <div className="bg-gray-800 rounded-xl border border-gray-700 p-6">
-          <h2 className="text-xl font-semibold text-gray-100 mb-6">{t('edit_event')}</h2>
+          <h2 className="text-xl font-semibold text-white mb-6">{t('edit_event')}</h2>
           <form onSubmit={handleUpdateEvent} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-gray-300 text-sm font-medium mb-2">{t('event_name_fr')}</label>
                 <input type="text" value={eventNameFr} onChange={(e) => setEventNameFr(e.target.value)} required
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:ring-2 focus:ring-indigo-500" />
+                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-indigo-500" />
               </div>
               <div>
                 <label className="block text-gray-300 text-sm font-medium mb-2">{t('event_name_en')}</label>
                 <input type="text" value={eventNameEn} onChange={(e) => setEventNameEn(e.target.value)} required
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:ring-2 focus:ring-indigo-500" />
+                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-indigo-500" />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-gray-300 text-sm font-medium mb-2">{t('description_fr')}</label>
                 <textarea value={descriptionFr} onChange={(e) => setDescriptionFr(e.target.value)} required rows="4"
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:ring-2 focus:ring-indigo-500 resize-none" />
+                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 resize-none" />
               </div>
               <div>
                 <label className="block text-gray-300 text-sm font-medium mb-2">{t('description_en')}</label>
                 <textarea value={descriptionEn} onChange={(e) => setDescriptionEn(e.target.value)} required rows="4"
-                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:ring-2 focus:ring-indigo-500 resize-none" />
+                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 resize-none" />
               </div>
             </div>
             <div>
               <label className="block text-gray-300 text-sm font-medium mb-2">{t('event_date')}</label>
               <input type="datetime-local" value={eventStartDate} onChange={(e) => setEventStartDate(e.target.value)}
-                className="w-full md:w-1/2 px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:ring-2 focus:ring-indigo-500" />
+                className="w-full md:w-1/2 px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-indigo-500" />
             </div>
             <div>
               <label className="block text-gray-300 text-sm font-medium mb-2">{t('background_image_url')}</label>
               <input type="file" accept="image/*" onChange={handleFileChange}
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-indigo-600 file:text-white" />
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-indigo-600 file:text-white" />
             </div>
             <div>
               <label className="block text-gray-300 text-sm font-medium mb-2">{t('or_image_url_direct')}</label>
               <input type="text" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} disabled={!!backgroundImageFile}
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 disabled:opacity-50" />
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white disabled:opacity-50" />
             </div>
             <div className="flex items-center">
               <input type="checkbox" id="isCompleted" checked={isCompleted} onChange={(e) => setIsCompleted(e.target.checked)}
@@ -532,27 +532,27 @@ function AdminEventDetailPage() {
                 </div>
               )}
               <div className="p-6">
-                <h2 className="text-xl font-semibold text-gray-100 mb-4">{t('event_details_admin_view')}</h2>
+                <h2 className="text-xl font-semibold text-white mb-4">{t('event_details_admin_view')}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <p className="text-gray-400 text-sm">{t('event_name_fr')}</p>
-                    <p className="text-gray-100">{event.name_fr}</p>
+                    <p className="text-white">{event.name_fr}</p>
                   </div>
                   <div>
                     <p className="text-gray-400 text-sm">{t('event_name_en')}</p>
-                    <p className="text-gray-100">{event.name_en}</p>
+                    <p className="text-white">{event.name_en}</p>
                   </div>
                   <div className="md:col-span-2">
                     <p className="text-gray-400 text-sm">{t('description_fr')}</p>
-                    <p className="text-gray-100">{event.description_fr}</p>
+                    <p className="text-white">{event.description_fr}</p>
                   </div>
                   <div className="md:col-span-2">
                     <p className="text-gray-400 text-sm">{t('description_en')}</p>
-                    <p className="text-gray-100">{event.description_en}</p>
+                    <p className="text-white">{event.description_en}</p>
                   </div>
                   <div>
                     <p className="text-gray-400 text-sm">{t('event_date')}</p>
-                    <p className="text-gray-100 flex items-center">
+                    <p className="text-white flex items-center">
                       <MdCalendarToday className="mr-2 text-indigo-400" />
                       {event.event_start_date
                         ? new Date(event.event_start_date).toLocaleString(i18n.language === 'fr' ? 'fr-FR' : 'en-US')
@@ -571,7 +571,7 @@ function AdminEventDetailPage() {
             {/* Attendees Table */}
             <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-700 flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-100 flex items-center">
+                <h3 className="text-lg font-semibold text-white flex items-center">
                   <MdPeople className="mr-2 text-green-400" />
                   {t('attendee_list_count', { count: attendeeCount })}
                 </h3>
@@ -605,7 +605,7 @@ function AdminEventDetailPage() {
                     <tbody className="divide-y divide-gray-700">
                       {attendees.map(attendee => (
                         <tr key={attendee.id} className="hover:bg-gray-700/30">
-                          <td className="px-4 py-3 text-gray-100 font-medium">
+                          <td className="px-4 py-3 text-white font-medium">
                             {attendee.full_name}
                           </td>
                           <td className="px-4 py-3 text-gray-300">
@@ -641,7 +641,7 @@ function AdminEventDetailPage() {
           <div className="space-y-6">
             {/* Event Statistics */}
             <div className="bg-gray-800 rounded-xl border border-gray-700 p-6">
-              <h3 className="text-lg font-semibold text-gray-100 mb-4 flex items-center">
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
                 <MdBarChart className="mr-2 text-amber-400" />
                 {t('statistics') || 'Statistiques'}
               </h3>
@@ -673,7 +673,7 @@ function AdminEventDetailPage() {
 
             {/* QR Code Public */}
             <div className="bg-gray-800 rounded-xl border border-gray-700 p-6">
-              <h3 className="text-lg font-semibold text-gray-100 mb-4 flex items-center">
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
                 <MdQrCode className="mr-2 text-indigo-400" />
                 {t('qr_code_public')}
               </h3>
@@ -690,7 +690,7 @@ function AdminEventDetailPage() {
 
             {/* QR Code Check-in */}
             <div className="bg-gray-800 rounded-xl border border-gray-700 p-6">
-              <h3 className="text-lg font-semibold text-gray-100 mb-4 flex items-center">
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
                 <MdQrCode className="mr-2 text-green-400" />
                 {t('check_in_qr_code')}
               </h3>
@@ -708,7 +708,7 @@ function AdminEventDetailPage() {
 
             {/* Send Emails */}
             <div className="bg-gray-800 rounded-xl border border-gray-700 p-6">
-              <h3 className="text-lg font-semibold text-gray-100 mb-4 flex items-center">
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
                 <MdEmail className="mr-2 text-purple-400" />
                 {t('send_thank_you_emails')}
               </h3>
@@ -716,12 +716,12 @@ function AdminEventDetailPage() {
                 <div>
                   <label className="block text-gray-300 text-sm mb-2">{t('subject')}</label>
                   <input type="text" value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} required
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:ring-2 focus:ring-purple-500" />
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-purple-500" />
                 </div>
                 <div>
                   <label className="block text-gray-300 text-sm mb-2">{t('message')}</label>
                   <textarea value={emailMessage} onChange={(e) => setEmailMessage(e.target.value)} required rows="4"
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:ring-2 focus:ring-purple-500 resize-none" />
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-purple-500 resize-none" />
                 </div>
                 <button type="submit" disabled={sendingEmails}
                   className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50">
@@ -753,7 +753,7 @@ function AdminEventDetailPage() {
           <div className="bg-gray-800 rounded-xl border border-gray-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             {/* Header */}
             <div className="sticky top-0 bg-gray-800 px-6 py-4 border-b border-gray-700 flex items-center justify-between">
-              <h3 className="text-xl font-semibold text-gray-100">
+              <h3 className="text-xl font-semibold text-white">
                 {t('attendee_details')}
               </h3>
               <div className="flex items-center gap-2">
@@ -779,19 +779,19 @@ function AdminEventDetailPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-gray-700/50 rounded-lg p-4">
                   <p className="text-gray-400 text-sm mb-1">{t('full_name')}</p>
-                  <p className="text-gray-100 text-lg font-medium">{selectedAttendee.full_name}</p>
+                  <p className="text-white text-lg font-medium">{selectedAttendee.full_name}</p>
                 </div>
                 <div className="bg-gray-700/50 rounded-lg p-4">
                   <p className="text-gray-400 text-sm mb-1">{t('email')}</p>
-                  <p className="text-gray-100 text-lg">{selectedAttendee.email}</p>
+                  <p className="text-white text-lg">{selectedAttendee.email}</p>
                 </div>
                 <div className="bg-gray-700/50 rounded-lg p-4">
                   <p className="text-gray-400 text-sm mb-1">{t('phone')}</p>
-                  <p className="text-gray-100 text-lg">{selectedAttendee.form_responses?.phone || '-'}</p>
+                  <p className="text-white text-lg">{selectedAttendee.form_responses?.phone || '-'}</p>
                 </div>
                 <div className="bg-gray-700/50 rounded-lg p-4">
                   <p className="text-gray-400 text-sm mb-1">{t('registered_at')}</p>
-                  <p className="text-gray-100 text-lg">
+                  <p className="text-white text-lg">
                     {selectedAttendee.created_at
                       ? new Date(selectedAttendee.created_at).toLocaleString(i18n.language === 'fr' ? 'fr-FR' : 'en-US')
                       : '-'}
@@ -802,7 +802,7 @@ function AdminEventDetailPage() {
               {/* Réponses au formulaire */}
               {dynamicHeaders.filter(h => h !== 'phone').length > 0 && (
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-100 mb-4 flex items-center">
+                  <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
                     <MdEvent className="mr-2 text-indigo-400" />
                     {t('form_responses')}
                   </h4>
@@ -815,7 +815,7 @@ function AdminEventDetailPage() {
                       return (
                         <div key={header} className="bg-gray-700/30 rounded-lg p-4 border-l-4 border-indigo-500">
                           <p className="text-gray-400 text-sm mb-1">{getFieldLabel(header)}</p>
-                          <p className="text-gray-100">{formatResponseValue(value)}</p>
+                          <p className="text-white">{formatResponseValue(value)}</p>
                         </div>
                       );
                     })}

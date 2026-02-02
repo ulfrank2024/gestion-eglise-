@@ -242,7 +242,7 @@ function AttendeesModal({ eventId, onClose }) {
                   {attendees.map((attendee, index) => (
                     <tr key={attendee.id} className="hover:bg-gray-700/50 transition-colors">
                       <td className="px-4 py-3 text-gray-400">{index + 1}</td>
-                      <td className="px-4 py-3 text-gray-100 font-medium">{attendee.full_name}</td>
+                      <td className="px-4 py-3 text-white font-medium">{attendee.full_name}</td>
                       <td className="px-4 py-3 text-gray-300">{attendee.email}</td>
                       <td className="px-4 py-3 text-gray-300">{attendee.form_responses?.phone || '-'}</td>
                       <td className="px-4 py-3 text-gray-400 text-sm">{formatDate(attendee.created_at)}</td>
@@ -306,25 +306,25 @@ function AttendeesModal({ eventId, onClose }) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="bg-gray-700/50 rounded-lg p-3">
                   <p className="text-gray-400 text-xs mb-1">{t('full_name')}</p>
-                  <p className="text-gray-100 font-semibold">{selectedAttendee.full_name}</p>
+                  <p className="text-white font-semibold">{selectedAttendee.full_name}</p>
                 </div>
                 <div className="bg-gray-700/50 rounded-lg p-3">
                   <p className="text-gray-400 text-xs mb-1">{t('email')}</p>
-                  <p className="text-gray-100 flex items-center gap-2">
+                  <p className="text-white flex items-center gap-2">
                     <MdEmail className="text-indigo-400" />
                     {selectedAttendee.email}
                   </p>
                 </div>
                 <div className="bg-gray-700/50 rounded-lg p-3">
                   <p className="text-gray-400 text-xs mb-1">{t('phone')}</p>
-                  <p className="text-gray-100 flex items-center gap-2">
+                  <p className="text-white flex items-center gap-2">
                     <MdPhone className="text-green-400" />
                     {selectedAttendee.form_responses?.phone || '-'}
                   </p>
                 </div>
                 <div className="bg-gray-700/50 rounded-lg p-3">
                   <p className="text-gray-400 text-xs mb-1">{t('registered_at')}</p>
-                  <p className="text-gray-100">{formatDate(selectedAttendee.created_at)}</p>
+                  <p className="text-white">{formatDate(selectedAttendee.created_at)}</p>
                 </div>
               </div>
 
@@ -332,14 +332,14 @@ function AttendeesModal({ eventId, onClose }) {
               {selectedAttendee.form_responses &&
                Object.keys(selectedAttendee.form_responses).filter(k => k !== 'phone').length > 0 && (
                 <div>
-                  <h4 className="text-md font-semibold text-gray-100 mb-2">{t('form_responses')}</h4>
+                  <h4 className="text-md font-semibold text-white mb-2">{t('form_responses')}</h4>
                   <div className="space-y-2">
                     {Object.entries(selectedAttendee.form_responses)
                       .filter(([key]) => key !== 'phone')
                       .map(([key, value]) => (
                         <div key={key} className="bg-gray-700/50 rounded-lg p-3">
                           <p className="text-gray-400 text-xs mb-1">{key}</p>
-                          <p className="text-gray-100">{formatValue(value)}</p>
+                          <p className="text-white">{formatValue(value)}</p>
                         </div>
                       ))}
                   </div>

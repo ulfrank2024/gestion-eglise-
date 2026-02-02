@@ -209,7 +209,7 @@ const AdminChoirSongsPage = () => {
             <MdArrowBack className="text-xl" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-100 flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
               <MdLibraryMusic className="text-emerald-400" />
               {t('choir.repertoire_title')}
             </h1>
@@ -250,7 +250,7 @@ const AdminChoirSongsPage = () => {
             placeholder={t('choir.search_song')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
         </div>
 
@@ -259,7 +259,7 @@ const AdminChoirSongsPage = () => {
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
           >
             <option value="all">{t('choir.all_categories')}</option>
             {categories.map(category => (
@@ -382,7 +382,7 @@ const AdminChoirSongsPage = () => {
                     type="text"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     placeholder={t('choir.song_title_placeholder')}
                   />
                 </div>
@@ -393,7 +393,7 @@ const AdminChoirSongsPage = () => {
                     type="text"
                     value={formData.author}
                     onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     placeholder={t('choir.author_placeholder')}
                   />
                 </div>
@@ -405,7 +405,7 @@ const AdminChoirSongsPage = () => {
                   <select
                     value={formData.category_id}
                     onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   >
                     <option value="">{t('choir.select_category')}</option>
                     {categories.map(category => (
@@ -421,7 +421,7 @@ const AdminChoirSongsPage = () => {
                   <select
                     value={formData.tempo}
                     onChange={(e) => setFormData({ ...formData, tempo: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   >
                     <option value="">{t('choir.select_tempo')}</option>
                     {tempoOptions.map(tempo => (
@@ -435,7 +435,7 @@ const AdminChoirSongsPage = () => {
                   <select
                     value={formData.key_signature}
                     onChange={(e) => setFormData({ ...formData, key_signature: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   >
                     <option value="">{t('choir.select_key')}</option>
                     {keyOptions.map(key => (
@@ -452,7 +452,7 @@ const AdminChoirSongsPage = () => {
                   onChange={(e) => setFormData({ ...formData, lyrics: e.target.value })}
                   placeholder={t('choir.lyrics_placeholder')}
                   rows={6}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
@@ -463,7 +463,7 @@ const AdminChoirSongsPage = () => {
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   placeholder={t('choir.song_notes_placeholder')}
                   rows={2}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
             </div>
@@ -571,7 +571,7 @@ const AdminChoirSongsPage = () => {
                       type="text"
                       value={categoryForm.name_fr}
                       onChange={(e) => setCategoryForm({ ...categoryForm, name_fr: e.target.value })}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       placeholder="Louange"
                     />
                   </div>
@@ -581,7 +581,7 @@ const AdminChoirSongsPage = () => {
                       type="text"
                       value={categoryForm.name_en}
                       onChange={(e) => setCategoryForm({ ...categoryForm, name_en: e.target.value })}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       placeholder="Worship"
                     />
                   </div>

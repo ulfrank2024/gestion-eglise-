@@ -196,7 +196,7 @@ function AdminActivityLogsPage() {
           <select
             value={moduleFilter}
             onChange={(e) => setModuleFilter(e.target.value)}
-            className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <option value="">{t('all_modules') || 'Tous les modules'}</option>
             <option value="events">{t('events') || 'Événements'}</option>
@@ -210,7 +210,7 @@ function AdminActivityLogsPage() {
           <select
             value={limit}
             onChange={(e) => setLimit(parseInt(e.target.value))}
-            className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <option value={25}>25 {t('entries') || 'entrées'}</option>
             <option value={50}>50 {t('entries') || 'entrées'}</option>
@@ -239,7 +239,7 @@ function AdminActivityLogsPage() {
                   {/* Contenu */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium text-gray-100">
+                      <span className="font-medium text-white">
                         {log.user_name || log.user_email || 'Utilisateur inconnu'}
                       </span>
                       <span className="flex items-center gap-1 px-2 py-0.5 bg-gray-700 rounded text-xs text-gray-300">

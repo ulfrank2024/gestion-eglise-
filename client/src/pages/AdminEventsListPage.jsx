@@ -171,7 +171,7 @@ function AdminEventsListPage() {
                       <div className="flex items-center">
                         <div className={`w-2.5 h-2.5 rounded-full mr-3 ${event.is_archived ? 'bg-gray-500' : 'bg-green-500'}`}></div>
                         <div>
-                          <p className="text-gray-100 font-medium">{event.name_fr}</p>
+                          <p className="text-white font-medium">{event.name_fr}</p>
                           <p className="text-gray-500 text-sm md:hidden">{event.name_en}</p>
                         </div>
                       </div>

@@ -196,7 +196,7 @@ function AdminMembersDashboardPage() {
       {/* Recent Members */}
       <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-700 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-100">{t('recent_members') || 'Membres Récents'}</h3>
+          <h3 className="text-lg font-semibold text-white">{t('recent_members') || 'Membres Récents'}</h3>
           <Link
             to="/admin/members"
             className="text-sm text-indigo-400 hover:text-indigo-300 flex items-center gap-1"
@@ -234,7 +234,7 @@ function AdminMembersDashboardPage() {
                       </div>
                     )}
                     <div>
-                      <p className="text-gray-100 font-medium">{member.full_name}</p>
+                      <p className="text-white font-medium">{member.full_name}</p>
                       <p className="text-sm text-gray-400">{member.email}</p>
                     </div>
                   </div>

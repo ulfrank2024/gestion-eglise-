@@ -50,7 +50,7 @@ const SuperAdminEventsByChurchPage = () => {
       </h1>
       <button
         onClick={() => navigate('/super-admin/events')}
-        className="mb-6 bg-gray-700 text-gray-100 px-4 py-2 rounded-md hover:bg-gray-600 border border-gray-600"
+        className="mb-6 bg-gray-700 text-white px-4 py-2 rounded-md hover:bg-gray-600 border border-gray-600"
       >
         {t('back_to_churches_list')}
       </button>

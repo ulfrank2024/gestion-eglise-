@@ -268,7 +268,7 @@ function AdminChurchSettingsPage() {
                 type="text"
                 value={churchSettings.name}
                 onChange={(e) => setChurchSettings(prev => ({ ...prev, name: e.target.value }))}
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 required
               />
             </div>
@@ -280,7 +280,7 @@ function AdminChurchSettingsPage() {
                 type="text"
                 value={churchSettings.subdomain}
                 onChange={(e) => setChurchSettings(prev => ({ ...prev, subdomain: e.target.value }))}
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
           </div>
@@ -296,7 +296,7 @@ function AdminChurchSettingsPage() {
                 type="text"
                 value={churchSettings.location}
                 onChange={(e) => setChurchSettings(prev => ({ ...prev, location: e.target.value }))}
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="123 Rue de l'Église"
               />
             </div>
@@ -309,7 +309,7 @@ function AdminChurchSettingsPage() {
                 type="text"
                 value={churchSettings.city}
                 onChange={(e) => setChurchSettings(prev => ({ ...prev, city: e.target.value }))}
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="Montréal, QC"
               />
             </div>
@@ -326,7 +326,7 @@ function AdminChurchSettingsPage() {
                 type="email"
                 value={churchSettings.contact_email}
                 onChange={(e) => setChurchSettings(prev => ({ ...prev, contact_email: e.target.value }))}
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="contact@eglise.com"
               />
             </div>
@@ -339,7 +339,7 @@ function AdminChurchSettingsPage() {
                 type="tel"
                 value={churchSettings.contact_phone}
                 onChange={(e) => setChurchSettings(prev => ({ ...prev, contact_phone: e.target.value }))}
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="+1 234 567 890"
               />
             </div>
@@ -383,7 +383,7 @@ function AdminChurchSettingsPage() {
                 type={showPasswords.new ? 'text' : 'password'}
                 value={passwordData.new_password}
                 onChange={(e) => setPasswordData(prev => ({ ...prev, new_password: e.target.value }))}
-                className="w-full px-4 py-3 pr-12 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full px-4 py-3 pr-12 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                 placeholder="••••••••"
                 minLength={6}
                 required
@@ -408,7 +408,7 @@ function AdminChurchSettingsPage() {
                 type={showPasswords.confirm ? 'text' : 'password'}
                 value={passwordData.confirm_password}
                 onChange={(e) => setPasswordData(prev => ({ ...prev, confirm_password: e.target.value }))}
-                className="w-full px-4 py-3 pr-12 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full px-4 py-3 pr-12 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                 placeholder="••••••••"
                 minLength={6}
                 required

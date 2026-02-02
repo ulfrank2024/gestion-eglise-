@@ -131,7 +131,7 @@ const AdminChoirDashboardPage = () => {
     <div className="p-6">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-100 flex items-center gap-3">
+        <h1 className="text-2xl font-bold text-white flex items-center gap-3">
           <MdMusicNote className="text-indigo-400" />
           {t('choir.dashboard_title')}
         </h1>
@@ -168,7 +168,7 @@ const AdminChoirDashboardPage = () => {
         {/* Upcoming Plannings */}
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-100 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
               <MdCalendarMonth className="text-amber-400" />
               {t('choir.upcoming_plannings')}
             </h2>
@@ -238,7 +238,7 @@ const AdminChoirDashboardPage = () => {
         {/* Lead Singers */}
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-100 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
               <MdStar className="text-amber-400" />
               {t('choir.lead_choristers')}
             </h2>

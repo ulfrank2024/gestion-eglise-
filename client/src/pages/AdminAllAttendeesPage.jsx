@@ -253,7 +253,7 @@ function AdminAllAttendeesPage() {
             <MdPeople className="text-2xl text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-100">{t('all_attendees')}</h1>
+            <h1 className="text-2xl font-bold text-white">{t('all_attendees')}</h1>
             <p className="text-gray-400">{filteredAttendees.length} {t('participants').toLowerCase()}</p>
           </div>
         </div>
@@ -265,7 +265,7 @@ function AdminAllAttendeesPage() {
             <select
               value={selectedEvent}
               onChange={(e) => setSelectedEvent(e.target.value)}
-              className="bg-transparent text-gray-100 outline-none cursor-pointer"
+              className="bg-transparent text-white outline-none cursor-pointer"
             >
               <option value="all" className="bg-gray-800">{t('all_events')}</option>
               {events.map(event => (
@@ -313,7 +313,7 @@ function AdminAllAttendeesPage() {
                 {filteredAttendees.map((attendee, index) => (
                   <tr key={attendee.id} className="hover:bg-gray-700/50 transition-colors">
                     <td className="px-4 py-3 text-gray-400">{index + 1}</td>
-                    <td className="px-4 py-3 text-gray-100 font-medium">{attendee.full_name}</td>
+                    <td className="px-4 py-3 text-white font-medium">{attendee.full_name}</td>
                     <td className="px-4 py-3 text-gray-300">{attendee.email}</td>
                     <td className="px-4 py-3 text-gray-300">{attendee.form_responses?.phone || '-'}</td>
                     <td className="px-4 py-3">
@@ -370,19 +370,19 @@ function AdminAllAttendeesPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-gray-700/50 rounded-lg p-4">
                   <p className="text-gray-400 text-sm mb-1">{t('full_name')}</p>
-                  <p className="text-gray-100 font-semibold">{selectedAttendee.full_name}</p>
+                  <p className="text-white font-semibold">{selectedAttendee.full_name}</p>
                 </div>
                 <div className="bg-gray-700/50 rounded-lg p-4">
                   <p className="text-gray-400 text-sm mb-1">{t('email')}</p>
-                  <p className="text-gray-100">{selectedAttendee.email}</p>
+                  <p className="text-white">{selectedAttendee.email}</p>
                 </div>
                 <div className="bg-gray-700/50 rounded-lg p-4">
                   <p className="text-gray-400 text-sm mb-1">{t('phone')}</p>
-                  <p className="text-gray-100">{selectedAttendee.form_responses?.phone || '-'}</p>
+                  <p className="text-white">{selectedAttendee.form_responses?.phone || '-'}</p>
                 </div>
                 <div className="bg-gray-700/50 rounded-lg p-4">
                   <p className="text-gray-400 text-sm mb-1">{t('registered_at')}</p>
-                  <p className="text-gray-100">{formatDate(selectedAttendee.created_at)}</p>
+                  <p className="text-white">{formatDate(selectedAttendee.created_at)}</p>
                 </div>
               </div>
 
@@ -395,14 +395,14 @@ function AdminAllAttendeesPage() {
               {/* Réponses au formulaire */}
               {selectedAttendee.form_responses && Object.keys(selectedAttendee.form_responses).filter(k => k !== 'phone').length > 0 && (
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-100 mb-3">{t('form_responses')}</h3>
+                  <h3 className="text-lg font-semibold text-white mb-3">{t('form_responses')}</h3>
                   <div className="space-y-3">
                     {Object.entries(selectedAttendee.form_responses)
                       .filter(([key]) => key !== 'phone')
                       .map(([key, value]) => (
                         <div key={key} className="bg-gray-700/50 rounded-lg p-4">
                           <p className="text-gray-400 text-sm mb-1">{key}</p>
-                          <p className="text-gray-100">{formatValue(value)}</p>
+                          <p className="text-white">{formatValue(value)}</p>
                         </div>
                       ))}
                   </div>

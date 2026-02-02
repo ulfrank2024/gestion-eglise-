@@ -249,7 +249,7 @@ function AdminLayout() {
                 </div>
               )}
             </div>
-            <h3 className="text-gray-100 text-sm font-bold truncate px-2">
+            <h3 className="text-white text-sm font-bold truncate px-2">
               {churchDetails?.name || 'MY EDEN X'}
             </h3>
             <p className="text-green-400 text-xs font-medium truncate px-2">{adminName}</p>
@@ -320,7 +320,7 @@ function AdminLayout() {
                 <div className="mb-2">
                   <button
                     onClick={() => toggleSection('events')}
-                    className="w-full flex items-center justify-between px-3 py-2 bg-gray-700 rounded-lg text-gray-100 font-semibold text-sm"
+                    className="w-full flex items-center justify-between px-3 py-2 bg-gray-700 rounded-lg text-white font-semibold text-sm"
                   >
                     <span className="flex items-center gap-2">
                       <MdEvent size={18} />
@@ -374,7 +374,7 @@ function AdminLayout() {
                 <div className="mb-2">
                   <button
                     onClick={() => toggleSection('reportsAndStats')}
-                    className="w-full flex items-center justify-between px-3 py-2 bg-gray-700 rounded-lg text-gray-100 font-semibold text-sm"
+                    className="w-full flex items-center justify-between px-3 py-2 bg-gray-700 rounded-lg text-white font-semibold text-sm"
                   >
                     <span className="flex items-center gap-2">
                       <MdLeaderboard size={18} />
@@ -419,7 +419,7 @@ function AdminLayout() {
               <div className="mb-2">
                 <button
                   onClick={() => toggleSection('members')}
-                  className="w-full flex items-center justify-between px-3 py-2 bg-gray-700 rounded-lg text-gray-100 font-semibold text-sm"
+                  className="w-full flex items-center justify-between px-3 py-2 bg-gray-700 rounded-lg text-white font-semibold text-sm"
                 >
                   <span className="flex items-center gap-2">
                     <MdPeople size={18} />
@@ -499,7 +499,7 @@ function AdminLayout() {
               <div className="mb-2">
                 <button
                   onClick={() => toggleSection('choir')}
-                  className="w-full flex items-center justify-between px-3 py-2 bg-gray-700 rounded-lg text-gray-100 font-semibold text-sm"
+                  className="w-full flex items-center justify-between px-3 py-2 bg-gray-700 rounded-lg text-white font-semibold text-sm"
                 >
                   <span className="flex items-center gap-2">
                     <MdMusicNote size={18} />
@@ -579,7 +579,7 @@ function AdminLayout() {
             <div className="mt-4 pt-4 border-t border-gray-700">
               <button
                 onClick={() => toggleSection('mySpace')}
-                className="w-full flex items-center justify-between px-3 py-2 bg-gray-700 rounded-lg text-gray-100 font-semibold text-sm"
+                className="w-full flex items-center justify-between px-3 py-2 bg-gray-700 rounded-lg text-white font-semibold text-sm"
               >
                 <span className="flex items-center gap-2">
                   <MdAccountCircle size={18} />

@@ -231,11 +231,11 @@ function MemberProfilePage() {
                 type="text"
                 value={formData.full_name}
                 onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 required
               />
             ) : (
-              <p className="px-4 py-3 bg-gray-700/50 rounded-lg text-gray-100">
+              <p className="px-4 py-3 bg-gray-700/50 rounded-lg text-white">
                 {profile?.full_name || '-'}
               </p>
             )}
@@ -263,10 +263,10 @@ function MemberProfilePage() {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             ) : (
-              <p className="px-4 py-3 bg-gray-700/50 rounded-lg text-gray-100">
+              <p className="px-4 py-3 bg-gray-700/50 rounded-lg text-white">
                 {profile?.phone || '-'}
               </p>
             )}
@@ -283,10 +283,10 @@ function MemberProfilePage() {
                 type="text"
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             ) : (
-              <p className="px-4 py-3 bg-gray-700/50 rounded-lg text-gray-100">
+              <p className="px-4 py-3 bg-gray-700/50 rounded-lg text-white">
                 {profile?.address || '-'}
               </p>
             )}
@@ -303,10 +303,10 @@ function MemberProfilePage() {
                 type="date"
                 value={formData.date_of_birth}
                 onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             ) : (
-              <p className="px-4 py-3 bg-gray-700/50 rounded-lg text-gray-100">
+              <p className="px-4 py-3 bg-gray-700/50 rounded-lg text-white">
                 {profile?.date_of_birth
                   ? new Date(profile.date_of_birth).toLocaleDateString(
                       lang === 'fr' ? 'fr-FR' : 'en-US'
