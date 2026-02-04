@@ -17,6 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Le pasteur se connecte et accède à un **dashboard avec des modules fonctionnels** :
 - 📅 **Événements** (✅ Développé) - Création d'événements, inscriptions, QR code check-in, emails
 - 👥 **Fidèles/Membres** (✅ Développé) - Liste des membres, rôles, invitations, annonces, dashboard membre
+- 🗓️ **Réunions** (✅ Développé) - Gestion des réunions, participants, compte-rendus, envoi par email
 - 💰 **Comptabilité** (🔜 À développer) - Dîmes, offrandes, dépenses, rapports financiers
 - 🙏 **Ministères** (🔜 À développer) - Groupes de service, équipes, assignation de rôles
 - 📊 **Statistiques** (🔜 À développer) - Tableaux de bord, analyses, tendances
@@ -55,11 +56,12 @@ Le pasteur se connecte et accède à un **dashboard avec des modules fonctionnel
 | Invitations Églises | ✅ Fait | Système d'invitation par email |
 | Thème Dark | ✅ Fait | Interface en thème sombre |
 | Fidèles/Membres | ✅ Fait | Gestion membres, rôles, invitations, annonces, dashboard membre |
+| Réunions | ✅ Fait | CRUD réunions, participants, compte-rendus, envoi email |
 | Comptabilité | 🔜 À faire | Gestion financière |
 | Ministères | 🔜 À faire | Groupes et équipes |
 
 ### Priorité Actuelle
-**Module Membres 100% implémenté** - Prochaine étape: Module Comptabilité ou Ministères.
+**Module Réunions 100% implémenté** - Prochaine étape: Module Comptabilité ou Ministères ou Planning Annuel.
 
 ## Development Commands
 
@@ -3005,5 +3007,100 @@ Une PWA permet d'installer l'application web directement sur l'appareil avec une
 - ✅ Support Android avec prompt natif
 - ✅ Support iOS avec instructions Safari
 - ✅ Ne gêne pas l'utilisation (dismiss 24h)
+
+---
+
+### 2026-02-04 - Implémentation du Module Gestion des Réunions
+
+**Contexte:**
+- Feedback d'un pasteur demandant un module de gestion des réunions
+- Possibilité de prendre des notes, sélectionner les participants parmi les membres
+- Envoi du compte-rendu par email aux participants
+- Délégation possible à des sous-admins/secrétaires
+
+**Implémentation complète:**
+
+1. **Base de données** (`/server/db/add_meetings_module.sql`)
+   - Table `meetings_v2` - Réunions avec titres bilingues, date, lieu, ordre du jour, notes
+   - Table `meeting_participants_v2` - Participants avec rôles (organizer, secretary, participant)
+   - Statuts de présence: invited, confirmed, present, absent, excused
+   - Contraintes FK et index pour performance
+
+2. **Backend - Routes API** (`/server/routes/meetingRoutes.js`)
+   - `GET /api/admin/meetings` - Liste des réunions avec filtres
+   - `GET /api/admin/meetings/:id` - Détails d'une réunion
+   - `POST /api/admin/meetings` - Créer une réunion
+   - `PUT /api/admin/meetings/:id` - Modifier une réunion
+   - `DELETE /api/admin/meetings/:id` - Supprimer une réunion
+   - `POST /api/admin/meetings/:id/participants` - Ajouter des participants
+   - `PUT /api/admin/meetings/:id/participants/:participantId` - Modifier un participant
+   - `DELETE /api/admin/meetings/:id/participants/:participantId` - Retirer un participant
+   - `POST /api/admin/meetings/:id/send-report` - Envoyer le rapport par email
+
+3. **Backend - Route Membre** (`/server/routes/memberDashboardRoutes.js`)
+   - `GET /api/member/meetings` - Réunions où le membre est participant
+
+4. **Frontend - Pages Admin**
+   - `AdminMeetingsPage.jsx` - Liste des réunions avec filtres et création
+   - `AdminMeetingDetailPage.jsx` - Détails, édition, gestion participants, envoi rapport
+
+5. **Frontend - Page Membre**
+   - `MemberMeetingsPage.jsx` - Vue des réunions avec filtres (à venir/passées)
+
+6. **API Client** (`/client/src/api/api.js`)
+   - Méthodes admin: getMeetings, getMeeting, createMeeting, updateMeeting, deleteMeeting
+   - Méthodes participants: addMeetingParticipants, updateMeetingParticipant, removeMeetingParticipant
+   - Méthode rapport: sendMeetingReport
+   - Méthode membre: getMeetings
+
+7. **Layouts mis à jour**
+   - `AdminLayout.jsx` - Module "Réunions" ajouté dans le sélecteur de modules
+   - `MemberLayout.jsx` - Lien "Réunions" ajouté dans la sidebar
+
+8. **Traductions complètes** (fr.json et en.json)
+   - Namespace `meetings.*` avec 60+ clés
+   - Statuts de réunion et de présence
+   - Labels de formulaires et boutons
+
+**Fonctionnalités du module:**
+
+- **Admin:**
+  - Créer/modifier/supprimer des réunions
+  - Ajouter des membres comme participants
+  - Assigner des rôles (organisateur, secrétaire, participant)
+  - Rédiger l'ordre du jour et le compte-rendu
+  - Envoyer le rapport par email à tous les participants
+  - Filtrer par statut et dates
+
+- **Membre:**
+  - Voir ses réunions (à venir, passées)
+  - Consulter l'ordre du jour et le compte-rendu
+  - Voir son rôle et statut de présence
+
+**Email du rapport:**
+- Template HTML professionnel avec thème dark
+- Logo et nom de l'église
+- Informations de la réunion (titre, date, lieu)
+- Ordre du jour et compte-rendu
+- Liste des participants
+- Support bilingue (FR/EN)
+
+**Routes:**
+- `/admin/meetings` - Liste admin
+- `/admin/meetings/:meetingId` - Détails admin
+- `/member/meetings` - Liste membre
+
+**Action requise:**
+⚠️ Exécuter le script SQL dans Supabase:
+```sql
+-- Fichier: /server/db/add_meetings_module.sql
+```
+
+**Résultat:**
+- ✅ Module Réunions 100% fonctionnel
+- ✅ Interface admin complète
+- ✅ Vue membre intégrée
+- ✅ Envoi de rapports par email
+- ✅ Design responsive et thème dark
 
 ---
