@@ -6,6 +6,7 @@ import { I18nextProvider } from 'react-i18next'; // Importation de I18nextProvid
 import i18n from './i18n';
 import './index.css'; // Importation du fichier CSS principal
 import { ToastProvider } from './components/Toast'; // Système de notifications toast
+import UpdatePrompt from './components/UpdatePrompt'; // Notification de mise à jour PWA
 
 // Layouts
 import AdminLayout from './layouts/AdminLayout';
@@ -90,6 +91,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <I18nextProvider i18n={i18n}>
       <ToastProvider>
+        <UpdatePrompt />
         <BrowserRouter>
           <Routes>
           {/* Admin Login - No Layout (MUST be before /:churchId to avoid conflict) */}

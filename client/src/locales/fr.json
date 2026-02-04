@@ -983,6 +983,12 @@
       "reopen_meeting": "Rouvrir la réunion"
     },
 
+    "update_available": "Nouvelle version disponible",
+    "update_description": "Une mise à jour est prête. Actualisez pour profiter des nouvelles fonctionnalités.",
+    "update_no_logout": "Pas besoin de vous déconnecter ! Votre session est préservée.",
+    "update_now": "Actualiser maintenant",
+    "update_later": "Plus tard",
+
     "activity_tracking": "Suivi d'activité",
     "super_admin_activity": {
       "title": "Suivi d'Activité",

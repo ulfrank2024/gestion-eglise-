@@ -9,7 +9,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt', // 'prompt' permet d'afficher une notification de mise à jour
       includeAssets: ['logo_eden.png', 'vite.svg'],
       manifest: {
         name: 'MY EDEN X - Gestion d\'Église',

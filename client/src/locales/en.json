@@ -1037,6 +1037,12 @@
       "reopen_meeting": "Reopen Meeting"
     },
 
+    "update_available": "New version available",
+    "update_description": "An update is ready. Refresh to enjoy new features.",
+    "update_no_logout": "No need to log out! Your session is preserved.",
+    "update_now": "Refresh now",
+    "update_later": "Later",
+
     "activity_tracking": "Activity Tracking",
     "super_admin_activity": {
       "title": "Activity Tracking",
