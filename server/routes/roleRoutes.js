@@ -8,6 +8,7 @@ const router = express.Router();
 const { supabaseAdmin } = require('../db/supabase');
 const { protect, isSuperAdminOrChurchAdmin } = require('../middleware/auth');
 const { sendEmail, generateRoleAssignedEmail, generateRoleRemovedEmail } = require('../services/mailer');
+const { logActivity, MODULES, ACTIONS } = require('../services/activityLogger');
 
 // Appliquer le middleware d'authentification à toutes les routes
 router.use(protect);
@@ -133,6 +134,20 @@ router.post('/', async (req, res) => {
       return res.status(500).json({ error: 'Erreur lors de la création du rôle' });
     }
 
+    // Logger l'activité
+    await logActivity({
+      churchId: church_id,
+      userId: req.user.id,
+      userName: req.user.full_name || req.user.email,
+      userEmail: req.user.email,
+      module: MODULES.ROLES,
+      action: ACTIONS.CREATE,
+      entityType: 'role',
+      entityId: role.id,
+      entityName: name_fr,
+      req
+    });
+
     res.status(201).json(role);
   } catch (err) {
     console.error('Error in POST /roles:', err);
@@ -174,6 +189,20 @@ router.put('/:id', async (req, res) => {
       return res.status(500).json({ error: 'Erreur lors de la mise à jour du rôle' });
     }
 
+    // Logger l'activité
+    await logActivity({
+      churchId: church_id,
+      userId: req.user.id,
+      userName: req.user.full_name || req.user.email,
+      userEmail: req.user.email,
+      module: MODULES.ROLES,
+      action: ACTIONS.UPDATE,
+      entityType: 'role',
+      entityId: id,
+      entityName: role.name_fr,
+      req
+    });
+
     res.json(role);
   } catch (err) {
     console.error('Error in PUT /roles/:id:', err);
@@ -189,6 +218,14 @@ router.delete('/:id', async (req, res) => {
   try {
     const { church_id } = req.user;
     const { id } = req.params;
+
+    // Récupérer le nom du rôle avant suppression pour le log
+    const { data: roleData } = await supabaseAdmin
+      .from('church_roles_v2')
+      .select('name_fr')
+      .eq('id', id)
+      .eq('church_id', church_id)
+      .single();
 
     // Désactiver le rôle au lieu de le supprimer
     const { error } = await supabaseAdmin
@@ -207,6 +244,20 @@ router.delete('/:id', async (req, res) => {
       .from('member_roles_v2')
       .delete()
       .eq('role_id', id);
+
+    // Logger l'activité
+    await logActivity({
+      churchId: church_id,
+      userId: req.user.id,
+      userName: req.user.full_name || req.user.email,
+      userEmail: req.user.email,
+      module: MODULES.ROLES,
+      action: ACTIONS.DELETE,
+      entityType: 'role',
+      entityId: id,
+      entityName: roleData?.name_fr,
+      req
+    });
 
     res.json({ message: 'Rôle supprimé avec succès' });
   } catch (err) {
@@ -316,6 +367,21 @@ router.post('/:roleId/assign/:memberId', async (req, res) => {
       // Ne pas faire échouer l'assignation si l'email échoue
     }
 
+    // Logger l'activité
+    await logActivity({
+      churchId: church_id,
+      userId: userId,
+      userName: req.user.full_name || req.user.email,
+      userEmail: req.user.email,
+      module: MODULES.ROLES,
+      action: ACTIONS.ASSIGN,
+      entityType: 'role',
+      entityId: roleId,
+      entityName: role.name_fr,
+      details: { member_id: memberId, member_name: member.full_name },
+      req
+    });
+
     res.status(201).json(assignment);
   } catch (err) {
     console.error('Error in POST /roles/:roleId/assign/:memberId:', err);
@@ -398,6 +464,21 @@ router.delete('/:roleId/unassign/:memberId', async (req, res) => {
         // Ne pas faire échouer le retrait si l'email échoue
       }
     }
+
+    // Logger l'activité
+    await logActivity({
+      churchId: church_id,
+      userId: req.user.id,
+      userName: req.user.full_name || req.user.email,
+      userEmail: req.user.email,
+      module: MODULES.ROLES,
+      action: ACTIONS.UNASSIGN,
+      entityType: 'role',
+      entityId: roleId,
+      entityName: role.name_fr,
+      details: { member_id: memberId, member_name: member?.full_name },
+      req
+    });
 
     res.json({ message: 'Rôle retiré avec succès' });
   } catch (err) {

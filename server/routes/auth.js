@@ -2,6 +2,7 @@ const express = require('express');
 const { supabase, supabaseAdmin } = require('../db/supabase');
 const { protect } = require('../middleware/auth'); // Importer le middleware centralisé
 const { sendEmail, generatePasswordResetEmail } = require('../services/mailer');
+const { logActivity, MODULES, ACTIONS } = require('../services/activityLogger');
 const crypto = require('crypto');
 const router = express.Router();
 
@@ -14,6 +15,26 @@ router.post('/login', async (req, res) => {
       password,
     });
     if (error) throw error;
+
+    // Logger l'activité de connexion
+    if (data.user) {
+      const { data: churchUser } = await supabaseAdmin
+        .from('church_users_v2')
+        .select('church_id, full_name')
+        .eq('user_id', data.user.id)
+        .single();
+
+      await logActivity({
+        churchId: churchUser?.church_id || null,
+        userId: data.user.id,
+        userName: churchUser?.full_name || email,
+        userEmail: email,
+        module: MODULES.AUTH,
+        action: ACTIONS.LOGIN,
+        req
+      });
+    }
+
     res.status(200).json(data);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -23,6 +44,17 @@ router.post('/login', async (req, res) => {
 // Route de déconnexion pour l'administrateur
 router.post('/logout', protect, async (req, res) => {
   try {
+    // Logger l'activité de déconnexion avant de déconnecter
+    await logActivity({
+      churchId: req.user?.church_id || null,
+      userId: req.user?.id,
+      userName: req.user?.full_name || req.user?.email,
+      userEmail: req.user?.email,
+      module: MODULES.AUTH,
+      action: ACTIONS.LOGOUT,
+      req
+    });
+
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
     res.status(200).json({ message: 'Logged out successfully' });

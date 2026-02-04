@@ -3,6 +3,7 @@ const router = express.Router();
 const { supabaseAdmin } = require('../db/supabase');
 const { protect, isSuperAdminOrChurchAdmin, hasModulePermission } = require('../middleware/auth');
 const { sendEmail } = require('../services/mailer');
+const { logActivity, MODULES, ACTIONS } = require('../services/activityLogger');
 
 // Middleware combiné pour les routes meetings
 const meetingsAuth = [protect, isSuperAdminOrChurchAdmin, hasModulePermission('meetings')];
@@ -189,6 +190,20 @@ router.post('/', ...meetingsAuth, async (req, res) => {
 
     if (fetchError) throw fetchError;
 
+    // Logger l'activité
+    await logActivity({
+      churchId: req.user.church_id,
+      userId: req.user.id,
+      userName: req.user.full_name || req.user.email,
+      userEmail: req.user.email,
+      module: MODULES.MEETINGS,
+      action: ACTIONS.CREATE,
+      entityType: 'meeting',
+      entityId: meeting.id,
+      entityName: title_fr,
+      req
+    });
+
     res.status(201).json(fullMeeting);
   } catch (error) {
     console.error('Error creating meeting:', error);
@@ -234,6 +249,20 @@ router.put('/:id', ...meetingsAuth, async (req, res) => {
 
     if (error) throw error;
 
+    // Logger l'activité
+    await logActivity({
+      churchId: req.user.church_id,
+      userId: req.user.id,
+      userName: req.user.full_name || req.user.email,
+      userEmail: req.user.email,
+      module: MODULES.MEETINGS,
+      action: ACTIONS.UPDATE,
+      entityType: 'meeting',
+      entityId: id,
+      entityName: title_fr || meeting.title_fr,
+      req
+    });
+
     res.json(meeting);
   } catch (error) {
     console.error('Error updating meeting:', error);
@@ -246,6 +275,14 @@ router.delete('/:id', ...meetingsAuth, async (req, res) => {
   try {
     const { id } = req.params;
 
+    // Récupérer le nom de la réunion avant suppression pour le log
+    const { data: meetingData } = await supabaseAdmin
+      .from('meetings_v2')
+      .select('title_fr, title_en')
+      .eq('id', id)
+      .eq('church_id', req.user.church_id)
+      .single();
+
     const { error } = await supabaseAdmin
       .from('meetings_v2')
       .delete()
@@ -253,6 +290,20 @@ router.delete('/:id', ...meetingsAuth, async (req, res) => {
       .eq('church_id', req.user.church_id);
 
     if (error) throw error;
+
+    // Logger l'activité
+    await logActivity({
+      churchId: req.user.church_id,
+      userId: req.user.id,
+      userName: req.user.full_name || req.user.email,
+      userEmail: req.user.email,
+      module: MODULES.MEETINGS,
+      action: ACTIONS.DELETE,
+      entityType: 'meeting',
+      entityId: id,
+      entityName: meetingData?.title_fr || meetingData?.title_en,
+      req
+    });
 
     res.json({ message: 'Réunion supprimée avec succès' });
   } catch (error) {
@@ -468,6 +519,21 @@ router.post('/:id/send-report', ...meetingsAuth, async (req, res) => {
     }
 
     await Promise.all(emailPromises);
+
+    // Logger l'activité
+    await logActivity({
+      churchId: req.user.church_id,
+      userId: req.user.id,
+      userName: req.user.full_name || req.user.email,
+      userEmail: req.user.email,
+      module: MODULES.MEETINGS,
+      action: ACTIONS.SEND_EMAIL,
+      entityType: 'meeting',
+      entityId: id,
+      entityName: title,
+      details: { recipients_count: emailPromises.length },
+      req
+    });
 
     res.json({
       message: `Rapport envoyé à ${emailPromises.length} participant(s)`,

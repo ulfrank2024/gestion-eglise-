@@ -7,6 +7,7 @@ const express = require('express');
 const router = express.Router();
 const { supabaseAdmin } = require('../db/supabase');
 const { protect, isSuperAdminOrChurchAdmin } = require('../middleware/auth');
+const { logActivity, MODULES, ACTIONS } = require('../services/activityLogger');
 
 // Appliquer le middleware d'authentification à toutes les routes
 router.use(protect);
@@ -114,6 +115,20 @@ router.post('/', async (req, res) => {
       return res.status(500).json({ error: 'Erreur lors de la création de l\'annonce' });
     }
 
+    // Logger l'activité
+    await logActivity({
+      churchId: church_id,
+      userId: userId,
+      userName: req.user.full_name || req.user.email,
+      userEmail: req.user.email,
+      module: MODULES.ANNOUNCEMENTS,
+      action: ACTIONS.CREATE,
+      entityType: 'announcement',
+      entityId: announcement.id,
+      entityName: title_fr,
+      req
+    });
+
     res.status(201).json(announcement);
   } catch (err) {
     console.error('Error in POST /announcements:', err);
@@ -171,6 +186,20 @@ router.put('/:id', async (req, res) => {
       return res.status(500).json({ error: 'Erreur lors de la mise à jour de l\'annonce' });
     }
 
+    // Logger l'activité
+    await logActivity({
+      churchId: church_id,
+      userId: req.user.id,
+      userName: req.user.full_name || req.user.email,
+      userEmail: req.user.email,
+      module: MODULES.ANNOUNCEMENTS,
+      action: ACTIONS.UPDATE,
+      entityType: 'announcement',
+      entityId: id,
+      entityName: announcement.title_fr,
+      req
+    });
+
     res.json(announcement);
   } catch (err) {
     console.error('Error in PUT /announcements/:id:', err);
@@ -210,6 +239,20 @@ router.put('/:id/publish', async (req, res) => {
       return res.status(500).json({ error: 'Erreur lors de la publication de l\'annonce' });
     }
 
+    // Logger l'activité
+    await logActivity({
+      churchId: church_id,
+      userId: req.user.id,
+      userName: req.user.full_name || req.user.email,
+      userEmail: req.user.email,
+      module: MODULES.ANNOUNCEMENTS,
+      action: is_published ? ACTIONS.PUBLISH : ACTIONS.UNPUBLISH,
+      entityType: 'announcement',
+      entityId: id,
+      entityName: announcement.title_fr,
+      req
+    });
+
     res.json(announcement);
   } catch (err) {
     console.error('Error in PUT /announcements/:id/publish:', err);
@@ -226,6 +269,14 @@ router.delete('/:id', async (req, res) => {
     const { church_id } = req.user;
     const { id } = req.params;
 
+    // Récupérer le titre avant suppression pour le log
+    const { data: announcementData } = await supabaseAdmin
+      .from('announcements_v2')
+      .select('title_fr')
+      .eq('id', id)
+      .eq('church_id', church_id)
+      .single();
+
     const { error } = await supabaseAdmin
       .from('announcements_v2')
       .delete()
@@ -236,6 +287,20 @@ router.delete('/:id', async (req, res) => {
       console.error('Error deleting announcement:', error);
       return res.status(500).json({ error: 'Erreur lors de la suppression de l\'annonce' });
     }
+
+    // Logger l'activité
+    await logActivity({
+      churchId: church_id,
+      userId: req.user.id,
+      userName: req.user.full_name || req.user.email,
+      userEmail: req.user.email,
+      module: MODULES.ANNOUNCEMENTS,
+      action: ACTIONS.DELETE,
+      entityType: 'announcement',
+      entityId: id,
+      entityName: announcementData?.title_fr,
+      req
+    });
 
     res.json({ message: 'Annonce supprimée avec succès' });
   } catch (err) {

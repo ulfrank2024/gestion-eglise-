@@ -2,6 +2,7 @@ const express = require('express');
 const { supabase, supabaseAdmin } = require('../db/supabase');
 const { transporter, generateThankYouEmail, sendEmail, generateNewEventNotificationEmail } = require('../services/mailer');
 const { protect, isAdminChurch, isSuperAdminOrChurchAdmin } = require('../middleware/auth');
+const { logActivity, MODULES, ACTIONS } = require('../services/activityLogger');
 const router = express.Router();
 const qrcode = require('qrcode');
 
@@ -33,6 +34,20 @@ router.post('/events_v2', protect, isSuperAdminOrChurchAdmin, async (req, res) =
 
     const createdEvent = data[0];
     console.log('Event created successfully:', createdEvent?.id);
+
+    // Logger l'activité
+    await logActivity({
+      churchId: req.user.church_id,
+      userId: req.user.id,
+      userName: req.user.full_name || req.user.email,
+      userEmail: req.user.email,
+      module: MODULES.EVENTS,
+      action: ACTIONS.CREATE,
+      entityType: 'event',
+      entityId: createdEvent.id,
+      entityName: name_fr || name_en,
+      req
+    });
 
     // Si l'admin souhaite notifier les membres
     if (notify_members) {
@@ -196,6 +211,21 @@ router.put('/events_v2/:id', protect, isSuperAdminOrChurchAdmin, async (req, res
         throw error;
     }
     if (!data || data.length === 0) return res.status(404).json({ error: 'Event not found or not authorized' });
+
+    // Logger l'activité
+    await logActivity({
+      churchId: req.user.church_id,
+      userId: req.user.id,
+      userName: req.user.full_name || req.user.email,
+      userEmail: req.user.email,
+      module: MODULES.EVENTS,
+      action: ACTIONS.UPDATE,
+      entityType: 'event',
+      entityId: id,
+      entityName: name_fr || name_en,
+      req
+    });
+
     res.status(200).json(data[0]);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -206,6 +236,14 @@ router.put('/events_v2/:id', protect, isSuperAdminOrChurchAdmin, async (req, res
 router.delete('/events_v2/:id', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
   const { id } = req.params;
   try {
+    // Récupérer le nom de l'événement avant suppression pour le log
+    const { data: eventData } = await supabaseAdmin
+      .from('events_v2')
+      .select('name_fr, name_en')
+      .eq('id', id)
+      .eq('church_id', req.user.church_id)
+      .single();
+
     const { error } = await supabaseAdmin
       .from('events_v2')
       .delete()
@@ -218,6 +256,21 @@ router.delete('/events_v2/:id', protect, isSuperAdminOrChurchAdmin, async (req, 
         }
         throw error;
     }
+
+    // Logger l'activité
+    await logActivity({
+      churchId: req.user.church_id,
+      userId: req.user.id,
+      userName: req.user.full_name || req.user.email,
+      userEmail: req.user.email,
+      module: MODULES.EVENTS,
+      action: ACTIONS.DELETE,
+      entityType: 'event',
+      entityId: id,
+      entityName: eventData?.name_fr || eventData?.name_en,
+      req
+    });
+
     res.status(204).send();
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -360,6 +413,21 @@ router.post('/events_v2/:eventId/send-thanks', protect, isSuperAdminOrChurchAdmi
     });
 
     await Promise.all(emailPromises);
+
+    // Logger l'activité
+    await logActivity({
+      churchId: req.user.church_id,
+      userId: req.user.id,
+      userName: req.user.full_name || req.user.email,
+      userEmail: req.user.email,
+      module: MODULES.EVENTS,
+      action: ACTIONS.SEND_EMAIL,
+      entityType: 'event',
+      entityId: eventId,
+      entityName: eventName,
+      details: { recipients_count: attendees.length },
+      req
+    });
 
     res.status(200).json({ message: `Emails sent successfully to ${attendees.length} attendees.` });
 

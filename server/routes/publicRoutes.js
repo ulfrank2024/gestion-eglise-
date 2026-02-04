@@ -7,6 +7,7 @@ const {
   generateWelcomeChurchAdminEmail,
   generateMemberWelcomeEmail
 } = require('../services/mailer');
+const { logActivity, MODULES, ACTIONS } = require('../services/activityLogger');
 
 /**
  * Résout un churchId qui peut être soit un UUID soit un subdomain
@@ -170,6 +171,20 @@ router.post('/:churchId/events/:eventId/register', async (req, res) => {
 
     if (error) throw error;
 
+    // Logger l'activité d'inscription (route publique - pas de req.user)
+    await logActivity({
+      churchId: churchId,
+      userId: null,
+      userName: fullName,
+      userEmail: email,
+      module: MODULES.EVENTS,
+      action: ACTIONS.REGISTER,
+      entityType: 'event',
+      entityId: eventId,
+      entityName: null, // Sera enrichi ci-dessous
+      req
+    });
+
     // Utiliser supabaseAdmin pour récupérer les détails de l'événement et de l'église (pour l'email)
     const { data: eventDetails, error: eventError } = await supabaseAdmin
         .from('events_v2')
@@ -274,6 +289,20 @@ router.get('/:churchId/checkin/:eventId', async (req, res) => {
         throw updateError;
     }
     console.log(`Check-in successful for event ${eventId}. New count: ${newCheckinCount}`);
+
+    // Logger l'activité de check-in (route publique - pas de req.user)
+    await logActivity({
+      churchId: churchId,
+      userId: null,
+      userName: 'QR Code Scan',
+      userEmail: null,
+      module: MODULES.EVENTS,
+      action: ACTIONS.CHECKIN,
+      entityType: 'event',
+      entityId: eventId,
+      details: { checkin_count: newCheckinCount },
+      req
+    });
 
     const frontendBaseUrl = process.env.FRONTEND_BASE_URL || 'http://localhost:3000';
     // Utiliser le subdomain original pour la redirection (pas l'UUID)
@@ -441,6 +470,20 @@ router.post('/churches/register', async (req, res) => {
             .from('church_invitations')
             .delete()
             .eq('id', invitation.id);
+
+        // Logger l'activité de création d'église
+        await logActivity({
+            churchId: churchId,
+            userId: userId,
+            userName: adminName,
+            userEmail: invitation.email,
+            module: MODULES.CHURCHES,
+            action: ACTIONS.CREATE,
+            entityType: 'church',
+            entityId: churchId,
+            entityName: churchName,
+            req
+        });
 
         // 6. Envoyer l'email de bienvenue au nouvel admin avec le template professionnel
         console.log('Step 6: Sending welcome email...');
@@ -763,6 +806,20 @@ router.post('/:churchId/members/register', async (req, res) => {
                 .update({ current_uses: (linkData?.current_uses || 0) + 1 })
                 .eq('id', linkId);
         }
+
+        // Logger l'activité d'inscription membre
+        await logActivity({
+            churchId: churchDbId,
+            userId: userId,
+            userName: full_name,
+            userEmail: email,
+            module: MODULES.MEMBERS,
+            action: ACTIONS.REGISTER,
+            entityType: 'member',
+            entityId: member.id,
+            entityName: full_name,
+            req
+        });
 
         // Envoyer un email de bienvenue avec le template professionnel
         const frontendUrl = process.env.FRONTEND_BASE_URL || 'http://localhost:3000';

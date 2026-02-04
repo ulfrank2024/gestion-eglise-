@@ -7,6 +7,7 @@ const express = require('express');
 const router = express.Router();
 const { supabaseAdmin } = require('../db/supabase');
 const { protect, isSuperAdminOrChurchAdmin } = require('../middleware/auth');
+const { logActivity, MODULES, ACTIONS } = require('../services/activityLogger');
 
 // Appliquer le middleware d'authentification à toutes les routes
 router.use(protect);
@@ -243,6 +244,20 @@ router.post('/', async (req, res) => {
       return res.status(500).json({ error: 'Erreur lors de la création du membre' });
     }
 
+    // Logger l'activité
+    await logActivity({
+      churchId: church_id,
+      userId: req.user.id,
+      userName: req.user.full_name || req.user.email,
+      userEmail: req.user.email,
+      module: MODULES.MEMBERS,
+      action: ACTIONS.CREATE,
+      entityType: 'member',
+      entityId: member.id,
+      entityName: full_name,
+      req
+    });
+
     res.status(201).json(member);
   } catch (err) {
     console.error('Error in POST /members:', err);
@@ -285,6 +300,20 @@ router.put('/:id', async (req, res) => {
       return res.status(500).json({ error: 'Erreur lors de la mise à jour du membre' });
     }
 
+    // Logger l'activité
+    await logActivity({
+      churchId: church_id,
+      userId: req.user.id,
+      userName: req.user.full_name || req.user.email,
+      userEmail: req.user.email,
+      module: MODULES.MEMBERS,
+      action: ACTIONS.UPDATE,
+      entityType: 'member',
+      entityId: id,
+      entityName: member.full_name,
+      req
+    });
+
     res.json(member);
   } catch (err) {
     console.error('Error in PUT /members/:id:', err);
@@ -318,6 +347,21 @@ router.put('/:id/archive', async (req, res) => {
       return res.status(500).json({ error: 'Erreur lors de l\'archivage du membre' });
     }
 
+    // Logger l'activité
+    await logActivity({
+      churchId: church_id,
+      userId: req.user.id,
+      userName: req.user.full_name || req.user.email,
+      userEmail: req.user.email,
+      module: MODULES.MEMBERS,
+      action: ACTIONS.ARCHIVE,
+      entityType: 'member',
+      entityId: id,
+      entityName: member.full_name,
+      details: { is_archived: member.is_archived },
+      req
+    });
+
     res.json(member);
   } catch (err) {
     console.error('Error in PUT /members/:id/archive:', err);
@@ -334,6 +378,14 @@ router.delete('/:id', async (req, res) => {
     const { church_id } = req.user;
     const { id } = req.params;
 
+    // Récupérer le nom du membre avant suppression pour le log
+    const { data: memberData } = await supabaseAdmin
+      .from('members_v2')
+      .select('full_name')
+      .eq('id', id)
+      .eq('church_id', church_id)
+      .single();
+
     const { error } = await supabaseAdmin
       .from('members_v2')
       .delete()
@@ -344,6 +396,20 @@ router.delete('/:id', async (req, res) => {
       console.error('Error deleting member:', error);
       return res.status(500).json({ error: 'Erreur lors de la suppression du membre' });
     }
+
+    // Logger l'activité
+    await logActivity({
+      churchId: church_id,
+      userId: req.user.id,
+      userName: req.user.full_name || req.user.email,
+      userEmail: req.user.email,
+      module: MODULES.MEMBERS,
+      action: ACTIONS.DELETE,
+      entityType: 'member',
+      entityId: id,
+      entityName: memberData?.full_name,
+      req
+    });
 
     res.json({ message: 'Membre supprimé avec succès' });
   } catch (err) {
