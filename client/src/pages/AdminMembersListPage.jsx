@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
+import ConfirmModal from '../components/ConfirmModal';
 import {
   MdPeople, MdAdd, MdSearch, MdArchive, MdUnarchive,
   MdEdit, MdDelete, MdFilterList, MdPerson, MdBadge, MdClose, MdCheck, MdVisibility
@@ -35,6 +36,11 @@ function AdminMembersListPage() {
   const [selectedMember, setSelectedMember] = useState(null);
   const [availableRoles, setAvailableRoles] = useState([]);
   const [loadingRoles, setLoadingRoles] = useState(false);
+
+  // États pour la modal de confirmation de suppression
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [memberToDelete, setMemberToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -94,13 +100,23 @@ function AdminMembersListPage() {
     }
   };
 
-  const handleDelete = async (memberId) => {
-    if (!window.confirm(t('confirm_delete_member'))) return;
+  const handleDelete = (member) => {
+    setMemberToDelete(member);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!memberToDelete) return;
+    setDeleting(true);
     try {
-      await api.admin.deleteMember(memberId);
+      await api.admin.deleteMember(memberToDelete.id);
+      setShowDeleteModal(false);
+      setMemberToDelete(null);
       fetchData();
     } catch (err) {
       setError(err.message);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -383,7 +399,7 @@ function AdminMembersListPage() {
                       </button>
                       {member.is_archived && (
                         <button
-                          onClick={() => handleDelete(member.id)}
+                          onClick={() => handleDelete(member)}
                           className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-700 rounded-lg transition-colors"
                           title={t('delete') || 'Supprimer'}
                         >
@@ -569,6 +585,24 @@ function AdminMembersListPage() {
           </div>
         </div>
       )}
+
+      {/* Modal de confirmation de suppression */}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setMemberToDelete(null);
+        }}
+        onConfirm={confirmDelete}
+        title={t('delete_member')}
+        message={t('confirm_delete_member_message', {
+          name: memberToDelete?.full_name || ''
+        })}
+        confirmText={t('delete')}
+        cancelText={t('cancel')}
+        type="danger"
+        loading={deleting}
+      />
     </div>
   );
 }

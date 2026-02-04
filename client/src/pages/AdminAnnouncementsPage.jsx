@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
+import ConfirmModal from '../components/ConfirmModal';
 import {
   MdAnnouncement, MdAdd, MdEdit, MdDelete, MdPublish,
   MdUnpublished, MdClose, MdCheck
@@ -26,6 +27,11 @@ function AdminAnnouncementsPage() {
     is_published: false,
     expires_at: ''
   });
+
+  // États pour la modal de confirmation de suppression
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [announcementToDelete, setAnnouncementToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchAnnouncements();
@@ -93,14 +99,24 @@ function AdminAnnouncementsPage() {
     }
   };
 
-  const handleDelete = async (announcementId) => {
-    if (!window.confirm(t('confirm_delete_announcement') || 'Supprimer cette annonce?')) return;
+  const handleDelete = (announcement) => {
+    setAnnouncementToDelete(announcement);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!announcementToDelete) return;
+    setDeleting(true);
     try {
-      await api.admin.deleteAnnouncement(announcementId);
+      await api.admin.deleteAnnouncement(announcementToDelete.id);
+      setShowDeleteModal(false);
+      setAnnouncementToDelete(null);
       setSuccess(t('announcement_deleted') || 'Annonce supprimée');
       fetchAnnouncements();
     } catch (err) {
       setError(err.message);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -213,7 +229,7 @@ function AdminAnnouncementsPage() {
                     <MdEdit size={20} />
                   </button>
                   <button
-                    onClick={() => handleDelete(announcement.id)}
+                    onClick={() => handleDelete(announcement)}
                     className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-700 rounded-lg transition-colors"
                   >
                     <MdDelete size={20} />
@@ -350,6 +366,24 @@ function AdminAnnouncementsPage() {
           </div>
         </div>
       )}
+
+      {/* Modal de confirmation de suppression */}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setAnnouncementToDelete(null);
+        }}
+        onConfirm={confirmDelete}
+        title={t('delete_announcement')}
+        message={t('confirm_delete_announcement_message', {
+          title: announcementToDelete ? (lang === 'fr' ? announcementToDelete.title_fr : announcementToDelete.title_en) : ''
+        })}
+        confirmText={t('delete')}
+        cancelText={t('cancel')}
+        type="danger"
+        loading={deleting}
+      />
     </div>
   );
 }

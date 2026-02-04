@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
+import ConfirmModal from '../components/ConfirmModal';
 import {
   MdMail, MdLink, MdContentCopy, MdRefresh, MdSend,
   MdDelete, MdCheck, MdClose, MdPerson
@@ -23,6 +24,11 @@ function AdminMemberInvitationsPage() {
     full_name: ''
   });
   const [submitting, setSubmitting] = useState(false);
+
+  // États pour la modal de confirmation de suppression
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [invitationToDelete, setInvitationToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -84,14 +90,24 @@ function AdminMemberInvitationsPage() {
     }
   };
 
-  const handleDeleteInvitation = async (invitationId) => {
-    if (!window.confirm(t('confirm_delete_invitation') || 'Annuler cette invitation?')) return;
+  const handleDeleteInvitation = (invitation) => {
+    setInvitationToDelete(invitation);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteInvitation = async () => {
+    if (!invitationToDelete) return;
+    setDeleting(true);
     try {
-      await api.admin.deleteMemberInvitation(invitationId);
+      await api.admin.deleteMemberInvitation(invitationToDelete.id);
+      setShowDeleteModal(false);
+      setInvitationToDelete(null);
       setSuccess(t('invitation_cancelled') || 'Invitation annulée');
       fetchData();
     } catch (err) {
       setError(err.message);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -241,7 +257,7 @@ function AdminMemberInvitationsPage() {
                   </td>
                   <td className="px-4 py-3 text-center">
                     <button
-                      onClick={() => handleDeleteInvitation(invitation.id)}
+                      onClick={() => handleDeleteInvitation(invitation)}
                       className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-700 rounded-lg transition-colors"
                       title={t('cancel_invitation') || 'Annuler l\'invitation'}
                     >
@@ -321,6 +337,24 @@ function AdminMemberInvitationsPage() {
           </div>
         </div>
       )}
+
+      {/* Modal de confirmation de suppression */}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setInvitationToDelete(null);
+        }}
+        onConfirm={confirmDeleteInvitation}
+        title={t('cancel_invitation')}
+        message={t('confirm_delete_invitation_message', {
+          email: invitationToDelete?.email || ''
+        })}
+        confirmText={t('cancel_invitation')}
+        cancelText={t('back')}
+        type="warning"
+        loading={deleting}
+      />
     </div>
   );
 }

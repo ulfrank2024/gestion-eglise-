@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
+import ConfirmModal from '../components/ConfirmModal';
 import {
   MdArrowBack, MdEdit, MdSave, MdPeople, MdAdd, MdDelete,
   MdEmail, MdAccessTime, MdLocationOn, MdCheckCircle,
@@ -34,6 +35,14 @@ function AdminMeetingDetailPage() {
   // Modal de clôture
   const [showCloseModal, setShowCloseModal] = useState(false);
   const [closeEndTime, setCloseEndTime] = useState('');
+
+  // Modales de confirmation
+  const [showSendReportModal, setShowSendReportModal] = useState(false);
+  const [showRemoveParticipantModal, setShowRemoveParticipantModal] = useState(false);
+  const [participantToRemove, setParticipantToRemove] = useState(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [removingParticipant, setRemovingParticipant] = useState(false);
 
   useEffect(() => {
     fetchMeeting();
@@ -119,17 +128,22 @@ function AdminMeetingDetailPage() {
     }
   };
 
-  const handleSendReport = async () => {
-    if (!window.confirm(t('meetings.confirm_send_report'))) return;
+  const handleSendReport = () => {
+    setShowSendReportModal(true);
+  };
 
+  const confirmSendReport = async () => {
     setSendingReport(true);
     try {
       const result = await api.admin.sendMeetingReport(meetingId, { language: currentLang });
-      alert(result.message);
+      setShowSendReportModal(false);
+      setSuccessMessage(result.message || t('meetings.report_sent_success'));
+      setShowSuccessModal(true);
       fetchMeeting();
     } catch (err) {
       console.error('Error sending report:', err);
       setError(err.message);
+      setShowSendReportModal(false);
     } finally {
       setSendingReport(false);
     }
@@ -164,15 +178,25 @@ function AdminMeetingDetailPage() {
     }
   };
 
-  const handleRemoveParticipant = async (participantId) => {
-    if (!window.confirm(t('meetings.confirm_remove_participant'))) return;
+  const handleRemoveParticipant = (participant) => {
+    setParticipantToRemove(participant);
+    setShowRemoveParticipantModal(true);
+  };
 
+  const confirmRemoveParticipant = async () => {
+    if (!participantToRemove) return;
+
+    setRemovingParticipant(true);
     try {
-      await api.admin.removeMeetingParticipant(meetingId, participantId);
+      await api.admin.removeMeetingParticipant(meetingId, participantToRemove.id);
+      setShowRemoveParticipantModal(false);
+      setParticipantToRemove(null);
       fetchMeeting();
     } catch (err) {
       console.error('Error removing participant:', err);
       setError(err.message);
+    } finally {
+      setRemovingParticipant(false);
     }
   };
 
@@ -562,7 +586,7 @@ function AdminMeetingDetailPage() {
                       </div>
                     </div>
                     <button
-                      onClick={() => handleRemoveParticipant(participant.id)}
+                      onClick={() => handleRemoveParticipant(participant)}
                       className="p-1 text-red-400 hover:bg-gray-600 rounded transition-colors"
                     >
                       <MdDelete size={18} />
@@ -724,6 +748,48 @@ function AdminMeetingDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Modal de confirmation d'envoi de rapport */}
+      <ConfirmModal
+        isOpen={showSendReportModal}
+        onClose={() => setShowSendReportModal(false)}
+        onConfirm={confirmSendReport}
+        title={t('meetings.send_report')}
+        message={t('meetings.confirm_send_report_message')}
+        confirmText={t('send')}
+        cancelText={t('cancel')}
+        type="send"
+        loading={sendingReport}
+      />
+
+      {/* Modal de confirmation de suppression de participant */}
+      <ConfirmModal
+        isOpen={showRemoveParticipantModal}
+        onClose={() => {
+          setShowRemoveParticipantModal(false);
+          setParticipantToRemove(null);
+        }}
+        onConfirm={confirmRemoveParticipant}
+        title={t('meetings.remove_participant')}
+        message={t('meetings.confirm_remove_participant_message', {
+          name: participantToRemove?.member?.full_name || ''
+        })}
+        confirmText={t('remove')}
+        cancelText={t('cancel')}
+        type="danger"
+        loading={removingParticipant}
+      />
+
+      {/* Modal de succès */}
+      <ConfirmModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        onConfirm={() => setShowSuccessModal(false)}
+        title={t('success')}
+        message={successMessage}
+        confirmText={t('ok')}
+        type="info"
+      />
     </div>
   );
 }

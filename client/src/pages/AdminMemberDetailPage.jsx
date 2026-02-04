@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
+import ConfirmModal from '../components/ConfirmModal';
 import {
   MdPerson, MdEmail, MdPhone, MdLocationOn, MdCalendarToday,
   MdArrowBack, MdEdit, MdSave, MdCancel, MdBadge, MdEvent,
@@ -33,6 +34,10 @@ function AdminMemberDetailPage() {
   const [showRolesModal, setShowRolesModal] = useState(false);
   const [availableRoles, setAvailableRoles] = useState([]);
   const [loadingRoles, setLoadingRoles] = useState(false);
+
+  // États pour la modal de confirmation de suppression
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchMember();
@@ -80,13 +85,20 @@ function AdminMemberDetailPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!window.confirm(t('confirm_delete_member'))) return;
+  const handleDelete = () => {
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    setDeleting(true);
     try {
       await api.admin.deleteMember(memberId);
+      setShowDeleteModal(false);
       navigate('/admin/members');
     } catch (err) {
       setError(err.message);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -567,6 +579,21 @@ function AdminMemberDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Modal de confirmation de suppression */}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={confirmDelete}
+        title={t('delete_member')}
+        message={t('confirm_delete_member_message', {
+          name: member?.full_name || ''
+        })}
+        confirmText={t('delete')}
+        cancelText={t('cancel')}
+        type="danger"
+        loading={deleting}
+      />
     </div>
   );
 }

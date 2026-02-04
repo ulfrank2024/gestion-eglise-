@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
 import { useNavigate } from 'react-router-dom';
+import ConfirmModal from '../components/ConfirmModal';
 import {
   MdGroup, MdPersonAdd, MdEmail, MdPerson, MdDelete,
   MdCheck, MdClose, MdAdminPanelSettings, MdEdit,
@@ -29,6 +30,11 @@ function AdminChurchUsersPage() {
   // État pour l'édition des permissions
   const [editingUser, setEditingUser] = useState(null);
   const [editPermissions, setEditPermissions] = useState([]);
+
+  // États pour la modal de confirmation de suppression
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [userToRemove, setUserToRemove] = useState(null);
+  const [removing, setRemoving] = useState(false);
 
   const fetchChurchUsers = async (currentChurchId) => {
     try {
@@ -183,18 +189,28 @@ function AdminChurchUsersPage() {
     }
   };
 
-  const handleRemoveUser = async (userId) => {
+  const handleRemoveUser = (user) => {
     if (!churchId) {
-      alert(t('error_church_id_missing'));
+      setError(t('error_church_id_missing'));
       return;
     }
-    if (!window.confirm(t('confirm_remove_user_from_church'))) return;
+    setUserToRemove(user);
+    setShowDeleteModal(true);
+  };
+
+  const confirmRemoveUser = async () => {
+    if (!userToRemove) return;
+    setRemoving(true);
     try {
-      await api.admin.removeChurchUser(churchId, userId);
+      await api.admin.removeChurchUser(churchId, userToRemove.user_id);
+      setShowDeleteModal(false);
+      setUserToRemove(null);
       fetchChurchUsers(churchId);
     } catch (err) {
       console.error('Error removing user:', err);
-      alert(err.response?.data?.error || err.message || t('error_removing_user'));
+      setError(err.response?.data?.error || err.message || t('error_removing_user'));
+    } finally {
+      setRemoving(false);
     }
   };
 
@@ -545,7 +561,7 @@ function AdminChurchUsersPage() {
                               <MdEdit size={20} />
                             </button>
                             <button
-                              onClick={() => handleRemoveUser(user.user_id)}
+                              onClick={() => handleRemoveUser(user)}
                               className="p-2 text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded-lg transition-colors"
                               title={t('remove') || 'Retirer'}
                             >
@@ -569,6 +585,24 @@ function AdminChurchUsersPage() {
           <strong>Note:</strong> {t('team_permissions_note') || 'Les administrateurs invités recevront un email avec leurs identifiants de connexion. Ils ne pourront accéder qu\'aux modules pour lesquels ils ont les permissions.'}
         </p>
       </div>
+
+      {/* Modal de confirmation de suppression */}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setUserToRemove(null);
+        }}
+        onConfirm={confirmRemoveUser}
+        title={t('remove_team_member')}
+        message={t('confirm_remove_user_message', {
+          name: userToRemove?.full_name || userToRemove?.email || ''
+        })}
+        confirmText={t('remove')}
+        cancelText={t('cancel')}
+        type="danger"
+        loading={removing}
+      />
     </div>
   );
 }

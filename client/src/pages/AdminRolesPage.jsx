@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
+import ConfirmModal from '../components/ConfirmModal';
 import {
   MdBadge, MdAdd, MdEdit, MdDelete, MdPeople, MdClose
 } from 'react-icons/md';
@@ -23,6 +24,11 @@ function AdminRolesPage() {
     description_en: '',
     color: '#6366f1'
   });
+
+  // États pour la modal de confirmation de suppression
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [roleToDelete, setRoleToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const colorOptions = [
     '#6366f1', '#8b5cf6', '#ec4899', '#ef4444', '#f97316',
@@ -78,13 +84,23 @@ function AdminRolesPage() {
     setShowModal(true);
   };
 
-  const handleDelete = async (roleId) => {
-    if (!window.confirm(t('confirm_delete_role') || 'Êtes-vous sûr de vouloir supprimer ce rôle?')) return;
+  const handleDelete = (role) => {
+    setRoleToDelete(role);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!roleToDelete) return;
+    setDeleting(true);
     try {
-      await api.admin.deleteRole(roleId);
+      await api.admin.deleteRole(roleToDelete.id);
+      setShowDeleteModal(false);
+      setRoleToDelete(null);
       fetchRoles();
     } catch (err) {
       setError(err.message);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -174,7 +190,7 @@ function AdminRolesPage() {
                     {t('edit') || 'Modifier'}
                   </button>
                   <button
-                    onClick={() => handleDelete(role.id)}
+                    onClick={() => handleDelete(role)}
                     className="px-3 py-2 bg-gray-700 text-red-400 rounded-lg hover:bg-gray-600 hover:text-red-300 transition-colors"
                   >
                     <MdDelete size={16} />
@@ -284,6 +300,24 @@ function AdminRolesPage() {
           </div>
         </div>
       )}
+
+      {/* Modal de confirmation de suppression */}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setRoleToDelete(null);
+        }}
+        onConfirm={confirmDelete}
+        title={t('delete_role')}
+        message={t('confirm_delete_role_message', {
+          name: roleToDelete ? (lang === 'fr' ? roleToDelete.name_fr : roleToDelete.name_en) : ''
+        })}
+        confirmText={t('delete')}
+        cancelText={t('cancel')}
+        type="danger"
+        loading={deleting}
+      />
     </div>
   );
 }

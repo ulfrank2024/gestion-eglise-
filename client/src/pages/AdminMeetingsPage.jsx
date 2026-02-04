@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
+import ConfirmModal from '../components/ConfirmModal';
 import {
   MdAdd, MdSearch, MdFilterList, MdEvent, MdPeople,
   MdLocationOn, MdAccessTime, MdEdit, MdDelete, MdEmail,
@@ -39,6 +40,11 @@ function AdminMeetingsPage() {
   const [selectedMembers, setSelectedMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [memberSearchTerm, setMemberSearchTerm] = useState('');
+
+  // États pour la modal de confirmation de suppression
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [meetingToDelete, setMeetingToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchMeetings();
@@ -118,15 +124,25 @@ function AdminMeetingsPage() {
     }
   };
 
-  const handleDeleteMeeting = async (id) => {
-    if (!window.confirm(t('meetings.confirm_delete'))) return;
+  const handleDeleteMeeting = (meeting) => {
+    setMeetingToDelete(meeting);
+    setShowDeleteModal(true);
+  };
 
+  const confirmDeleteMeeting = async () => {
+    if (!meetingToDelete) return;
+
+    setDeleting(true);
     try {
-      await api.admin.deleteMeeting(id);
+      await api.admin.deleteMeeting(meetingToDelete.id);
+      setShowDeleteModal(false);
+      setMeetingToDelete(null);
       fetchMeetings();
     } catch (err) {
       console.error('Error deleting meeting:', err);
       setError(err.message);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -294,7 +310,7 @@ function AdminMeetingsPage() {
                       <MdEdit size={20} />
                     </button>
                     <button
-                      onClick={() => handleDeleteMeeting(meeting.id)}
+                      onClick={() => handleDeleteMeeting(meeting)}
                       className="p-2 text-red-400 hover:bg-gray-700 rounded-lg transition-colors"
                       title={t('delete')}
                     >
@@ -527,6 +543,24 @@ function AdminMeetingsPage() {
           </div>
         </div>
       )}
+
+      {/* Modal de confirmation de suppression */}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setMeetingToDelete(null);
+        }}
+        onConfirm={confirmDeleteMeeting}
+        title={t('meetings.delete_meeting')}
+        message={t('meetings.confirm_delete_message', {
+          title: meetingToDelete ? (currentLang === 'fr' ? meetingToDelete.title_fr : (meetingToDelete.title_en || meetingToDelete.title_fr)) : ''
+        })}
+        confirmText={t('delete')}
+        cancelText={t('cancel')}
+        type="danger"
+        loading={deleting}
+      />
     </div>
   );
 }
