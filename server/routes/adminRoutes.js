@@ -601,4 +601,27 @@ router.delete('/form-fields/:fieldId', protect, isSuperAdminOrChurchAdmin, async
   }
 });
 
+// ============================================
+// ROUTES MEMBRES
+// ============================================
+
+// GET /api/admin/members - Liste des membres de l'église
+router.get('/members', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
+  try {
+    const { data: members, error } = await supabaseAdmin
+      .from('members_v2')
+      .select('id, full_name, email, phone, is_active')
+      .eq('church_id', req.user.church_id)
+      .eq('is_active', true)
+      .order('full_name', { ascending: true });
+
+    if (error) throw error;
+
+    res.json(members || []);
+  } catch (error) {
+    console.error('Error fetching members:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
