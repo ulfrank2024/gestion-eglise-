@@ -40,7 +40,7 @@ html, body {
   width: 50%;
   padding: 40px;
   background-color: white;
-  color: #333;
+  color: #ffffff;
   text-align: center;
   box-sizing: border-box;
   display: flex;
@@ -182,7 +182,7 @@ html, body {
 
   .langButtonStyle.active {
     background-color: white;
-    color: #333;
+    color: #ffffff;
     border-color: white;
   }
 

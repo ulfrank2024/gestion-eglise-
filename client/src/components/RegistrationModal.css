@@ -13,7 +13,7 @@
   
   .modalContent {
     background-color: white;
-    color: #333;
+    color: #ffffff;
     padding: 30px;
     border-radius: 8px;
     max-width: 500px;
@@ -41,7 +41,7 @@
     display: block;
     margin-bottom: 5px;
     font-weight: bold;
-    color: #555;
+    color: #d1d5db;
   }
 
   .formInput {
@@ -134,7 +134,7 @@
   .optionItem label {
     cursor: pointer;
     font-size: 0.95rem;
-    color: #333;
+    color: #ffffff;
   }
 
   .optionItem label:hover {
@@ -199,5 +199,5 @@
   .yesNoOption label {
     cursor: pointer;
     font-weight: 500;
-    color: #333;
+    color: #ffffff;
   }

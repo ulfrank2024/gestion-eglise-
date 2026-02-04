@@ -21,7 +21,7 @@
 
 .mainTitle {
     margin-bottom: 40px;
-    color: #333;
+    color: #ffffff;
 }
 
 .logoStyle {
@@ -70,7 +70,7 @@
 .langButtonStyle {
     background: none;
     border: 1px solid #ccc;
-    color: #333;
+    color: #ffffff;
     padding: 5px 10px;
     margin: 0 5px;
     cursor: pointer;

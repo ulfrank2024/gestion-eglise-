@@ -16,7 +16,7 @@
 
 .admin-events-header h2 {
   font-size: 2rem;
-  color: #333;
+  color: #ffffff;
   margin: 0;
 }
 
@@ -59,7 +59,7 @@
 
 .events-table th {
   font-weight: 600;
-  color: #495057;
+  color: #d1d5db;
   border-bottom: 2px solid #dee2e6;
   font-size: 0.875rem;
   text-transform: uppercase;
