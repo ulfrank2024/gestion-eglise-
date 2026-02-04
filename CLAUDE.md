@@ -3104,3 +3104,66 @@ Une PWA permet d'installer l'application web directement sur l'appareil avec une
 - ✅ Design responsive et thème dark
 
 ---
+
+### 2026-02-04 - Ajout du logging d'activité dans toutes les routes
+
+**Contexte:**
+- Le module de suivi d'activité Super Admin était créé (table, service, API, page frontend)
+- Mais les appels `logActivity()` n'étaient pas présents dans les routes
+- Les activités n'étaient donc pas enregistrées
+
+**Implémentation complète:**
+
+1. **Routes d'authentification** (`/server/routes/auth.js`)
+   - Login: log après authentification réussie
+   - Logout: log avant déconnexion
+
+2. **Routes admin événements** (`/server/routes/adminRoutes.js`)
+   - CREATE: création d'événement
+   - UPDATE: modification d'événement
+   - DELETE: suppression d'événement
+   - SEND_EMAIL: envoi d'emails de remerciement
+
+3. **Routes admin membres** (`/server/routes/memberRoutes.js`)
+   - CREATE: création de membre
+   - UPDATE: modification de membre
+   - ARCHIVE: archivage/désarchivage de membre
+   - DELETE: suppression de membre
+
+4. **Routes admin réunions** (`/server/routes/meetingRoutes.js`)
+   - CREATE: création de réunion
+   - UPDATE: modification de réunion
+   - DELETE: suppression de réunion
+   - SEND_EMAIL: envoi de rapport de réunion
+
+5. **Routes admin annonces** (`/server/routes/announcementRoutes.js`)
+   - CREATE: création d'annonce
+   - UPDATE: modification d'annonce
+   - PUBLISH/UNPUBLISH: publication/dépublication
+   - DELETE: suppression d'annonce
+
+6. **Routes admin rôles** (`/server/routes/roleRoutes.js`)
+   - CREATE: création de rôle
+   - UPDATE: modification de rôle
+   - DELETE: suppression de rôle
+   - ASSIGN: assignation de rôle à un membre
+   - UNASSIGN: retrait de rôle d'un membre
+
+7. **Routes publiques** (`/server/routes/publicRoutes.js`)
+   - REGISTER (event): inscription à un événement
+   - CHECKIN: scan QR code check-in
+   - CREATE (church): enregistrement d'une nouvelle église
+   - REGISTER (member): inscription d'un nouveau membre
+
+**Modules couverts:**
+- AUTH, EVENTS, MEMBERS, MEETINGS, ANNOUNCEMENTS, ROLES, CHURCHES
+
+**Actions couvertes:**
+- LOGIN, LOGOUT, CREATE, UPDATE, DELETE, ARCHIVE, REGISTER, CHECKIN, SEND_EMAIL, ASSIGN, UNASSIGN, PUBLISH, UNPUBLISH
+
+**Résultat:**
+- ✅ Toutes les actions importantes sont maintenant enregistrées
+- ✅ Le Super Admin peut voir l'historique via `/super-admin/activity`
+- ✅ Informations capturées: IP, User Agent, détails de l'action
+
+---
