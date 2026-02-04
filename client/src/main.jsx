@@ -44,6 +44,7 @@ import AdminChoirPlanningPage from './pages/AdminChoirPlanningPage';
 import AdminChoirCompilationsPage from './pages/AdminChoirCompilationsPage';
 
 // Admin Pages - Module Réunions
+import AdminMeetingsDashboardPage from './pages/AdminMeetingsDashboardPage';
 import AdminMeetingsPage from './pages/AdminMeetingsPage';
 import AdminMeetingDetailPage from './pages/AdminMeetingDetailPage';
 
@@ -132,6 +133,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="choir/compilations" element={<AdminChoirCompilationsPage />} />
             <Route path="choir/planning" element={<AdminChoirPlanningPage />} />
             {/* Module Réunions */}
+            <Route path="meetings-dashboard" element={<AdminMeetingsDashboardPage />} />
             <Route path="meetings" element={<AdminMeetingsPage />} />
             <Route path="meetings/:meetingId" element={<AdminMeetingDetailPage />} />
           </Route>

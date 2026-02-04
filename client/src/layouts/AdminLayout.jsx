@@ -158,7 +158,7 @@ function AdminLayout() {
     } else if (module === 'choir') {
       navigate('/admin/choir');
     } else if (module === 'meetings') {
-      navigate('/admin/meetings');
+      navigate('/admin/meetings-dashboard');
     }
     setSidebarOpen(false);
   };
@@ -608,6 +608,19 @@ function AdminLayout() {
                 {openSections.meetings && (
                   <div className="mt-1 ml-2 space-y-1">
                     <NavLink
+                      to="/admin/meetings-dashboard"
+                      end
+                      onClick={closeSidebarOnMobile}
+                      className={({ isActive }) =>
+                        `flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                          isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                        }`
+                      }
+                    >
+                      <MdDashboard size={18} />
+                      {t('dashboard')}
+                    </NavLink>
+                    <NavLink
                       to="/admin/meetings"
                       end
                       onClick={closeSidebarOnMobile}
@@ -618,7 +631,7 @@ function AdminLayout() {
                       }
                     >
                       <MdGroups size={18} />
-                      {t('meetings.title') || 'Réunions'}
+                      {t('meetings.all_meetings') || 'Toutes les réunions'}
                     </NavLink>
                   </div>
                 )}

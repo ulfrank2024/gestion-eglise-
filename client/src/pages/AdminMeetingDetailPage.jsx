@@ -5,11 +5,12 @@ import { api } from '../api/api';
 import {
   MdArrowBack, MdEdit, MdSave, MdPeople, MdAdd, MdDelete,
   MdEmail, MdAccessTime, MdLocationOn, MdCheckCircle,
-  MdSchedule, MdCancel, MdPlayArrow, MdPerson, MdNotes
+  MdSchedule, MdCancel, MdPlayArrow, MdPerson, MdNotes,
+  MdClose, MdLock, MdRefresh
 } from 'react-icons/md';
 
 function AdminMeetingDetailPage() {
-  const { id } = useParams();
+  const { meetingId } = useParams();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const currentLang = i18n.language;
@@ -30,21 +31,25 @@ function AdminMeetingDetailPage() {
   const [selectedMembers, setSelectedMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
 
+  // Modal de clôture
+  const [showCloseModal, setShowCloseModal] = useState(false);
+  const [closeEndTime, setCloseEndTime] = useState('');
+
   useEffect(() => {
     fetchMeeting();
-  }, [id]);
+  }, [meetingId]);
 
   const fetchMeeting = async () => {
     try {
       setLoading(true);
-      const data = await api.admin.getMeeting(id);
+      const data = await api.admin.getMeeting(meetingId);
       setMeeting(data);
       setFormData({
         title_fr: data.title_fr,
         title_en: data.title_en,
         meeting_date: data.meeting_date?.split('T')[0],
         meeting_time: data.meeting_date?.split('T')[1]?.substring(0, 5),
-        meeting_end_time: data.meeting_end_time?.split('T')[1]?.substring(0, 5),
+        meeting_end_time: data.meeting_end_time?.split('T')[1]?.substring(0, 5) || '',
         location: data.location || '',
         agenda_fr: data.agenda_fr || '',
         agenda_en: data.agenda_en || '',
@@ -71,7 +76,7 @@ function AdminMeetingDetailPage() {
         ? `${formData.meeting_date}T${formData.meeting_end_time}`
         : null;
 
-      await api.admin.updateMeeting(id, {
+      await api.admin.updateMeeting(meetingId, {
         ...formData,
         meeting_date,
         meeting_end_time
@@ -87,12 +92,39 @@ function AdminMeetingDetailPage() {
     }
   };
 
+  const handleStatusChange = async (newStatus) => {
+    try {
+      await api.admin.updateMeeting(meetingId, { status: newStatus });
+      fetchMeeting();
+    } catch (err) {
+      console.error('Error updating status:', err);
+      setError(err.message);
+    }
+  };
+
+  const handleCloseMeeting = async () => {
+    if (!closeEndTime) return;
+
+    try {
+      const meeting_end_time = `${formData.meeting_date}T${closeEndTime}`;
+      await api.admin.updateMeeting(meetingId, {
+        status: 'completed',
+        meeting_end_time
+      });
+      setShowCloseModal(false);
+      fetchMeeting();
+    } catch (err) {
+      console.error('Error closing meeting:', err);
+      setError(err.message);
+    }
+  };
+
   const handleSendReport = async () => {
     if (!window.confirm(t('meetings.confirm_send_report'))) return;
 
     setSendingReport(true);
     try {
-      const result = await api.admin.sendMeetingReport(id, { language: currentLang });
+      const result = await api.admin.sendMeetingReport(meetingId, { language: currentLang });
       alert(result.message);
       fetchMeeting();
     } catch (err) {
@@ -122,7 +154,7 @@ function AdminMeetingDetailPage() {
     if (selectedMembers.length === 0) return;
 
     try {
-      await api.admin.addMeetingParticipants(id, { member_ids: selectedMembers });
+      await api.admin.addMeetingParticipants(meetingId, { member_ids: selectedMembers });
       setShowAddParticipants(false);
       setSelectedMembers([]);
       fetchMeeting();
@@ -136,7 +168,7 @@ function AdminMeetingDetailPage() {
     if (!window.confirm(t('meetings.confirm_remove_participant'))) return;
 
     try {
-      await api.admin.removeMeetingParticipant(id, participantId);
+      await api.admin.removeMeetingParticipant(meetingId, participantId);
       fetchMeeting();
     } catch (err) {
       console.error('Error removing participant:', err);
@@ -146,7 +178,7 @@ function AdminMeetingDetailPage() {
 
   const handleUpdateParticipant = async (participantId, updates) => {
     try {
-      await api.admin.updateMeetingParticipant(id, participantId, updates);
+      await api.admin.updateMeetingParticipant(meetingId, participantId, updates);
       fetchMeeting();
     } catch (err) {
       console.error('Error updating participant:', err);
@@ -170,6 +202,16 @@ function AdminMeetingDetailPage() {
         {config.label}
       </span>
     );
+  };
+
+  // Trouver le secrétaire ou l'organisateur pour les notes
+  const getNotesAuthor = () => {
+    if (!meeting?.participants) return null;
+    const secretary = meeting.participants.find(p => p.role === 'secretary');
+    if (secretary) return secretary.member?.full_name;
+    const organizer = meeting.participants.find(p => p.role === 'organizer');
+    if (organizer) return organizer.member?.full_name;
+    return null;
   };
 
   if (loading) {
@@ -197,6 +239,7 @@ function AdminMeetingDetailPage() {
   const title = currentLang === 'fr' ? meeting.title_fr : (meeting.title_en || meeting.title_fr);
   const agenda = currentLang === 'fr' ? meeting.agenda_fr : (meeting.agenda_en || meeting.agenda_fr);
   const notes = currentLang === 'fr' ? meeting.notes_fr : (meeting.notes_en || meeting.notes_fr);
+  const notesAuthor = getNotesAuthor();
 
   return (
     <div className="space-y-6">
@@ -227,7 +270,7 @@ function AdminMeetingDetailPage() {
             </div>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {!editMode ? (
             <>
               <button
@@ -237,14 +280,46 @@ function AdminMeetingDetailPage() {
                 <MdEdit size={20} />
                 {t('edit')}
               </button>
-              <button
-                onClick={handleSendReport}
-                disabled={sendingReport || meeting.participants?.length === 0}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
-              >
-                <MdEmail size={20} />
-                {sendingReport ? t('sending') : t('meetings.send_report')}
-              </button>
+              {meeting.status === 'planned' && (
+                <button
+                  onClick={() => handleStatusChange('in_progress')}
+                  className="flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+                >
+                  <MdPlayArrow size={20} />
+                  {t('meetings.start_meeting')}
+                </button>
+              )}
+              {meeting.status === 'in_progress' && (
+                <button
+                  onClick={() => {
+                    setCloseEndTime(new Date().toTimeString().substring(0, 5));
+                    setShowCloseModal(true);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  <MdLock size={20} />
+                  {t('meetings.close_meeting')}
+                </button>
+              )}
+              {meeting.status === 'completed' && (
+                <>
+                  <button
+                    onClick={() => handleStatusChange('in_progress')}
+                    className="flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+                  >
+                    <MdRefresh size={20} />
+                    {t('meetings.reopen_meeting')}
+                  </button>
+                  <button
+                    onClick={handleSendReport}
+                    disabled={sendingReport || meeting.participants?.length === 0}
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                  >
+                    <MdEmail size={20} />
+                    {sendingReport ? t('sending') : t('meetings.send_report')}
+                  </button>
+                </>
+              )}
             </>
           ) : (
             <>
@@ -257,7 +332,7 @@ function AdminMeetingDetailPage() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50"
               >
                 <MdSave size={20} />
                 {saving ? t('saving') : t('save')}
@@ -288,7 +363,7 @@ function AdminMeetingDetailPage() {
                     type="text"
                     value={formData.title_fr}
                     onChange={(e) => setFormData({ ...formData, title_fr: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
                 <div>
@@ -297,7 +372,7 @@ function AdminMeetingDetailPage() {
                     type="text"
                     value={formData.title_en}
                     onChange={(e) => setFormData({ ...formData, title_en: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
               </div>
@@ -309,7 +384,7 @@ function AdminMeetingDetailPage() {
                     type="date"
                     value={formData.meeting_date}
                     onChange={(e) => setFormData({ ...formData, meeting_date: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
                 <div>
@@ -318,7 +393,7 @@ function AdminMeetingDetailPage() {
                     type="time"
                     value={formData.meeting_time}
                     onChange={(e) => setFormData({ ...formData, meeting_time: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
                 <div>
@@ -327,34 +402,19 @@ function AdminMeetingDetailPage() {
                     type="time"
                     value={formData.meeting_end_time}
                     onChange={(e) => setFormData({ ...formData, meeting_end_time: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-300 mb-2">{t('meetings.location')}</label>
-                  <input
-                    type="text"
-                    value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-300 mb-2">{t('meetings.status')}</label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  >
-                    <option value="planned">{t('meetings.status_planned')}</option>
-                    <option value="in_progress">{t('meetings.status_in_progress')}</option>
-                    <option value="completed">{t('meetings.status_completed')}</option>
-                    <option value="cancelled">{t('meetings.status_cancelled')}</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block text-sm text-gray-300 mb-2">{t('meetings.location')}</label>
+                <input
+                  type="text"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
               </div>
             </div>
           ) : (
@@ -371,6 +431,12 @@ function AdminMeetingDetailPage() {
                   <MdPeople className="text-gray-400" />
                   <span>{meeting.participants?.length || 0} {t('meetings.participants')}</span>
                 </div>
+                {meeting.meeting_end_time && (
+                  <div className="flex items-center gap-2">
+                    <MdAccessTime className="text-gray-400" />
+                    <span>{t('meetings.end_time')}: {new Date(meeting.meeting_end_time).toLocaleTimeString(currentLang === 'fr' ? 'fr-FR' : 'en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -386,7 +452,7 @@ function AdminMeetingDetailPage() {
                 value={formData.agenda_fr}
                 onChange={(e) => setFormData({ ...formData, agenda_fr: e.target.value })}
                 rows={6}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
                 placeholder={t('meetings.agenda_placeholder')}
               />
             ) : (
@@ -398,16 +464,24 @@ function AdminMeetingDetailPage() {
 
           {/* Compte-rendu / Notes */}
           <div className="bg-gray-800 rounded-xl border border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <MdEdit className="text-green-400" />
-              {t('meetings.notes')}
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                <MdEdit className="text-green-400" />
+                {t('meetings.notes')}
+              </h2>
+              {notesAuthor && notes && (
+                <span className="text-sm text-gray-400 flex items-center gap-1">
+                  <MdPerson size={16} />
+                  {t('meetings.notes_written_by')}: <span className="text-green-400">{notesAuthor}</span>
+                </span>
+              )}
+            </div>
             {editMode ? (
               <textarea
                 value={formData.notes_fr}
                 onChange={(e) => setFormData({ ...formData, notes_fr: e.target.value })}
                 rows={10}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
                 placeholder={t('meetings.notes_placeholder')}
               />
             ) : (
@@ -423,7 +497,7 @@ function AdminMeetingDetailPage() {
           <div className="bg-gray-800 rounded-xl border border-gray-700 p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                <MdPeople className="text-indigo-400" />
+                <MdPeople className="text-amber-400" />
                 {t('meetings.participants')} ({meeting.participants?.length || 0})
               </h2>
               <button
@@ -431,7 +505,7 @@ function AdminMeetingDetailPage() {
                   setShowAddParticipants(true);
                   fetchAvailableMembers();
                 }}
-                className="p-2 text-indigo-400 hover:bg-gray-700 rounded-lg transition-colors"
+                className="p-2 text-amber-400 hover:bg-gray-700 rounded-lg transition-colors"
                 title={t('meetings.add_participants')}
               >
                 <MdAdd size={20} />
@@ -467,7 +541,7 @@ function AdminMeetingDetailPage() {
                           <select
                             value={participant.role}
                             onChange={(e) => handleUpdateParticipant(participant.id, { role: e.target.value, attendance_status: participant.attendance_status })}
-                            className="text-xs bg-gray-600 text-gray-300 rounded px-1 py-0.5 border-none focus:ring-1 focus:ring-indigo-500"
+                            className="text-xs bg-gray-600 text-gray-300 rounded px-1 py-0.5 border-none focus:ring-1 focus:ring-amber-500"
                           >
                             <option value="participant">{t('meetings.role_participant')}</option>
                             <option value="organizer">{t('meetings.role_organizer')}</option>
@@ -476,7 +550,7 @@ function AdminMeetingDetailPage() {
                           <select
                             value={participant.attendance_status}
                             onChange={(e) => handleUpdateParticipant(participant.id, { role: participant.role, attendance_status: e.target.value })}
-                            className="text-xs bg-gray-600 text-gray-300 rounded px-1 py-0.5 border-none focus:ring-1 focus:ring-indigo-500"
+                            className="text-xs bg-gray-600 text-gray-300 rounded px-1 py-0.5 border-none focus:ring-1 focus:ring-amber-500"
                           >
                             <option value="invited">{t('meetings.status_invited')}</option>
                             <option value="confirmed">{t('meetings.status_confirmed')}</option>
@@ -498,6 +572,18 @@ function AdminMeetingDetailPage() {
               </div>
             )}
           </div>
+
+          {/* Info création */}
+          <div className="bg-gray-800 rounded-xl border border-gray-700 p-4">
+            <p className="text-xs text-gray-400">
+              {t('meetings.created_at')}: {new Date(meeting.created_at).toLocaleDateString(currentLang === 'fr' ? 'fr-FR' : 'en-US')}
+            </p>
+            {meeting.updated_at && meeting.updated_at !== meeting.created_at && (
+              <p className="text-xs text-gray-400 mt-1">
+                {t('meetings.updated_at')}: {new Date(meeting.updated_at).toLocaleDateString(currentLang === 'fr' ? 'fr-FR' : 'en-US')}
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -505,8 +591,17 @@ function AdminMeetingDetailPage() {
       {showAddParticipants && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-gray-800 rounded-2xl w-full max-w-md max-h-[80vh] overflow-hidden border border-gray-700">
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4">
+            <div className="bg-gradient-to-r from-amber-600 to-orange-600 p-4 flex items-center justify-between">
               <h2 className="text-lg font-bold text-white">{t('meetings.add_participants')}</h2>
+              <button
+                onClick={() => {
+                  setShowAddParticipants(false);
+                  setSelectedMembers([]);
+                }}
+                className="p-1 text-white/80 hover:text-white"
+              >
+                <MdClose size={24} />
+              </button>
             </div>
 
             <div className="p-4 overflow-y-auto max-h-96">
@@ -531,7 +626,7 @@ function AdminMeetingDetailPage() {
                             setSelectedMembers(selectedMembers.filter(id => id !== member.id));
                           }
                         }}
-                        className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
+                        className="w-4 h-4 text-amber-600 rounded focus:ring-amber-500"
                       />
                       {member.profile_photo_url ? (
                         <img
@@ -567,10 +662,64 @@ function AdminMeetingDetailPage() {
               <button
                 onClick={handleAddParticipants}
                 disabled={selectedMembers.length === 0}
-                className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50"
               >
                 {t('add')} ({selectedMembers.length})
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de clôture */}
+      {showCloseModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-gray-800 rounded-2xl w-full max-w-md border border-gray-700">
+            <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-4 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <MdLock size={24} />
+                {t('meetings.close_meeting')}
+              </h2>
+              <button
+                onClick={() => setShowCloseModal(false)}
+                className="p-1 text-white/80 hover:text-white"
+              >
+                <MdClose size={24} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-gray-300">{t('meetings.close_meeting_desc')}</p>
+
+              <div>
+                <label className="block text-sm text-gray-300 mb-2">
+                  {t('meetings.actual_end_time')} *
+                </label>
+                <input
+                  type="time"
+                  value={closeEndTime}
+                  onChange={(e) => setCloseEndTime(e.target.value)}
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                  required
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setShowCloseModal(false)}
+                  className="flex-1 px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600"
+                >
+                  {t('cancel')}
+                </button>
+                <button
+                  onClick={handleCloseMeeting}
+                  disabled={!closeEndTime}
+                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  <MdCheckCircle size={20} />
+                  {t('meetings.confirm_close')}
+                </button>
+              </div>
             </div>
           </div>
         </div>
