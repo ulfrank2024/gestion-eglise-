@@ -3167,3 +3167,56 @@ Une PWA permet d'installer l'application web directement sur l'appareil avec une
 - ✅ Informations capturées: IP, User Agent, détails de l'action
 
 ---
+
+### 2026-02-04 - Notification de mise à jour PWA
+
+**Contexte:**
+- Question utilisateur: "Si les utilisateurs téléchargent le PWA et qu'il y a des ajouts de fonctionnalités, est-ce que cela peut s'afficher directement ou doit-il retélécharger ?"
+- Réponse: Les PWA se mettent à jour automatiquement, mais l'utilisateur n'est pas informé
+
+**Solution implémentée:**
+
+1. **Composant UpdatePrompt** (`/client/src/components/UpdatePrompt.jsx`)
+   - Notification visuelle quand une nouvelle version est disponible
+   - Message clair: "Nouvelle version disponible 🎉"
+   - Information rassurante: "Pas besoin de vous déconnecter ! Votre session est préservée."
+   - Bouton "Actualiser maintenant"
+   - Bouton "Plus tard" pour fermer
+   - Design dark theme cohérent
+
+2. **Configuration Vite PWA** (`/client/vite.config.js`)
+   - Changé `registerType` de `'autoUpdate'` à `'prompt'`
+   - Permet de contrôler quand la mise à jour s'applique
+
+3. **Intégration main.jsx**
+   - Composant UpdatePrompt ajouté globalement
+   - Visible sur toutes les pages
+
+4. **Traductions** (fr.json et en.json)
+   - `update_available` - "Nouvelle version disponible"
+   - `update_description` - Description de la mise à jour
+   - `update_no_logout` - Message rassurant
+   - `update_now` - Bouton actualiser
+   - `update_later` - Bouton plus tard
+
+**Comportement:**
+1. L'utilisateur ouvre la PWA
+2. Le Service Worker vérifie s'il y a une nouvelle version
+3. Si oui → Téléchargement en arrière-plan
+4. Une notification s'affiche en bas de l'écran
+5. L'utilisateur clique sur "Actualiser maintenant"
+6. La page se recharge avec la nouvelle version
+7. **La session est préservée** (pas de déconnexion)
+
+**Ce que l'utilisateur n'a PAS besoin de faire:**
+- ❌ Retélécharger l'app
+- ❌ Désinstaller et réinstaller
+- ❌ Se déconnecter
+
+**Résultat:**
+- ✅ Notification claire et rassurante
+- ✅ Session préservée lors de la mise à jour
+- ✅ Vérification automatique toutes les heures
+- ✅ Expérience utilisateur améliorée
+
+---
