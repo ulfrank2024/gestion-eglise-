@@ -6,7 +6,7 @@ import { supabase } from '../supabaseClient';
 import defaultLogo from '../assets/logo_eden.png';
 import {
   MdDashboard, MdPerson, MdEvent, MdBadge, MdNotifications,
-  MdAnnouncement, MdLogout, MdMenu, MdClose
+  MdAnnouncement, MdLogout, MdMenu, MdClose, MdGroups
 } from 'react-icons/md';
 
 function MemberLayout() {
@@ -73,6 +73,7 @@ function MemberLayout() {
     { path: '/member/dashboard', icon: MdDashboard, label: t('member_dashboard') },
     { path: '/member/profile', icon: MdPerson, label: t('my_profile') },
     { path: '/member/events', icon: MdEvent, label: t('my_events') },
+    { path: '/member/meetings', icon: MdGroups, label: t('meetings.title') },
     { path: '/member/roles', icon: MdBadge, label: t('my_roles') },
     {
       path: '/member/notifications',

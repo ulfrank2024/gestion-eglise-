@@ -43,6 +43,10 @@ import AdminChoirSongsPage from './pages/AdminChoirSongsPage';
 import AdminChoirPlanningPage from './pages/AdminChoirPlanningPage';
 import AdminChoirCompilationsPage from './pages/AdminChoirCompilationsPage';
 
+// Admin Pages - Module Réunions
+import AdminMeetingsPage from './pages/AdminMeetingsPage';
+import AdminMeetingDetailPage from './pages/AdminMeetingDetailPage';
+
 // Member Pages
 import MemberRegistrationPage from './pages/MemberRegistrationPage';
 import MemberLayout from './layouts/MemberLayout';
@@ -57,6 +61,7 @@ import MemberEventsPage from './pages/MemberEventsPage';
 import MemberRolesPage from './pages/MemberRolesPage';
 import MemberNotificationsPage from './pages/MemberNotificationsPage';
 import MemberAnnouncementsPage from './pages/MemberAnnouncementsPage';
+import MemberMeetingsPage from './pages/MemberMeetingsPage';
 
 // Super Admin Pages
 import SuperAdminLayout from './layouts/SuperAdminLayout';
@@ -126,6 +131,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="choir/songs" element={<AdminChoirSongsPage />} />
             <Route path="choir/compilations" element={<AdminChoirCompilationsPage />} />
             <Route path="choir/planning" element={<AdminChoirPlanningPage />} />
+            {/* Module Réunions */}
+            <Route path="meetings" element={<AdminMeetingsPage />} />
+            <Route path="meetings/:meetingId" element={<AdminMeetingDetailPage />} />
           </Route>
 
           {/* Super Admin Routes with Layout */}
@@ -160,6 +168,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="roles" element={<MemberRolesPage />} />
             <Route path="notifications" element={<MemberNotificationsPage />} />
             <Route path="announcements" element={<MemberAnnouncementsPage />} />
+            <Route path="meetings" element={<MemberMeetingsPage />} />
           </Route>
 
           {/* Member Registration - Public (must be before /:churchId routes) */}

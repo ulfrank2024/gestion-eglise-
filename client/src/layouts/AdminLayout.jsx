@@ -7,7 +7,7 @@ import {
   MdGroupAdd, MdHistory, MdLogout, MdDashboard, MdPeople,
   MdPersonAdd, MdBadge, MdAnnouncement, MdMail, MdAccountCircle,
   MdEventAvailable, MdMusicNote, MdLibraryMusic, MdCalendarMonth,
-  MdMenu, MdClose, MdPlaylistPlay
+  MdMenu, MdClose, MdPlaylistPlay, MdGroups, MdAssignment, MdSend
 } from 'react-icons/md';
 import { api } from '../api/api';
 import { supabase } from '../supabaseClient';
@@ -40,6 +40,7 @@ function AdminLayout() {
     events: true,
     members: true,
     choir: true,
+    meetings: true,
     reportsAndStats: false,
     mySpace: true,
   });
@@ -156,6 +157,8 @@ function AdminLayout() {
       navigate('/admin/members-dashboard');
     } else if (module === 'choir') {
       navigate('/admin/choir');
+    } else if (module === 'meetings') {
+      navigate('/admin/meetings');
     }
     setSidebarOpen(false);
   };
@@ -300,10 +303,24 @@ function AdminLayout() {
                 <span className="sm:hidden">Chor.</span>
               </button>
             )}
+            {hasPermission('meetings') && (
+              <button
+                onClick={() => handleModuleChange('meetings')}
+                className={`flex-1 min-w-[60px] py-2 px-2 rounded-md text-xs font-medium flex items-center justify-center gap-1 transition-all ${
+                  activeModule === 'meetings'
+                    ? 'bg-indigo-600 text-white shadow-lg'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                <MdGroups size={14} />
+                <span className="hidden sm:inline">{t('meetings_module') || 'Réunions'}</span>
+                <span className="sm:hidden">Réun.</span>
+              </button>
+            )}
           </div>
 
           {/* Message si aucun module autorisé */}
-          {!hasPermission('events') && !hasPermission('members') && !hasPermission('choir') && (
+          {!hasPermission('events') && !hasPermission('members') && !hasPermission('choir') && !hasPermission('meetings') && (
             <div className="p-4 bg-gray-700 rounded-lg mb-5 text-center">
               <p className="text-yellow-400 text-sm">
                 {t('no_module_access') || 'Aucun module autorisé. Contactez l\'administrateur principal.'}
@@ -569,6 +586,39 @@ function AdminLayout() {
                     >
                       <MdCalendarMonth size={18} />
                       {t('choir.planning') || 'Planning'}
+                    </NavLink>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Module Réunions */}
+            {activeModule === 'meetings' && hasPermission('meetings') && (
+              <div className="mb-2">
+                <button
+                  onClick={() => toggleSection('meetings')}
+                  className="w-full flex items-center justify-between px-3 py-2 bg-gray-700 rounded-lg text-white font-semibold text-sm"
+                >
+                  <span className="flex items-center gap-2">
+                    <MdGroups size={18} />
+                    {t('meetings.management') || 'Gestion Réunions'}
+                  </span>
+                  {openSections.meetings ? <MdExpandLess /> : <MdExpandMore />}
+                </button>
+                {openSections.meetings && (
+                  <div className="mt-1 ml-2 space-y-1">
+                    <NavLink
+                      to="/admin/meetings"
+                      end
+                      onClick={closeSidebarOnMobile}
+                      className={({ isActive }) =>
+                        `flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                          isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                        }`
+                      }
+                    >
+                      <MdGroups size={18} />
+                      {t('meetings.title') || 'Réunions'}
                     </NavLink>
                   </div>
                 )}

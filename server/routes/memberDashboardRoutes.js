@@ -295,6 +295,66 @@ router.get('/announcements', async (req, res) => {
 });
 
 /**
+ * GET /api/member/meetings
+ * Récupérer les réunions où le membre est participant
+ */
+router.get('/meetings', async (req, res) => {
+  try {
+    const { member_id, church_id } = req.user;
+
+    if (!member_id) {
+      return res.json([]);
+    }
+
+    // Récupérer les réunions où le membre est participant
+    const { data: participations, error } = await supabaseAdmin
+      .from('meeting_participants_v2')
+      .select(`
+        id,
+        role,
+        attendance_status,
+        report_sent_at,
+        meetings_v2 (
+          id,
+          title_fr,
+          title_en,
+          meeting_date,
+          meeting_end_time,
+          location,
+          agenda_fr,
+          agenda_en,
+          notes_fr,
+          notes_en,
+          status,
+          church_id
+        )
+      `)
+      .eq('member_id', member_id);
+
+    if (error) {
+      console.error('Error fetching member meetings:', error);
+      return res.status(500).json({ error: 'Erreur lors de la récupération des réunions' });
+    }
+
+    // Filtrer par church_id et formater les données
+    const meetings = participations
+      .filter(p => p.meetings_v2 && p.meetings_v2.church_id === church_id)
+      .map(p => ({
+        ...p.meetings_v2,
+        role: p.role,
+        attendance_status: p.attendance_status,
+        report_received: !!p.report_sent_at
+      }))
+      .sort((a, b) => new Date(b.meeting_date) - new Date(a.meeting_date));
+
+    res.json(meetings);
+  } catch (err) {
+    console.error('Error in GET /member/meetings:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+/**
  * GET /api/member/dashboard
  * Données du dashboard membre
  */

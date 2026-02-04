@@ -571,6 +571,47 @@ export const api = {
       const { data } = await apiClient.post(`/admin/choir/planning/${planningId}/compilations`, compilationData);
       return data;
     },
+
+    // --- Meetings (Réunions) ---
+    getMeetings: async (params = '') => {
+      const { data } = await apiClient.get(`/admin/meetings${params}`);
+      return data;
+    },
+    getMeeting: async (meetingId) => {
+      const { data } = await apiClient.get(`/admin/meetings/${meetingId}`);
+      return data;
+    },
+    createMeeting: async (meetingData) => {
+      const { data } = await apiClient.post('/admin/meetings', meetingData);
+      return data;
+    },
+    updateMeeting: async (meetingId, meetingData) => {
+      const { data } = await apiClient.put(`/admin/meetings/${meetingId}`, meetingData);
+      return data;
+    },
+    deleteMeeting: async (meetingId) => {
+      await apiClient.delete(`/admin/meetings/${meetingId}`);
+    },
+    // Meeting Participants
+    getMeetingParticipants: async (meetingId) => {
+      const { data } = await apiClient.get(`/admin/meetings/${meetingId}/participants`);
+      return data;
+    },
+    addMeetingParticipants: async (meetingId, participantsData) => {
+      const { data } = await apiClient.post(`/admin/meetings/${meetingId}/participants`, participantsData);
+      return data;
+    },
+    updateMeetingParticipant: async (meetingId, participantId, participantData) => {
+      const { data } = await apiClient.put(`/admin/meetings/${meetingId}/participants/${participantId}`, participantData);
+      return data;
+    },
+    removeMeetingParticipant: async (meetingId, participantId) => {
+      await apiClient.delete(`/admin/meetings/${meetingId}/participants/${participantId}`);
+    },
+    sendMeetingReport: async (meetingId, reportData) => {
+      const { data } = await apiClient.post(`/admin/meetings/${meetingId}/send-report`, reportData);
+      return data;
+    },
   },
 
   public: {
@@ -643,6 +684,11 @@ export const api = {
     },
     getAnnouncements: async () => {
       const { data } = await apiClient.get('/member/announcements');
+      return data;
+    },
+    // Member Meetings
+    getMeetings: async () => {
+      const { data } = await apiClient.get('/member/meetings');
       return data;
     },
   },

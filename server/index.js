@@ -37,6 +37,8 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const memberDashboardRoutes = require('./routes/memberDashboardRoutes');
 // Module Gestion de la Chorale
 const choirRoutes = require('./routes/choirRoutes');
+// Module Gestion des Réunions
+const meetingRoutes = require('./routes/meetingRoutes');
 
 // Middleware
 const allowedOrigins = [
@@ -87,6 +89,8 @@ app.use('/api/admin/notifications', notificationRoutes); // Notifications admin
 app.use('/api/member', memberDashboardRoutes); // Dashboard membre
 // Routes du module Gestion de la Chorale
 app.use('/api/admin/choir', choirRoutes); // Gestion chorale (managers, choristes, planning, répertoire)
+// Routes du module Gestion des Réunions
+app.use('/api/admin/meetings', meetingRoutes); // Gestion des réunions et rapports
 
 // Route de test
 app.get('/', (req, res) => {
