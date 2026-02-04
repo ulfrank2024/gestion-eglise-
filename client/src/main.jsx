@@ -76,6 +76,7 @@ import SuperAdminChurchesPage from './pages/SuperAdminChurchesPage';
 import SuperAdminMembersPage from './pages/SuperAdminMembersPage';
 import SuperAdminMembersByChurchPage from './pages/SuperAdminMembersByChurchPage';
 import ChurchRegistrationPage from './pages/ChurchRegistrationPage';
+import SuperAdminActivityPage from './pages/SuperAdminActivityPage';
 
 // Public Pages
 import EventPage from './pages/EventPage';
@@ -154,6 +155,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="members" element={<SuperAdminMembersPage />} />
             {/* Statistiques */}
             <Route path="statistics" element={<SuperAdminStatisticsPage />} />
+            {/* Activité */}
+            <Route path="activity" element={<SuperAdminActivityPage />} />
           </Route>
 
           {/* Member Login - No Layout */}

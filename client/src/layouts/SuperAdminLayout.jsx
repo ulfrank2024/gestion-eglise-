@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import logo from '../assets/logo_eden.png';
 import {
   MdDashboard, MdChurch, MdEvent, MdPeople, MdLeaderboard,
-  MdExpandMore, MdExpandLess, MdLogout, MdSettings
+  MdExpandMore, MdExpandLess, MdLogout, MdSettings, MdHistory
 } from 'react-icons/md';
 import { api } from '../api/api';
 import { supabase } from '../supabaseClient';
@@ -268,6 +268,17 @@ function SuperAdminLayout() {
                       style={({ isActive }) => getLinkStyle({ isActive, itemName: 'statistics' })}
                     >
                       {t('platform_statistics') || 'Statistiques'}
+                    </NavLink>
+                  </li>
+                  <li style={{ marginBottom: '4px' }}>
+                    <NavLink
+                      to="/super-admin/activity"
+                      onMouseEnter={() => setHoveredItem('activity')}
+                      onMouseLeave={() => setHoveredItem(null)}
+                      style={({ isActive }) => getLinkStyle({ isActive, itemName: 'activity' })}
+                    >
+                      <MdHistory style={{ marginRight: '8px', fontSize: '16px' }} />
+                      {t('activity_tracking') || 'Suivi d\'activité'}
                     </NavLink>
                   </li>
                 </ul>

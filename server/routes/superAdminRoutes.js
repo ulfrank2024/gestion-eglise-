@@ -3,6 +3,12 @@ const { supabase, supabaseAdmin } = require('../db/supabase'); // Utiliser supab
 const { protect, isSuperAdmin } = require('../middleware/auth');
 const crypto = require('crypto');
 const { transporter, generateChurchInvitationEmail } = require('../services/mailer');
+const {
+  getGlobalChurchStats,
+  getGlobalUserStats,
+  getGlobalActivityLogs,
+  getGlobalActivitySummary
+} = require('../services/activityLogger');
 
 const router = express.Router();
 
@@ -685,6 +691,66 @@ router.get('/churches_v2/:churchId/members/statistics', protect, isSuperAdmin, a
 
   } catch (error) {
     console.error('Error fetching church members statistics:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// =============================================
+// ROUTES SUIVI D'ACTIVITÉ (Activity Tracking)
+// =============================================
+
+// GET /api/super-admin/activity/summary - Résumé global de l'activité
+router.get('/activity/summary', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const days = parseInt(req.query.days) || 30;
+    const summary = await getGlobalActivitySummary(days);
+    res.json(summary);
+  } catch (error) {
+    console.error('Error fetching activity summary:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/super-admin/activity/churches - Statistiques par église
+router.get('/activity/churches', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const days = parseInt(req.query.days) || 30;
+    const limit = parseInt(req.query.limit) || 50;
+    const stats = await getGlobalChurchStats({ days, limit });
+    res.json(stats);
+  } catch (error) {
+    console.error('Error fetching church activity stats:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/super-admin/activity/users - Statistiques par utilisateur
+router.get('/activity/users', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const days = parseInt(req.query.days) || 30;
+    const limit = parseInt(req.query.limit) || 50;
+    const churchId = req.query.church_id || null;
+    const stats = await getGlobalUserStats({ days, limit, churchId });
+    res.json(stats);
+  } catch (error) {
+    console.error('Error fetching user activity stats:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/super-admin/activity/logs - Logs d'activité récents
+router.get('/activity/logs', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 100;
+    const offset = parseInt(req.query.offset) || 0;
+    const churchId = req.query.church_id || null;
+    const userId = req.query.user_id || null;
+    const module = req.query.module || null;
+
+    const logs = await getGlobalActivityLogs({ limit, offset, churchId, userId, module });
+    res.json(logs);
+  } catch (error) {
+    console.error('Error fetching activity logs:', error);
     res.status(500).json({ error: error.message });
   }
 });

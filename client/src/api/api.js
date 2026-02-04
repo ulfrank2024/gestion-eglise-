@@ -139,6 +139,25 @@ export const api = {
       const { data } = await apiClient.get(`/super-admin/churches_v2/${churchId}/members/statistics`);
       return data;
     },
+    // --- Activity Tracking ---
+    getActivitySummary: async (days = 30) => {
+      const { data } = await apiClient.get('/super-admin/activity/summary', { params: { days } });
+      return data;
+    },
+    getActivityByChurches: async (days = 30, limit = 50) => {
+      const { data } = await apiClient.get('/super-admin/activity/churches', { params: { days, limit } });
+      return data;
+    },
+    getActivityByUsers: async (days = 30, limit = 50, churchId = null) => {
+      const params = { days, limit };
+      if (churchId) params.church_id = churchId;
+      const { data } = await apiClient.get('/super-admin/activity/users', { params });
+      return data;
+    },
+    getActivityLogs: async (params = {}) => {
+      const { data } = await apiClient.get('/super-admin/activity/logs', { params });
+      return data;
+    },
   },
 
   admin: {
