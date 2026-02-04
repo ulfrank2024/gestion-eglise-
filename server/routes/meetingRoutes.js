@@ -1,15 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const { supabaseAdmin } = require('../db/supabase');
-const { protect, isSuperAdminOrChurchAdmin } = require('../middleware/auth');
+const { ...meetingsAuth, hasModulePermission } = require('../middleware/auth');
 const { sendEmail } = require('../services/mailer');
+
+// Middleware combiné pour les routes meetings
+const meetingsAuth = [...meetingsAuth, hasModulePermission('meetings')];
 
 // ============================================
 // ROUTES ADMIN - Gestion des réunions
 // ============================================
 
 // GET /api/admin/meetings - Liste des réunions de l'église
-router.get('/', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
+router.get('/', ...meetingsAuth, async (req, res) => {
   try {
     const { status, from_date, to_date } = req.query;
 
@@ -68,7 +71,7 @@ router.get('/', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
 });
 
 // GET /api/admin/meetings/:id - Détails d'une réunion
-router.get('/:id', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
+router.get('/:id', ...meetingsAuth, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -115,7 +118,7 @@ router.get('/:id', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
 });
 
 // POST /api/admin/meetings - Créer une réunion
-router.post('/', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
+router.post('/', ...meetingsAuth, async (req, res) => {
   try {
     const {
       title_fr,
@@ -194,7 +197,7 @@ router.post('/', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
 });
 
 // PUT /api/admin/meetings/:id - Modifier une réunion
-router.put('/:id', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
+router.put('/:id', ...meetingsAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const {
@@ -239,7 +242,7 @@ router.put('/:id', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
 });
 
 // DELETE /api/admin/meetings/:id - Supprimer une réunion
-router.delete('/:id', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
+router.delete('/:id', ...meetingsAuth, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -263,7 +266,7 @@ router.delete('/:id', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
 // ============================================
 
 // POST /api/admin/meetings/:id/participants - Ajouter des participants
-router.post('/:id/participants', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
+router.post('/:id/participants', ...meetingsAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const { member_ids, role = 'participant' } = req.body;
@@ -310,7 +313,7 @@ router.post('/:id/participants', protect, isSuperAdminOrChurchAdmin, async (req,
 });
 
 // PUT /api/admin/meetings/:id/participants/:participantId - Modifier un participant
-router.put('/:id/participants/:participantId', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
+router.put('/:id/participants/:participantId', ...meetingsAuth, async (req, res) => {
   try {
     const { participantId } = req.params;
     const { role, attendance_status } = req.body;
@@ -332,7 +335,7 @@ router.put('/:id/participants/:participantId', protect, isSuperAdminOrChurchAdmi
 });
 
 // DELETE /api/admin/meetings/:id/participants/:participantId - Retirer un participant
-router.delete('/:id/participants/:participantId', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
+router.delete('/:id/participants/:participantId', ...meetingsAuth, async (req, res) => {
   try {
     const { participantId } = req.params;
 
@@ -355,7 +358,7 @@ router.delete('/:id/participants/:participantId', protect, isSuperAdminOrChurchA
 // ============================================
 
 // POST /api/admin/meetings/:id/send-report - Envoyer le rapport aux participants
-router.post('/:id/send-report', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
+router.post('/:id/send-report', ...meetingsAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const { language = 'fr' } = req.body;

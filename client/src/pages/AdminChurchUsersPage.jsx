@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   MdGroup, MdPersonAdd, MdEmail, MdPerson, MdDelete,
   MdCheck, MdClose, MdAdminPanelSettings, MdEdit,
-  MdEvent, MdPeople, MdStar, MdSave
+  MdEvent, MdPeople, MdStar, MdSave, MdGroups
 } from 'react-icons/md';
 
 function AdminChurchUsersPage() {
@@ -204,7 +204,8 @@ function AdminChurchUsersPage() {
     }
     const labels = {
       events: t('events_module') || 'Événements',
-      members: t('members_module') || 'Membres'
+      members: t('members_module') || 'Membres',
+      meetings: t('meetings_module') || 'Réunions'
     };
     return permissions.map(p => labels[p] || p).join(', ');
   };
@@ -332,6 +333,21 @@ function AdminChurchUsersPage() {
                 />
                 <MdPeople />
                 {t('members_module') || 'Membres'}
+              </label>
+
+              <label className={`flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-all ${
+                inviteForm.permissions.includes('meetings') && !inviteForm.permissions.includes('all')
+                  ? 'bg-amber-600 text-white'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}>
+                <input
+                  type="checkbox"
+                  checked={inviteForm.permissions.includes('meetings') && !inviteForm.permissions.includes('all')}
+                  onChange={() => handlePermissionToggle('meetings')}
+                  className="hidden"
+                />
+                <MdGroups />
+                {t('meetings_module') || 'Réunions'}
               </label>
             </div>
             <p className="text-xs text-gray-500 mt-2">
@@ -462,6 +478,19 @@ function AdminChurchUsersPage() {
                               />
                               <MdPeople size={14} />
                             </label>
+                            <label className={`flex items-center gap-1 px-3 py-1 rounded cursor-pointer text-sm ${
+                              editPermissions.includes('meetings') && !editPermissions.includes('all')
+                                ? 'bg-amber-600 text-white'
+                                : 'bg-gray-600 text-gray-300'
+                            }`}>
+                              <input
+                                type="checkbox"
+                                checked={editPermissions.includes('meetings') && !editPermissions.includes('all')}
+                                onChange={() => handleEditPermissionToggle('meetings')}
+                                className="hidden"
+                              />
+                              <MdGroups size={14} />
+                            </label>
                           </div>
                         ) : (
                           <div className="flex flex-wrap gap-1">
@@ -471,12 +500,16 @@ function AdminChurchUsersPage() {
                                 className={`px-2 py-1 rounded text-xs ${
                                   perm === 'all' ? 'bg-indigo-600/20 text-indigo-400' :
                                   perm === 'events' ? 'bg-green-600/20 text-green-400' :
-                                  'bg-purple-600/20 text-purple-400'
+                                  perm === 'members' ? 'bg-purple-600/20 text-purple-400' :
+                                  perm === 'meetings' ? 'bg-amber-600/20 text-amber-400' :
+                                  'bg-gray-600/20 text-gray-400'
                                 }`}
                               >
                                 {perm === 'all' ? (t('full_access') || 'Complet') :
                                  perm === 'events' ? (t('events_module') || 'Événements') :
-                                 (t('members_module') || 'Membres')}
+                                 perm === 'members' ? (t('members_module') || 'Membres') :
+                                 perm === 'meetings' ? (t('meetings_module') || 'Réunions') :
+                                 perm}
                               </span>
                             ))}
                           </div>
