@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const { supabaseAdmin } = require('../db/supabase');
-const { ...meetingsAuth, hasModulePermission } = require('../middleware/auth');
+const { protect, isSuperAdminOrChurchAdmin, hasModulePermission } = require('../middleware/auth');
 const { sendEmail } = require('../services/mailer');
 
 // Middleware combiné pour les routes meetings
-const meetingsAuth = [...meetingsAuth, hasModulePermission('meetings')];
+const meetingsAuth = [protect, isSuperAdminOrChurchAdmin, hasModulePermission('meetings')];
 
 // ============================================
 // ROUTES ADMIN - Gestion des réunions
