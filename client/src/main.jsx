@@ -84,6 +84,7 @@ import SuperAdminMembersPage from './pages/SuperAdminMembersPage';
 import SuperAdminMembersByChurchPage from './pages/SuperAdminMembersByChurchPage';
 import ChurchRegistrationPage from './pages/ChurchRegistrationPage';
 import SuperAdminActivityPage from './pages/SuperAdminActivityPage';
+import SuperAdminModulesPage from './pages/SuperAdminModulesPage';
 
 // Public Pages
 import EventPage from './pages/EventPage';
@@ -165,6 +166,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="statistics" element={<SuperAdminStatisticsPage />} />
             {/* Activité */}
             <Route path="activity" element={<SuperAdminActivityPage />} />
+            {/* Gestion des Modules */}
+            <Route path="modules" element={<SuperAdminModulesPage />} />
           </Route>
 
           {/* Member Login - No Layout */}

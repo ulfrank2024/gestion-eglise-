@@ -11,6 +11,7 @@ import {
 } from 'react-icons/md';
 import { api } from '../api/api';
 import { supabase } from '../supabaseClient';
+import ChurchSuspendedPage from '../pages/ChurchSuspendedPage';
 
 function AdminLayout() {
   const { t, i18n } = useTranslation();
@@ -20,6 +21,8 @@ function AdminLayout() {
   const [churchDetails, setChurchDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isSuspended, setIsSuspended] = useState(false);
+  const [suspensionReason, setSuspensionReason] = useState(null);
   const hasRun = useRef(false);
 
   // Permissions et rôle principal
@@ -27,6 +30,9 @@ function AdminLayout() {
   const [isMainAdmin, setIsMainAdmin] = useState(false);
   const [adminName, setAdminName] = useState('');
   const [adminPhotoUrl, setAdminPhotoUrl] = useState(null);
+
+  // Modules activés pour cette église (définis par le Super Admin)
+  const [enabledModules, setEnabledModules] = useState(['events', 'members', 'meetings', 'choir']);
 
   // Mobile sidebar state
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -93,6 +99,17 @@ function AdminLayout() {
           const details = await api.admin.getChurchDetails(currentChurchId);
           if (!isCancelled) {
             setChurchDetails(details);
+            // Récupérer les modules activés par le Super Admin
+            if (details.enabled_modules && Array.isArray(details.enabled_modules)) {
+              setEnabledModules(details.enabled_modules);
+              // Vérifier si le module actif est toujours disponible
+              const currentModule = localStorage.getItem('adminActiveModule') || 'events';
+              if (!details.enabled_modules.includes(currentModule)) {
+                const firstEnabledModule = details.enabled_modules[0] || 'events';
+                setActiveModule(firstEnabledModule);
+                localStorage.setItem('adminActiveModule', firstEnabledModule);
+              }
+            }
           }
         } catch (detailsErr) {
           console.log('=== AdminLayout: Failed to fetch church details, using default ===', detailsErr);
@@ -113,6 +130,15 @@ function AdminLayout() {
           data: err.response?.data,
           message: err.message
         });
+
+        // Vérifier si l'église est suspendue
+        if (err.response?.data?.error === 'CHURCH_SUSPENDED') {
+          console.log('=== AdminLayout: Church is suspended ===');
+          setIsSuspended(true);
+          setSuspensionReason(err.response?.data?.reason || null);
+          setLoading(false);
+          return;
+        }
 
         if (err.response?.status === 401 || err.response?.status === 403) {
           console.log('=== AdminLayout: 401/403 error, clearing token and redirecting ===');
@@ -146,6 +172,11 @@ function AdminLayout() {
   const hasPermission = (module) => {
     if (permissions.includes('all')) return true;
     return permissions.includes(module);
+  };
+
+  // Vérifie si un module est disponible (activé par Super Admin ET autorisé par permissions)
+  const isModuleAvailable = (module) => {
+    return enabledModules.includes(module) && hasPermission(module);
   };
 
   const handleModuleChange = (module) => {
@@ -186,6 +217,11 @@ function AdminLayout() {
         <div className="text-gray-300 text-lg">{t('loading')}...</div>
       </div>
     );
+  }
+
+  // Afficher la page de suspension si l'église est suspendue
+  if (isSuspended) {
+    return <ChurchSuspendedPage reason={suspensionReason} />;
   }
 
   if (error) {
@@ -261,7 +297,7 @@ function AdminLayout() {
 
           {/* Sélecteur de Module */}
           <div className="mb-5 p-1 bg-gray-900 rounded-lg flex flex-wrap gap-1">
-            {hasPermission('events') && (
+            {isModuleAvailable('events') && (
               <button
                 onClick={() => handleModuleChange('events')}
                 className={`flex-1 min-w-[60px] py-2 px-2 rounded-md text-xs font-medium flex items-center justify-center gap-1 transition-all ${
@@ -275,7 +311,7 @@ function AdminLayout() {
                 <span className="sm:hidden">Évén.</span>
               </button>
             )}
-            {hasPermission('members') && (
+            {isModuleAvailable('members') && (
               <button
                 onClick={() => handleModuleChange('members')}
                 className={`flex-1 min-w-[60px] py-2 px-2 rounded-md text-xs font-medium flex items-center justify-center gap-1 transition-all ${
@@ -289,7 +325,7 @@ function AdminLayout() {
                 <span className="sm:hidden">Memb.</span>
               </button>
             )}
-            {hasPermission('choir') && (
+            {isModuleAvailable('choir') && (
               <button
                 onClick={() => handleModuleChange('choir')}
                 className={`flex-1 min-w-[60px] py-2 px-2 rounded-md text-xs font-medium flex items-center justify-center gap-1 transition-all ${
@@ -303,7 +339,7 @@ function AdminLayout() {
                 <span className="sm:hidden">Chor.</span>
               </button>
             )}
-            {hasPermission('meetings') && (
+            {isModuleAvailable('meetings') && (
               <button
                 onClick={() => handleModuleChange('meetings')}
                 className={`flex-1 min-w-[60px] py-2 px-2 rounded-md text-xs font-medium flex items-center justify-center gap-1 transition-all ${
@@ -319,11 +355,11 @@ function AdminLayout() {
             )}
           </div>
 
-          {/* Message si aucun module autorisé */}
-          {!hasPermission('events') && !hasPermission('members') && !hasPermission('choir') && !hasPermission('meetings') && (
+          {/* Message si aucun module disponible */}
+          {!isModuleAvailable('events') && !isModuleAvailable('members') && !isModuleAvailable('choir') && !isModuleAvailable('meetings') && (
             <div className="p-4 bg-gray-700 rounded-lg mb-5 text-center">
               <p className="text-yellow-400 text-sm">
-                {t('no_module_access') || 'Aucun module autorisé. Contactez l\'administrateur principal.'}
+                {t('no_module_access') || 'Aucun module disponible. Contactez l\'administrateur de la plateforme.'}
               </p>
             </div>
           )}
@@ -331,7 +367,7 @@ function AdminLayout() {
           {/* Navigation */}
           <nav className="space-y-2">
             {/* Module Événements */}
-            {activeModule === 'events' && hasPermission('events') && (
+            {activeModule === 'events' && isModuleAvailable('events') && (
               <>
                 {/* Section Gestion des Événements */}
                 <div className="mb-2">
@@ -432,7 +468,7 @@ function AdminLayout() {
             )}
 
             {/* Module Membres */}
-            {activeModule === 'members' && hasPermission('members') && (
+            {activeModule === 'members' && isModuleAvailable('members') && (
               <div className="mb-2">
                 <button
                   onClick={() => toggleSection('members')}
@@ -512,7 +548,7 @@ function AdminLayout() {
             )}
 
             {/* Module Chorale */}
-            {activeModule === 'choir' && hasPermission('choir') && (
+            {activeModule === 'choir' && isModuleAvailable('choir') && (
               <div className="mb-2">
                 <button
                   onClick={() => toggleSection('choir')}
@@ -593,7 +629,7 @@ function AdminLayout() {
             )}
 
             {/* Module Réunions */}
-            {activeModule === 'meetings' && hasPermission('meetings') && (
+            {activeModule === 'meetings' && isModuleAvailable('meetings') && (
               <div className="mb-2">
                 <button
                   onClick={() => toggleSection('meetings')}

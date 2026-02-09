@@ -395,6 +395,21 @@ router.get('/churches_v2/:churchId/settings', protect, isAdminChurch, async (req
     if (!data) {
       return res.status(404).json({ error: 'Church not found.' });
     }
+
+    // Vérifier si l'église est suspendue
+    if (data.is_suspended) {
+      return res.status(403).json({
+        error: 'CHURCH_SUSPENDED',
+        reason: data.suspension_reason || null,
+        suspended_at: data.suspended_at
+      });
+    }
+
+    // Ajouter les modules par défaut si non définis
+    if (!data.enabled_modules) {
+      data.enabled_modules = ['events', 'members', 'meetings', 'choir'];
+    }
+
     res.status(200).json(data);
   } catch (error) {
     console.error('Error fetching church settings:', error);

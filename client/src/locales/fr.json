@@ -1079,6 +1079,38 @@
       "my_songs_to_lead": "Mes chants à diriger",
       "program": "Programme musical",
       "view_full_program": "Voir le programme complet"
+    },
+
+    "modules_management": "Gestion des Modules",
+    "modules": {
+      "management": "Gestion des Modules",
+      "description": "Activez ou désactivez les modules pour chaque église",
+      "save_success": "Modules mis à jour avec succès",
+      "info": "Lorsque vous désactivez un module, les administrateurs et membres de l'église ne pourront plus y accéder. Les données ne sont pas supprimées et seront accessibles si le module est réactivé."
+    },
+
+    "suspension": {
+      "suspend_title": "Suspendre l'église",
+      "reactivate_title": "Réactiver l'église",
+      "reason_required": "La raison est obligatoire",
+      "reason_label": "Raison de la suspension",
+      "reason_placeholder": "Ex: Non-paiement, violation des conditions...",
+      "message_label": "Message à envoyer à l'administrateur",
+      "suspend_message_placeholder": "Expliquez la situation et les démarches à suivre...",
+      "reactivate_message_placeholder": "Informez l'admin que son compte a été réactivé...",
+      "email_note": "Un email sera automatiquement envoyé à l'administrateur principal de l'église.",
+      "warning": "Attention : Cette action bloquera l'accès au tableau de bord pour l'admin et tous les membres de cette église.",
+      "suspend_button": "Suspendre",
+      "reactivate_button": "Réactiver"
+    },
+
+    "suspended": {
+      "title": "Compte Suspendu",
+      "message": "L'accès à votre tableau de bord a été temporairement suspendu. Vous ne pouvez pas accéder aux fonctionnalités de l'application pendant cette période.",
+      "reason": "Raison de la suspension",
+      "instructions": "Pour résoudre cette situation, veuillez contacter l'administrateur de la plateforme :",
+      "logout": "Se déconnecter",
+      "footer": "Plateforme de Gestion d'Église"
     }
   }
 }

@@ -755,4 +755,594 @@ router.get('/activity/logs', protect, isSuperAdmin, async (req, res) => {
   }
 });
 
+// =============================================
+// ROUTES SUSPENSION D'ÉGLISE
+// =============================================
+
+// PUT /api/super-admin/churches_v2/:churchId/suspend - Suspendre une église
+router.put('/churches_v2/:churchId/suspend', protect, isSuperAdmin, async (req, res) => {
+  const { churchId } = req.params;
+  const { reason, message, language = 'fr' } = req.body;
+
+  try {
+    // Récupérer les infos de l'église
+    const { data: church, error: churchError } = await supabaseAdmin
+      .from('churches_v2')
+      .select('name, email, is_suspended')
+      .eq('id', churchId)
+      .single();
+
+    if (churchError || !church) {
+      return res.status(404).json({ error: 'Church not found' });
+    }
+
+    if (church.is_suspended) {
+      return res.status(400).json({ error: 'Church is already suspended' });
+    }
+
+    // Suspendre l'église
+    const { error: updateError } = await supabaseAdmin
+      .from('churches_v2')
+      .update({
+        is_suspended: true,
+        suspended_at: new Date().toISOString(),
+        suspended_by: req.user.id,
+        suspension_reason: reason || 'Non spécifié'
+      })
+      .eq('id', churchId);
+
+    if (updateError) throw updateError;
+
+    // Récupérer l'email de l'admin principal de l'église
+    const { data: admins, error: adminError } = await supabaseAdmin
+      .from('church_users_v2')
+      .select('user_id')
+      .eq('church_id', churchId)
+      .eq('role', 'church_admin')
+      .eq('is_main_admin', true);
+
+    if (adminError) throw adminError;
+
+    // Envoyer l'email à l'admin si un message est fourni
+    if (message && admins && admins.length > 0) {
+      const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
+      const adminUser = users.find(u => u.id === admins[0].user_id);
+
+      if (adminUser && adminUser.email) {
+        const emailHtml = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <style>
+              body { font-family: Arial, sans-serif; background-color: #111827; color: #f3f4f6; margin: 0; padding: 20px; }
+              .container { max-width: 600px; margin: 0 auto; background-color: #1f2937; border-radius: 12px; overflow: hidden; }
+              .header { background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); padding: 30px; text-align: center; }
+              .header h1 { color: white; margin: 0; font-size: 24px; }
+              .content { padding: 30px; }
+              .alert-box { background-color: #7f1d1d; border: 1px solid #dc2626; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+              .message-box { background-color: #374151; border-radius: 8px; padding: 20px; margin: 20px 0; }
+              .footer { background-color: #111827; padding: 20px; text-align: center; color: #9ca3af; font-size: 12px; }
+              h2 { color: #f87171; margin-top: 0; }
+              p { line-height: 1.6; margin: 10px 0; }
+              .reason { color: #fbbf24; font-weight: bold; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>⚠️ ${language === 'en' ? 'Account Suspended' : 'Compte Suspendu'}</h1>
+              </div>
+              <div class="content">
+                <div class="alert-box">
+                  <h2>${language === 'en' ? 'Your church account has been suspended' : 'Le compte de votre église a été suspendu'}</h2>
+                  <p><strong>${language === 'en' ? 'Church' : 'Église'}:</strong> ${church.name}</p>
+                  <p><strong>${language === 'en' ? 'Reason' : 'Raison'}:</strong> <span class="reason">${reason || (language === 'en' ? 'Not specified' : 'Non spécifiée')}</span></p>
+                </div>
+
+                <h3>${language === 'en' ? 'Message from the administrator' : 'Message de l\'administrateur'}:</h3>
+                <div class="message-box">
+                  <p>${message}</p>
+                </div>
+
+                <p>${language === 'en'
+                  ? 'During this suspension period, you and your members will not be able to access the dashboard. Please contact us to resolve this situation.'
+                  : 'Pendant cette période de suspension, vous et vos membres n\'aurez pas accès au tableau de bord. Veuillez nous contacter pour résoudre cette situation.'}</p>
+
+                <p>${language === 'en' ? 'Contact' : 'Contact'}: <a href="mailto:support@myedenx.com" style="color: #60a5fa;">support@myedenx.com</a></p>
+              </div>
+              <div class="footer">
+                <p>MY EDEN X - ${language === 'en' ? 'Church Management Platform' : 'Plateforme de Gestion d\'Église'}</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `;
+
+        const mailOptions = {
+          from: `"MY EDEN X" <${process.env.NODEMAILER_EMAIL}>`,
+          to: adminUser.email,
+          subject: language === 'en'
+            ? `⚠️ Account Suspended - ${church.name}`
+            : `⚠️ Compte Suspendu - ${church.name}`,
+          html: emailHtml
+        };
+
+        try {
+          await transporter.sendMail(mailOptions);
+          console.log('Suspension email sent to:', adminUser.email);
+        } catch (mailError) {
+          console.error('Error sending suspension email:', mailError);
+        }
+      }
+    }
+
+    res.json({ message: 'Church suspended successfully', church_name: church.name });
+
+  } catch (error) {
+    console.error('Error suspending church:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT /api/super-admin/churches_v2/:churchId/reactivate - Réactiver une église
+router.put('/churches_v2/:churchId/reactivate', protect, isSuperAdmin, async (req, res) => {
+  const { churchId } = req.params;
+  const { message, language = 'fr' } = req.body;
+
+  try {
+    // Récupérer les infos de l'église
+    const { data: church, error: churchError } = await supabaseAdmin
+      .from('churches_v2')
+      .select('name, email, is_suspended')
+      .eq('id', churchId)
+      .single();
+
+    if (churchError || !church) {
+      return res.status(404).json({ error: 'Church not found' });
+    }
+
+    if (!church.is_suspended) {
+      return res.status(400).json({ error: 'Church is not suspended' });
+    }
+
+    // Réactiver l'église
+    const { error: updateError } = await supabaseAdmin
+      .from('churches_v2')
+      .update({
+        is_suspended: false,
+        reactivated_at: new Date().toISOString(),
+        suspension_reason: null
+      })
+      .eq('id', churchId);
+
+    if (updateError) throw updateError;
+
+    // Récupérer l'email de l'admin principal
+    const { data: admins } = await supabaseAdmin
+      .from('church_users_v2')
+      .select('user_id')
+      .eq('church_id', churchId)
+      .eq('role', 'church_admin')
+      .eq('is_main_admin', true);
+
+    // Envoyer l'email de réactivation
+    if (admins && admins.length > 0) {
+      const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
+      const adminUser = users.find(u => u.id === admins[0].user_id);
+
+      if (adminUser && adminUser.email) {
+        const emailHtml = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <style>
+              body { font-family: Arial, sans-serif; background-color: #111827; color: #f3f4f6; margin: 0; padding: 20px; }
+              .container { max-width: 600px; margin: 0 auto; background-color: #1f2937; border-radius: 12px; overflow: hidden; }
+              .header { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); padding: 30px; text-align: center; }
+              .header h1 { color: white; margin: 0; font-size: 24px; }
+              .content { padding: 30px; }
+              .success-box { background-color: #14532d; border: 1px solid #22c55e; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+              .message-box { background-color: #374151; border-radius: 8px; padding: 20px; margin: 20px 0; }
+              .button { display: inline-block; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; text-decoration: none; padding: 12px 30px; border-radius: 8px; font-weight: bold; margin-top: 20px; }
+              .footer { background-color: #111827; padding: 20px; text-align: center; color: #9ca3af; font-size: 12px; }
+              h2 { color: #4ade80; margin-top: 0; }
+              p { line-height: 1.6; margin: 10px 0; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>✅ ${language === 'en' ? 'Account Reactivated' : 'Compte Réactivé'}</h1>
+              </div>
+              <div class="content">
+                <div class="success-box">
+                  <h2>${language === 'en' ? 'Great news! Your account has been reactivated' : 'Bonne nouvelle ! Votre compte a été réactivé'}</h2>
+                  <p><strong>${language === 'en' ? 'Church' : 'Église'}:</strong> ${church.name}</p>
+                </div>
+
+                ${message ? `
+                <h3>${language === 'en' ? 'Message from the administrator' : 'Message de l\'administrateur'}:</h3>
+                <div class="message-box">
+                  <p>${message}</p>
+                </div>
+                ` : ''}
+
+                <p>${language === 'en'
+                  ? 'You can now access your dashboard and all features of MY EDEN X.'
+                  : 'Vous pouvez maintenant accéder à votre tableau de bord et à toutes les fonctionnalités de MY EDEN X.'}</p>
+
+                <center>
+                  <a href="${process.env.FRONTEND_BASE_URL}/admin/login" class="button">
+                    ${language === 'en' ? 'Access Dashboard' : 'Accéder au Tableau de Bord'}
+                  </a>
+                </center>
+              </div>
+              <div class="footer">
+                <p>MY EDEN X - ${language === 'en' ? 'Church Management Platform' : 'Plateforme de Gestion d\'Église'}</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `;
+
+        const mailOptions = {
+          from: `"MY EDEN X" <${process.env.NODEMAILER_EMAIL}>`,
+          to: adminUser.email,
+          subject: language === 'en'
+            ? `✅ Account Reactivated - ${church.name}`
+            : `✅ Compte Réactivé - ${church.name}`,
+          html: emailHtml
+        };
+
+        try {
+          await transporter.sendMail(mailOptions);
+          console.log('Reactivation email sent to:', adminUser.email);
+        } catch (mailError) {
+          console.error('Error sending reactivation email:', mailError);
+        }
+      }
+    }
+
+    res.json({ message: 'Church reactivated successfully', church_name: church.name });
+
+  } catch (error) {
+    console.error('Error reactivating church:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/super-admin/churches_v2/:churchId/contact - Envoyer un email à l'admin d'une église
+router.post('/churches_v2/:churchId/contact', protect, isSuperAdmin, async (req, res) => {
+  const { churchId } = req.params;
+  const { subject, message, language = 'fr' } = req.body;
+
+  if (!subject || !message) {
+    return res.status(400).json({ error: 'Subject and message are required' });
+  }
+
+  try {
+    // Récupérer les infos de l'église
+    const { data: church, error: churchError } = await supabaseAdmin
+      .from('churches_v2')
+      .select('name')
+      .eq('id', churchId)
+      .single();
+
+    if (churchError || !church) {
+      return res.status(404).json({ error: 'Church not found' });
+    }
+
+    // Récupérer l'email de l'admin principal
+    const { data: admins } = await supabaseAdmin
+      .from('church_users_v2')
+      .select('user_id')
+      .eq('church_id', churchId)
+      .eq('role', 'church_admin')
+      .eq('is_main_admin', true);
+
+    if (!admins || admins.length === 0) {
+      return res.status(404).json({ error: 'No admin found for this church' });
+    }
+
+    const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
+    const adminUser = users.find(u => u.id === admins[0].user_id);
+
+    if (!adminUser || !adminUser.email) {
+      return res.status(404).json({ error: 'Admin email not found' });
+    }
+
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          body { font-family: Arial, sans-serif; background-color: #111827; color: #f3f4f6; margin: 0; padding: 20px; }
+          .container { max-width: 600px; margin: 0 auto; background-color: #1f2937; border-radius: 12px; overflow: hidden; }
+          .header { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 30px; text-align: center; }
+          .header h1 { color: white; margin: 0; font-size: 24px; }
+          .content { padding: 30px; }
+          .message-box { background-color: #374151; border-radius: 8px; padding: 20px; margin: 20px 0; white-space: pre-wrap; }
+          .footer { background-color: #111827; padding: 20px; text-align: center; color: #9ca3af; font-size: 12px; }
+          p { line-height: 1.6; margin: 10px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>📬 ${language === 'en' ? 'Message from MY EDEN X' : 'Message de MY EDEN X'}</h1>
+          </div>
+          <div class="content">
+            <p><strong>${language === 'en' ? 'To' : 'À'}:</strong> ${church.name}</p>
+            <p><strong>${language === 'en' ? 'Subject' : 'Objet'}:</strong> ${subject}</p>
+
+            <div class="message-box">
+              ${message}
+            </div>
+
+            <p style="color: #9ca3af; font-size: 14px;">
+              ${language === 'en'
+                ? 'This message was sent by the MY EDEN X platform administrator.'
+                : 'Ce message a été envoyé par l\'administrateur de la plateforme MY EDEN X.'}
+            </p>
+          </div>
+          <div class="footer">
+            <p>MY EDEN X - ${language === 'en' ? 'Church Management Platform' : 'Plateforme de Gestion d\'Église'}</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const mailOptions = {
+      from: `"MY EDEN X" <${process.env.NODEMAILER_EMAIL}>`,
+      to: adminUser.email,
+      subject: `📬 MY EDEN X: ${subject}`,
+      html: emailHtml
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log('Contact email sent to:', adminUser.email);
+
+    res.json({ message: 'Email sent successfully', recipient: adminUser.email });
+
+  } catch (error) {
+    console.error('Error sending contact email:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// =============================================
+// ROUTES GESTION DES MODULES PAR ÉGLISE
+// =============================================
+
+// Liste des modules disponibles
+const AVAILABLE_MODULES = ['events', 'members', 'meetings', 'choir'];
+
+// GET /api/super-admin/churches_v2/:churchId/modules - Obtenir les modules d'une église
+router.get('/churches_v2/:churchId/modules', protect, isSuperAdmin, async (req, res) => {
+  const { churchId } = req.params;
+
+  try {
+    const { data: church, error } = await supabaseAdmin
+      .from('churches_v2')
+      .select('id, name, enabled_modules')
+      .eq('id', churchId)
+      .single();
+
+    if (error || !church) {
+      return res.status(404).json({ error: 'Church not found' });
+    }
+
+    // Si enabled_modules n'existe pas, tous les modules sont activés par défaut
+    const enabledModules = church.enabled_modules || AVAILABLE_MODULES;
+
+    res.json({
+      church_id: church.id,
+      church_name: church.name,
+      available_modules: AVAILABLE_MODULES,
+      enabled_modules: enabledModules
+    });
+
+  } catch (error) {
+    console.error('Error fetching church modules:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT /api/super-admin/churches_v2/:churchId/modules - Mettre à jour les modules d'une église
+router.put('/churches_v2/:churchId/modules', protect, isSuperAdmin, async (req, res) => {
+  const { churchId } = req.params;
+  const { enabled_modules, notify_admin = true, language = 'fr' } = req.body;
+
+  try {
+    // Valider les modules
+    if (!Array.isArray(enabled_modules)) {
+      return res.status(400).json({ error: 'enabled_modules must be an array' });
+    }
+
+    // Vérifier que tous les modules sont valides
+    const invalidModules = enabled_modules.filter(m => !AVAILABLE_MODULES.includes(m));
+    if (invalidModules.length > 0) {
+      return res.status(400).json({ error: `Invalid modules: ${invalidModules.join(', ')}` });
+    }
+
+    // Récupérer les infos de l'église
+    const { data: church, error: churchError } = await supabaseAdmin
+      .from('churches_v2')
+      .select('name, enabled_modules')
+      .eq('id', churchId)
+      .single();
+
+    if (churchError || !church) {
+      return res.status(404).json({ error: 'Church not found' });
+    }
+
+    const previousModules = church.enabled_modules || AVAILABLE_MODULES;
+
+    // Mettre à jour les modules
+    const { error: updateError } = await supabaseAdmin
+      .from('churches_v2')
+      .update({ enabled_modules })
+      .eq('id', churchId);
+
+    if (updateError) throw updateError;
+
+    // Identifier les changements
+    const addedModules = enabled_modules.filter(m => !previousModules.includes(m));
+    const removedModules = previousModules.filter(m => !enabled_modules.includes(m));
+
+    // Notifier l'admin si demandé et s'il y a des changements
+    if (notify_admin && (addedModules.length > 0 || removedModules.length > 0)) {
+      // Récupérer l'admin principal
+      const { data: admins } = await supabaseAdmin
+        .from('church_users_v2')
+        .select('user_id')
+        .eq('church_id', churchId)
+        .eq('role', 'church_admin')
+        .eq('is_main_admin', true);
+
+      if (admins && admins.length > 0) {
+        const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
+        const adminUser = users.find(u => u.id === admins[0].user_id);
+
+        if (adminUser && adminUser.email) {
+          const moduleNames = {
+            events: language === 'en' ? 'Events' : 'Événements',
+            members: language === 'en' ? 'Members' : 'Membres',
+            meetings: language === 'en' ? 'Meetings' : 'Réunions',
+            choir: language === 'en' ? 'Choir' : 'Chorale'
+          };
+
+          const addedList = addedModules.map(m => moduleNames[m]).join(', ');
+          const removedList = removedModules.map(m => moduleNames[m]).join(', ');
+
+          const emailHtml = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="UTF-8">
+              <style>
+                body { font-family: Arial, sans-serif; background-color: #111827; color: #f3f4f6; margin: 0; padding: 20px; }
+                .container { max-width: 600px; margin: 0 auto; background-color: #1f2937; border-radius: 12px; overflow: hidden; }
+                .header { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 30px; text-align: center; }
+                .header h1 { color: white; margin: 0; font-size: 24px; }
+                .content { padding: 30px; }
+                .module-box { background-color: #374151; border-radius: 8px; padding: 16px; margin: 12px 0; }
+                .added { border-left: 4px solid #22c55e; }
+                .removed { border-left: 4px solid #ef4444; }
+                .module-list { margin: 8px 0; padding-left: 20px; }
+                .footer { background-color: #111827; padding: 20px; text-align: center; color: #9ca3af; font-size: 12px; }
+                h2 { color: #a5b4fc; margin-top: 0; }
+                p { line-height: 1.6; margin: 10px 0; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h1>🔧 ${language === 'en' ? 'Module Update' : 'Mise à jour des Modules'}</h1>
+                </div>
+                <div class="content">
+                  <p>${language === 'en' ? 'Hello,' : 'Bonjour,'}</p>
+                  <p>${language === 'en'
+                    ? 'The available modules for your church have been updated by the platform administrator.'
+                    : 'Les modules disponibles pour votre église ont été mis à jour par l\'administrateur de la plateforme.'}</p>
+
+                  ${addedModules.length > 0 ? `
+                  <div class="module-box added">
+                    <strong style="color: #22c55e;">✅ ${language === 'en' ? 'Modules Enabled' : 'Modules Activés'}:</strong>
+                    <p style="color: #d1d5db; margin: 8px 0 0;">${addedList}</p>
+                  </div>
+                  ` : ''}
+
+                  ${removedModules.length > 0 ? `
+                  <div class="module-box removed">
+                    <strong style="color: #ef4444;">❌ ${language === 'en' ? 'Modules Disabled' : 'Modules Désactivés'}:</strong>
+                    <p style="color: #d1d5db; margin: 8px 0 0;">${removedList}</p>
+                  </div>
+                  ` : ''}
+
+                  <p style="margin-top: 24px;">${language === 'en'
+                    ? 'If you have any questions about these changes, please contact the platform administrator.'
+                    : 'Si vous avez des questions concernant ces changements, veuillez contacter l\'administrateur de la plateforme.'}</p>
+                </div>
+                <div class="footer">
+                  <p>MY EDEN X - ${language === 'en' ? 'Church Management Platform' : 'Plateforme de Gestion d\'Église'}</p>
+                </div>
+              </div>
+            </body>
+            </html>
+          `;
+
+          const mailOptions = {
+            from: `"MY EDEN X" <${process.env.NODEMAILER_EMAIL}>`,
+            to: adminUser.email,
+            subject: language === 'en'
+              ? `🔧 Module Update - ${church.name}`
+              : `🔧 Mise à jour des Modules - ${church.name}`,
+            html: emailHtml
+          };
+
+          try {
+            await transporter.sendMail(mailOptions);
+            console.log('Module update email sent to:', adminUser.email);
+          } catch (mailError) {
+            console.error('Error sending module update email:', mailError);
+          }
+        }
+      }
+    }
+
+    res.json({
+      message: 'Modules updated successfully',
+      church_name: church.name,
+      enabled_modules,
+      added: addedModules,
+      removed: removedModules
+    });
+
+  } catch (error) {
+    console.error('Error updating church modules:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET /api/super-admin/modules/overview - Vue d'ensemble des modules par église
+router.get('/modules/overview', protect, isSuperAdmin, async (req, res) => {
+  try {
+    const { data: churches, error } = await supabaseAdmin
+      .from('churches_v2')
+      .select('id, name, subdomain, enabled_modules, is_suspended')
+      .order('name');
+
+    if (error) throw error;
+
+    // Compter les églises par module
+    const moduleStats = {};
+    AVAILABLE_MODULES.forEach(m => { moduleStats[m] = 0; });
+
+    const churchesWithModules = churches.map(church => {
+      const modules = church.enabled_modules || AVAILABLE_MODULES;
+      modules.forEach(m => { if (moduleStats[m] !== undefined) moduleStats[m]++; });
+      return {
+        ...church,
+        enabled_modules: modules
+      };
+    });
+
+    res.json({
+      available_modules: AVAILABLE_MODULES,
+      module_stats: moduleStats,
+      total_churches: churches.length,
+      churches: churchesWithModules
+    });
+
+  } catch (error) {
+    console.error('Error fetching modules overview:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

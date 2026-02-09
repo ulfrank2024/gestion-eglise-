@@ -172,6 +172,20 @@ export const api = {
       const { data } = await apiClient.post(`/super-admin/churches_v2/${churchId}/contact`, { subject, message, language });
       return data;
     },
+
+    // --- Church Modules Management ---
+    getChurchModules: async (churchId) => {
+      const { data } = await apiClient.get(`/super-admin/churches_v2/${churchId}/modules`);
+      return data;
+    },
+    updateChurchModules: async (churchId, { enabled_modules, notify_admin, language }) => {
+      const { data } = await apiClient.put(`/super-admin/churches_v2/${churchId}/modules`, { enabled_modules, notify_admin, language });
+      return data;
+    },
+    getModulesOverview: async () => {
+      const { data } = await apiClient.get('/super-admin/modules/overview');
+      return data;
+    },
   },
 
   admin: {

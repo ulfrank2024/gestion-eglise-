@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import logo from '../assets/logo_eden.png';
 import {
   MdDashboard, MdChurch, MdEvent, MdPeople, MdLeaderboard,
-  MdExpandMore, MdExpandLess, MdLogout, MdSettings, MdHistory
+  MdExpandMore, MdExpandLess, MdLogout, MdSettings, MdHistory, MdExtension
 } from 'react-icons/md';
 import { api } from '../api/api';
 import { supabase } from '../supabaseClient';
@@ -279,6 +279,17 @@ function SuperAdminLayout() {
                     >
                       <MdHistory style={{ marginRight: '8px', fontSize: '16px' }} />
                       {t('activity_tracking') || 'Suivi d\'activité'}
+                    </NavLink>
+                  </li>
+                  <li style={{ marginBottom: '4px' }}>
+                    <NavLink
+                      to="/super-admin/modules"
+                      onMouseEnter={() => setHoveredItem('modules')}
+                      onMouseLeave={() => setHoveredItem(null)}
+                      style={({ isActive }) => getLinkStyle({ isActive, itemName: 'modules' })}
+                    >
+                      <MdExtension style={{ marginRight: '8px', fontSize: '16px' }} />
+                      {t('modules_management') || 'Gestion des Modules'}
                     </NavLink>
                   </li>
                 </ul>
