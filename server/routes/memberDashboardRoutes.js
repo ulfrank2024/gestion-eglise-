@@ -360,17 +360,17 @@ router.get('/meetings', async (req, res) => {
  */
 router.get('/dashboard', async (req, res) => {
   try {
-    const { member_id, church_id } = req.user;
+    const { member_id, church_id, id: userId } = req.user;
     const now = new Date().toISOString();
 
     // Récupérer les infos du membre
     const { data: member } = await supabaseAdmin
       .from('members_v2')
-      .select('full_name, profile_photo_url')
+      .select('full_name, profile_photo_url, email')
       .eq('id', member_id)
       .single();
 
-    // Événements à venir
+    // Événements à venir de l'église
     const { data: upcomingEvents } = await supabaseAdmin
       .from('events_v2')
       .select('id, name_fr, name_en, event_start_date, background_image_url')
@@ -379,6 +379,73 @@ router.get('/dashboard', async (req, res) => {
       .gte('event_start_date', now)
       .order('event_start_date', { ascending: true })
       .limit(5);
+
+    // Mes inscriptions aux événements (événements auxquels je suis inscrit)
+    const { data: myRegistrations } = await supabaseAdmin
+      .from('attendees_v2')
+      .select(`
+        id,
+        created_at,
+        events_v2 (
+          id,
+          name_fr,
+          name_en,
+          event_start_date,
+          event_end_date,
+          background_image_url,
+          is_archived
+        )
+      `)
+      .eq('church_id', church_id)
+      .eq('email', member?.email)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    // Filtrer pour ne garder que les événements non archivés et à venir
+    const myUpcomingRegistrations = myRegistrations
+      ?.filter(r => r.events_v2 && !r.events_v2.is_archived && new Date(r.events_v2.event_start_date) >= new Date())
+      .map(r => ({
+        registration_id: r.id,
+        registered_at: r.created_at,
+        ...r.events_v2
+      })) || [];
+
+    // Mes réunions récentes
+    const { data: myMeetings } = await supabaseAdmin
+      .from('meeting_participants_v2')
+      .select(`
+        id,
+        role,
+        attendance_status,
+        meetings_v2 (
+          id,
+          title_fr,
+          title_en,
+          meeting_date,
+          location,
+          status
+        )
+      `)
+      .eq('member_id', member_id)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    const recentMeetings = myMeetings
+      ?.filter(m => m.meetings_v2)
+      .map(m => ({
+        ...m.meetings_v2,
+        my_role: m.role,
+        my_status: m.attendance_status
+      })) || [];
+
+    // Vérifier si je fais partie de la chorale
+    const { data: choirStatus } = await supabaseAdmin
+      .from('choir_members_v2')
+      .select('id, voice_type, is_lead')
+      .eq('member_id', member_id)
+      .eq('church_id', church_id)
+      .eq('is_active', true)
+      .single();
 
     // Notifications non lues
     const { count: unreadNotifications } = await supabaseAdmin
@@ -432,10 +499,20 @@ router.get('/dashboard', async (req, res) => {
       church,
       // Arrays pour affichage
       upcoming_events: upcomingEvents || [],
+      my_registrations: myUpcomingRegistrations,
+      recent_meetings: recentMeetings,
       recent_announcements: latestAnnouncements || [],
       roles: formattedRoles,
+      // Statut chorale
+      choir_status: choirStatus ? {
+        is_member: true,
+        is_lead: choirStatus.is_lead,
+        voice_type: choirStatus.voice_type
+      } : { is_member: false },
       // Counts pour les cartes statistiques
       upcoming_events_count: upcomingEvents?.length || 0,
+      my_registrations_count: myUpcomingRegistrations.length,
+      meetings_count: recentMeetings.length,
       roles_count: formattedRoles.length,
       unread_notifications: unreadNotifications || 0,
       announcements_count: announcementsCount || 0

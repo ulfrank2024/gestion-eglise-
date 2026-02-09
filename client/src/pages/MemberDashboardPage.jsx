@@ -4,7 +4,7 @@ import { useOutletContext, Link } from 'react-router-dom';
 import { api } from '../api/api';
 import {
   MdEvent, MdBadge, MdNotifications, MdAnnouncement,
-  MdArrowForward, MdPerson
+  MdArrowForward, MdPerson, MdGroups, MdMusicNote, MdCheckCircle, MdStar
 } from 'react-icons/md';
 
 function MemberDashboardPage() {
@@ -113,6 +113,134 @@ function MemberDashboardPage() {
           </Link>
         ))}
       </div>
+
+      {/* Choir Status Card - si membre de la chorale */}
+      {dashboardData?.choir_status?.is_member && (
+        <Link
+          to="/member/choir"
+          className="block bg-gradient-to-r from-indigo-600/20 to-purple-600/20 border border-indigo-500/30 rounded-xl p-4 hover:from-indigo-600/30 hover:to-purple-600/30 transition-colors"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-indigo-500/30 rounded-full flex items-center justify-center">
+                <MdMusicNote className="text-2xl text-indigo-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  {t('member_choir.choir')}
+                  {dashboardData.choir_status.is_lead && (
+                    <span className="bg-yellow-400 text-yellow-900 text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <MdStar className="w-3 h-3" /> Lead
+                    </span>
+                  )}
+                </h3>
+                <p className="text-gray-400 text-sm">
+                  {t(`choir.${dashboardData.choir_status.voice_type}`) || dashboardData.choir_status.voice_type}
+                </p>
+              </div>
+            </div>
+            <MdArrowForward className="text-indigo-400 text-xl" />
+          </div>
+        </Link>
+      )}
+
+      {/* My Event Registrations */}
+      {Array.isArray(dashboardData?.my_registrations) && dashboardData.my_registrations.length > 0 && (
+        <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+          <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+              <MdCheckCircle className="text-green-400" />
+              {t('my_registrations')}
+            </h2>
+            <Link
+              to="/member/events"
+              className="text-sm text-indigo-400 hover:text-indigo-300 flex items-center gap-1"
+            >
+              {t('view_all')}
+              <MdArrowForward />
+            </Link>
+          </div>
+          <div className="divide-y divide-gray-700">
+            {dashboardData.my_registrations.slice(0, 3).map((event) => (
+              <div key={event.registration_id} className="p-4 hover:bg-gray-700/50 transition-colors">
+                <div className="flex items-start gap-4">
+                  {event.background_image_url && (
+                    <img
+                      src={event.background_image_url}
+                      alt={lang === 'fr' ? event.name_fr : event.name_en}
+                      className="w-16 h-16 rounded-lg object-cover"
+                    />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-medium text-white truncate">
+                        {lang === 'fr' ? event.name_fr : event.name_en}
+                      </h3>
+                      <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded">
+                        {t('registered')}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-400">
+                      {new Date(event.event_start_date).toLocaleDateString(
+                        lang === 'fr' ? 'fr-FR' : 'en-US',
+                        { weekday: 'long', day: 'numeric', month: 'long' }
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Recent Meetings */}
+      {Array.isArray(dashboardData?.recent_meetings) && dashboardData.recent_meetings.length > 0 && (
+        <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+          <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+              <MdGroups className="text-purple-400" />
+              {t('meetings.title')}
+            </h2>
+            <Link
+              to="/member/meetings"
+              className="text-sm text-indigo-400 hover:text-indigo-300 flex items-center gap-1"
+            >
+              {t('view_all')}
+              <MdArrowForward />
+            </Link>
+          </div>
+          <div className="divide-y divide-gray-700">
+            {dashboardData.recent_meetings.slice(0, 3).map((meeting) => (
+              <div key={meeting.id} className="p-4 hover:bg-gray-700/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-white truncate">
+                      {lang === 'fr' ? meeting.title_fr : (meeting.title_en || meeting.title_fr)}
+                    </h3>
+                    <p className="text-sm text-gray-400">
+                      {new Date(meeting.meeting_date).toLocaleDateString(
+                        lang === 'fr' ? 'fr-FR' : 'en-US',
+                        { weekday: 'long', day: 'numeric', month: 'long' }
+                      )}
+                      {meeting.location && ` • ${meeting.location}`}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs px-2 py-1 rounded ${
+                      meeting.my_role === 'organizer' ? 'bg-indigo-500/20 text-indigo-400' :
+                      meeting.my_role === 'secretary' ? 'bg-purple-500/20 text-purple-400' :
+                      'bg-gray-600/50 text-gray-400'
+                    }`}>
+                      {t(`meetings.role_${meeting.my_role}`)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Recent Announcements */}
       {Array.isArray(dashboardData?.recent_announcements) && dashboardData.recent_announcements.length > 0 && (

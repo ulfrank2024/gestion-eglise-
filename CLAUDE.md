@@ -3220,3 +3220,114 @@ Une PWA permet d'installer l'application web directement sur l'appareil avec une
 - ✅ Expérience utilisateur améliorée
 
 ---
+
+### 2026-02-09 - Amélioration de l'espace membre + Module Chorale Membre
+
+**Contexte:**
+- Amélioration de l'espace membre pour afficher plus d'informations personnalisées
+- Ajout d'un espace chorale complet pour les membres choristes
+
+**Améliorations du Dashboard Membre (`MemberDashboardPage.jsx`):**
+
+1. **Section "Mes Inscriptions"**
+   - Affiche les événements auxquels le membre s'est inscrit
+   - Lien vers attendees_v2 via email du membre
+   - Image, nom et date de l'événement
+   - Badge "Inscrit" pour confirmation visuelle
+
+2. **Section "Réunions Récentes"**
+   - Liste des réunions où le membre a participé
+   - Affiche le rôle du membre (organisateur, secrétaire, participant)
+   - Date et lieu de la réunion
+
+3. **Carte "Statut Chorale"**
+   - Visible uniquement si le membre est choriste
+   - Affiche le type de voix (soprano, alto, ténor, basse)
+   - Badge "Lead" si le choriste est lead
+   - Lien vers l'espace chorale
+
+**Nouveau Module Chorale Membre (5 pages):**
+
+1. **MemberChoirDashboardPage.jsx** - Dashboard chorale
+   - Statistiques: chants au répertoire, plannings à venir, compilations
+   - Liste des prochains plannings musicaux
+   - Accès rapide au répertoire et aux chants
+
+2. **MemberChoirRepertoirePage.jsx** - Mon répertoire personnel
+   - Liste des chants que le lead peut diriger
+   - Édition du niveau de maîtrise
+   - Suppression de chants du répertoire
+   - Visible uniquement pour les leads
+
+3. **MemberChoirSongsPage.jsx** - Tous les chants
+   - Parcourir le répertoire complet de l'église
+   - Recherche par nom
+   - Filtre par catégorie
+   - Bouton "Ajouter à mon répertoire" pour les leads
+
+4. **MemberChoirSongDetailPage.jsx** - Détails d'un chant
+   - Paroles complètes (FR/EN)
+   - Tonalité, tempo, catégorie
+   - Bouton pour ajouter/retirer du répertoire
+
+5. **MemberChoirPlanningPage.jsx** - Planning musical
+   - Liste des événements musicaux (cultes, répétitions, concerts)
+   - Filtres: à venir, passés, tous
+   - Détails expandables avec liste des chants et leads
+
+**Backend - Nouvelles routes (`/server/routes/memberChoirRoutes.js`):**
+- `GET /api/member/choir/status` - Statut chorale du membre
+- `GET /api/member/choir/dashboard` - Dashboard chorale
+- `GET /api/member/choir/repertoire` - Mon répertoire
+- `POST /api/member/choir/repertoire` - Ajouter au répertoire
+- `PUT /api/member/choir/repertoire/:id` - Modifier niveau
+- `DELETE /api/member/choir/repertoire/:id` - Retirer du répertoire
+- `GET /api/member/choir/songs` - Tous les chants
+- `GET /api/member/choir/songs/:id` - Détails chant
+- `GET /api/member/choir/categories` - Catégories
+- `GET /api/member/choir/planning` - Plannings
+- `GET /api/member/choir/planning/:id` - Détails planning
+- `GET /api/member/choir/compilations` - Compilations
+
+**API Client (`api.js`) - Méthodes ajoutées:**
+```javascript
+api.member.getChoirStatus()
+api.member.getChoirDashboard()
+api.member.getChoirRepertoire()
+api.member.addToChoirRepertoire(data)
+api.member.updateChoirRepertoire(id, data)
+api.member.deleteChoirRepertoire(id)
+api.member.getChoirSongs(params)
+api.member.getChoirSong(id)
+api.member.getChoirCategories()
+api.member.getChoirPlanning(params)
+api.member.getChoirPlanningDetail(id)
+api.member.getChoirCompilations()
+```
+
+**MemberLayout.jsx - Modifications:**
+- Menu "Chorale" conditionnel (visible si membre est choriste)
+- Vérification du statut chorale au chargement
+
+**Routes Frontend (`main.jsx`):**
+```jsx
+<Route path="choir" element={<MemberChoirDashboardPage />} />
+<Route path="choir/repertoire" element={<MemberChoirRepertoirePage />} />
+<Route path="choir/songs" element={<MemberChoirSongsPage />} />
+<Route path="choir/songs/:songId" element={<MemberChoirSongDetailPage />} />
+<Route path="choir/planning" element={<MemberChoirPlanningPage />} />
+```
+
+**Traductions ajoutées (fr.json et en.json):**
+- Namespace `member_choir.*` avec ~45 clés
+- Clé `my_registrations` pour la section inscriptions
+
+**Résultat:**
+- ✅ Dashboard membre enrichi avec inscriptions et réunions
+- ✅ Espace chorale complet pour les membres choristes
+- ✅ Répertoire personnel pour les leads
+- ✅ Navigation intuitive entre les sections
+- ✅ Design dark theme cohérent
+- ✅ Support bilingue FR/EN
+
+---

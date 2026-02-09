@@ -64,6 +64,12 @@ import MemberRolesPage from './pages/MemberRolesPage';
 import MemberNotificationsPage from './pages/MemberNotificationsPage';
 import MemberAnnouncementsPage from './pages/MemberAnnouncementsPage';
 import MemberMeetingsPage from './pages/MemberMeetingsPage';
+// Member Choir Pages
+import MemberChoirDashboardPage from './pages/MemberChoirDashboardPage';
+import MemberChoirRepertoirePage from './pages/MemberChoirRepertoirePage';
+import MemberChoirSongsPage from './pages/MemberChoirSongsPage';
+import MemberChoirSongDetailPage from './pages/MemberChoirSongDetailPage';
+import MemberChoirPlanningPage from './pages/MemberChoirPlanningPage';
 
 // Super Admin Pages
 import SuperAdminLayout from './layouts/SuperAdminLayout';
@@ -176,6 +182,13 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="notifications" element={<MemberNotificationsPage />} />
             <Route path="announcements" element={<MemberAnnouncementsPage />} />
             <Route path="meetings" element={<MemberMeetingsPage />} />
+            {/* Module Chorale Membre */}
+            <Route path="choir" element={<MemberChoirDashboardPage />} />
+            <Route path="choir/repertoire" element={<MemberChoirRepertoirePage />} />
+            <Route path="choir/songs" element={<MemberChoirSongsPage />} />
+            <Route path="choir/songs/:songId" element={<MemberChoirSongDetailPage />} />
+            <Route path="choir/planning" element={<MemberChoirPlanningPage />} />
+            <Route path="choir/planning/:planningId" element={<MemberChoirPlanningPage />} />
           </Route>
 
           {/* Member Registration - Public (must be before /:churchId routes) */}

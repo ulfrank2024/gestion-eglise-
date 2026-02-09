@@ -158,6 +158,20 @@ export const api = {
       const { data } = await apiClient.get('/super-admin/activity/logs', { params });
       return data;
     },
+
+    // --- Church Suspension ---
+    suspendChurch: async (churchId, { reason, message, language }) => {
+      const { data } = await apiClient.put(`/super-admin/churches_v2/${churchId}/suspend`, { reason, message, language });
+      return data;
+    },
+    reactivateChurch: async (churchId, { message, language }) => {
+      const { data } = await apiClient.put(`/super-admin/churches_v2/${churchId}/reactivate`, { message, language });
+      return data;
+    },
+    contactChurchAdmin: async (churchId, { subject, message, language }) => {
+      const { data } = await apiClient.post(`/super-admin/churches_v2/${churchId}/contact`, { subject, message, language });
+      return data;
+    },
   },
 
   admin: {
@@ -708,6 +722,81 @@ export const api = {
     // Member Meetings
     getMeetings: async () => {
       const { data } = await apiClient.get('/member/meetings');
+      return data;
+    },
+
+    // =====================================================
+    // MEMBER CHOIR - Espace Chorale pour les membres
+    // =====================================================
+
+    // Statut chorale du membre
+    getChoirStatus: async () => {
+      const { data } = await apiClient.get('/member/choir/status');
+      return data;
+    },
+
+    // Dashboard chorale
+    getChoirDashboard: async () => {
+      const { data } = await apiClient.get('/member/choir/dashboard');
+      return data;
+    },
+
+    // Mon répertoire (chants que je peux diriger)
+    getChoirRepertoire: async () => {
+      const { data } = await apiClient.get('/member/choir/repertoire');
+      return data;
+    },
+
+    // Ajouter un chant à mon répertoire
+    addToChoirRepertoire: async (songData) => {
+      const { data } = await apiClient.post('/member/choir/repertoire', songData);
+      return data;
+    },
+
+    // Mettre à jour un chant de mon répertoire
+    updateChoirRepertoire: async (id, updateData) => {
+      const { data } = await apiClient.put(`/member/choir/repertoire/${id}`, updateData);
+      return data;
+    },
+
+    // Retirer un chant de mon répertoire
+    deleteChoirRepertoire: async (id) => {
+      await apiClient.delete(`/member/choir/repertoire/${id}`);
+    },
+
+    // Liste des chants disponibles
+    getChoirSongs: async (params = {}) => {
+      const { data } = await apiClient.get('/member/choir/songs', { params });
+      return data;
+    },
+
+    // Détails d'un chant
+    getChoirSong: async (songId) => {
+      const { data } = await apiClient.get(`/member/choir/songs/${songId}`);
+      return data;
+    },
+
+    // Catégories de chants
+    getChoirCategories: async () => {
+      const { data } = await apiClient.get('/member/choir/categories');
+      return data;
+    },
+
+    // Planning musical
+    getChoirPlanning: async (filter = 'upcoming') => {
+      const { data } = await apiClient.get('/member/choir/planning', { params: { filter } });
+      return data;
+    },
+
+    // Détails d'un planning
+    getChoirPlanningDetail: async (planningId) => {
+      const { data } = await apiClient.get(`/member/choir/planning/${planningId}`);
+      return data;
+    },
+
+    // Compilations
+    getChoirCompilations: async () => {
+      const { data } = await apiClient.get('/member/choir/compilations');
       return data;
     },
   },

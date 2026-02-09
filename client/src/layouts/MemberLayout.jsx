@@ -6,7 +6,7 @@ import { supabase } from '../supabaseClient';
 import defaultLogo from '../assets/logo_eden.png';
 import {
   MdDashboard, MdPerson, MdEvent, MdBadge, MdNotifications,
-  MdAnnouncement, MdLogout, MdMenu, MdClose, MdGroups
+  MdAnnouncement, MdLogout, MdMenu, MdClose, MdGroups, MdMusicNote
 } from 'react-icons/md';
 
 function MemberLayout() {
@@ -18,6 +18,7 @@ function MemberLayout() {
   const [churchInfo, setChurchInfo] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [isChoirMember, setIsChoirMember] = useState(false);
 
   useEffect(() => {
     const fetchMemberInfo = async () => {
@@ -35,6 +36,11 @@ function MemberLayout() {
         const dashboardData = await api.member.getDashboard();
         setChurchInfo(dashboardData.church);
         setUnreadNotifications(dashboardData.unread_notifications || 0);
+
+        // Vérifier le statut chorale
+        if (dashboardData.choir_status?.is_member) {
+          setIsChoirMember(true);
+        }
 
         setLoading(false);
       } catch (err) {
@@ -75,6 +81,12 @@ function MemberLayout() {
     { path: '/member/events', icon: MdEvent, label: t('my_events') },
     { path: '/member/meetings', icon: MdGroups, label: t('meetings.title') },
     { path: '/member/roles', icon: MdBadge, label: t('my_roles') },
+    // Espace Chorale - visible uniquement si le membre fait partie de la chorale
+    ...(isChoirMember ? [{
+      path: '/member/choir',
+      icon: MdMusicNote,
+      label: t('member_choir.choir'),
+    }] : []),
     {
       path: '/member/notifications',
       icon: MdNotifications,

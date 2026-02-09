@@ -44,6 +44,23 @@ const protect = async (req, res, next) => {
       req.user.is_main_admin = churchUserData.is_main_admin || false;
       req.user.full_name = churchUserData.full_name || req.user.email;
       req.user.profile_photo_url = churchUserData.profile_photo_url || null;
+
+      // Vérifier si l'église est suspendue (sauf pour les super admins)
+      if (churchUserData.church_id && churchUserData.role !== 'super_admin') {
+        const { data: churchData, error: churchError } = await supabaseAdmin
+          .from('churches_v2')
+          .select('is_suspended, suspension_reason')
+          .eq('id', churchUserData.church_id)
+          .single();
+
+        if (!churchError && churchData && churchData.is_suspended) {
+          return res.status(403).json({
+            error: 'CHURCH_SUSPENDED',
+            message: 'Your church account has been suspended',
+            reason: churchData.suspension_reason
+          });
+        }
+      }
     } else {
       // Si l'utilisateur n'est pas trouvé dans 'church_users_v2', vérifier si c'est un Super Admin par email.
       // Cela permet aux Super Admins de ne pas avoir forcément une entrée dans 'church_users_v2' liée à un church_id.
