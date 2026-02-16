@@ -127,7 +127,7 @@ router.get('/events_v2', protect, isSuperAdminOrChurchAdmin, async (req, res) =>
     // 1. Récupérer les événements avec checkin_count (supabaseAdmin pour bypasser RLS)
     let eventQuery = supabaseAdmin
       .from('events_v2')
-      .select('id, name_fr, name_en, is_archived, event_start_date, created_at, checkin_count')
+      .select('id, name_fr, name_en, description_fr, description_en, background_image_url, is_archived, event_start_date, event_end_date, created_at, checkin_count')
       .eq('church_id', req.user.church_id);
 
     if (req.query.is_archived !== undefined) {

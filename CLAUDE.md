@@ -3385,3 +3385,48 @@ api.member.getChoirCompilations()
 - ✅ Rétrogradation automatique vers le rôle 'member' si applicable
 
 ---
+
+### 2026-02-11 - Correction login membre orphelin + Refonte page "Mes Événements"
+
+**Problème 1: Membre ne peut plus se connecter après suppression de l'équipe**
+- Un membre (`elizabethpraisequeen@gmail.com`) ajouté à l'équipe puis supprimé (avant le fix de la permission "none") ne pouvait plus se connecter
+- Le middleware `protect` ne trouvait plus sa ligne dans `church_users_v2` et mettait `church_role = null`
+- Login retournait "Accès interdit"
+
+**Solution:**
+- Ajout d'un fallback dans `/server/middleware/auth.js`
+- Si l'utilisateur n'est pas dans `church_users_v2`, vérifie `members_v2`
+- Si trouvé dans `members_v2`, recrée automatiquement la ligne `church_users_v2` avec `role: 'member'` et `permissions: ['none']`
+- L'utilisateur peut à nouveau se connecter comme membre
+
+**Problème 2: Page "Mes Événements" dans Mon Espace affichait "Invalid Date"**
+- Pas de filtres (à venir/passés/tous)
+- Pas de vue détaillée d'un événement
+- Pas de possibilité de s'inscrire
+- L'API ne retournait pas tous les champs nécessaires
+
+**Solution:**
+1. **Backend** (`/server/routes/adminRoutes.js`):
+   - SELECT étendu pour inclure `description_fr`, `description_en`, `background_image_url`, `event_end_date`
+
+2. **Frontend** (`/client/src/pages/AdminMyEventsPage.jsx`) - Refonte complète:
+   - Formatage des dates avec vérification `isNaN(d.getTime())` pour éviter "Invalid Date"
+   - Filtres: À venir / Passés / Tous
+   - Vue détaillée : image, description, dates, statistiques (inscrits/présents)
+   - Inscription via `RegistrationModal` intégré
+   - Badge "Inscrit" pour les événements déjà enregistrés
+   - Section résumé avec statistiques globales
+   - Design responsive et thème dark cohérent
+
+**Fichiers modifiés:**
+- `/server/middleware/auth.js`
+- `/server/routes/adminRoutes.js`
+- `/client/src/pages/AdminMyEventsPage.jsx`
+
+**Résultat:**
+- ✅ Membres orphelins récupérés automatiquement
+- ✅ Page "Mes Événements" avec dates correctes
+- ✅ Filtres, détails, inscription fonctionnels
+- ✅ Interface moderne et responsive
+
+---
