@@ -457,12 +457,36 @@ function AdminMembersListPage() {
               </div>
               <div>
                 <label className="block text-gray-300 text-sm mb-1">{t('date_of_birth') || 'Date de naissance'}</label>
-                <input
-                  type="date"
-                  value={newMember.date_of_birth}
-                  onChange={(e) => setNewMember({ ...newMember, date_of_birth: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
+                <div className="flex gap-2">
+                  <select
+                    value={newMember.date_of_birth ? newMember.date_of_birth.split('-')[0] : ''}
+                    onChange={(e) => {
+                      const day = newMember.date_of_birth ? newMember.date_of_birth.split('-')[1] : '';
+                      setNewMember({ ...newMember, date_of_birth: e.target.value && day ? `${e.target.value}-${day}` : e.target.value ? `${e.target.value}-` : '' });
+                    }}
+                    className="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="">{t('month') || 'Mois'}</option>
+                    {Array.from({ length: 12 }, (_, i) => (
+                      <option key={i + 1} value={String(i + 1).padStart(2, '0')}>
+                        {new Date(2000, i).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { month: 'long' })}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={newMember.date_of_birth ? newMember.date_of_birth.split('-')[1] : ''}
+                    onChange={(e) => {
+                      const month = newMember.date_of_birth ? newMember.date_of_birth.split('-')[0] : '';
+                      setNewMember({ ...newMember, date_of_birth: month && e.target.value ? `${month}-${e.target.value}` : '' });
+                    }}
+                    className="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="">{t('day') || 'Jour'}</option>
+                    {Array.from({ length: 31 }, (_, i) => (
+                      <option key={i + 1} value={String(i + 1).padStart(2, '0')}>{i + 1}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
               <div className="flex gap-3 pt-4">
                 <button

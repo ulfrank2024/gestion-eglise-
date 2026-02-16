@@ -53,7 +53,7 @@ function AdminMemberDetailPage() {
         email: data.email || '',
         phone: data.phone || '',
         address: data.address || '',
-        date_of_birth: data.date_of_birth || ''
+        date_of_birth: data.date_of_birth ? (data.date_of_birth.length > 5 ? data.date_of_birth.slice(5, 10) : data.date_of_birth) : ''
       });
     } catch (err) {
       console.error('Error fetching member:', err);
@@ -339,16 +339,46 @@ function AdminMemberDetailPage() {
                   <div className="flex-1">
                     <p className="text-gray-400 text-sm">{t('date_of_birth')}</p>
                     {isEditing ? (
-                      <input
-                        type="date"
-                        value={editForm.date_of_birth}
-                        onChange={(e) => setEditForm({ ...editForm, date_of_birth: e.target.value })}
-                        className="w-full mt-1 bg-gray-700 text-white px-3 py-2 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      />
+                      <div className="flex gap-2 mt-1">
+                        <select
+                          value={editForm.date_of_birth ? editForm.date_of_birth.split('-')[0] : ''}
+                          onChange={(e) => {
+                            const day = editForm.date_of_birth ? editForm.date_of_birth.split('-')[1] : '';
+                            setEditForm({ ...editForm, date_of_birth: e.target.value && day ? `${e.target.value}-${day}` : e.target.value ? `${e.target.value}-` : '' });
+                          }}
+                          className="flex-1 bg-gray-700 text-white px-3 py-2 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                          <option value="">{t('month') || 'Mois'}</option>
+                          {Array.from({ length: 12 }, (_, i) => (
+                            <option key={i + 1} value={String(i + 1).padStart(2, '0')}>
+                              {new Date(2000, i).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { month: 'long' })}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          value={editForm.date_of_birth ? editForm.date_of_birth.split('-')[1] : ''}
+                          onChange={(e) => {
+                            const month = editForm.date_of_birth ? editForm.date_of_birth.split('-')[0] : '';
+                            setEditForm({ ...editForm, date_of_birth: month && e.target.value ? `${month}-${e.target.value}` : '' });
+                          }}
+                          className="flex-1 bg-gray-700 text-white px-3 py-2 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                          <option value="">{t('day') || 'Jour'}</option>
+                          {Array.from({ length: 31 }, (_, i) => (
+                            <option key={i + 1} value={String(i + 1).padStart(2, '0')}>{i + 1}</option>
+                          ))}
+                        </select>
+                      </div>
                     ) : (
                       <p className="text-white">
                         {member.date_of_birth
-                          ? new Date(member.date_of_birth).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US')
+                          ? (() => {
+                              const dob = member.date_of_birth;
+                              const parts = dob.length > 5 ? dob.slice(5, 10).split('-') : dob.split('-');
+                              const month = parseInt(parts[0]) - 1;
+                              const day = parseInt(parts[1]);
+                              return `${day} ${new Date(2000, month).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { month: 'long' })}`;
+                            })()
                           : '-'}
                       </p>
                     )}

@@ -647,7 +647,9 @@
     "by_registering": "By registering, you agree to the terms of use.",
     "confirm_password": "Confirm",
     "address": "Address",
-    "date_of_birth": "Date of Birth",
+    "date_of_birth": "Date of Birth (day and month)",
+    "month": "Month",
+    "day": "Day",
     "saving": "Saving...",
     "save": "Save",
 

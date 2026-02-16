@@ -47,7 +47,7 @@ function AdminMyProfilePage() {
         phone: adminProfile.phone || '',
         address: adminProfile.address || '',
         city: adminProfile.city || '',
-        date_of_birth: adminProfile.date_of_birth || '',
+        date_of_birth: adminProfile.date_of_birth ? (adminProfile.date_of_birth.length > 5 ? adminProfile.date_of_birth.slice(5, 10) : adminProfile.date_of_birth) : '',
         profile_photo_url: adminProfile.profile_photo_url || null
       });
     } catch (err) {
@@ -142,12 +142,12 @@ function AdminMyProfilePage() {
 
   const formatDate = (dateString) => {
     if (!dateString) return '-';
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat(i18n.language === 'fr' ? 'fr-FR' : 'en-US', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric'
-    }).format(date);
+    // Format "MM-DD" ou ancien format "YYYY-MM-DD"
+    const parts = dateString.length > 5 ? dateString.slice(5, 10).split('-') : dateString.split('-');
+    const month = parseInt(parts[0]) - 1;
+    const day = parseInt(parts[1]);
+    if (isNaN(month) || isNaN(day)) return '-';
+    return `${day} ${new Date(2000, month).toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-US', { month: 'long' })}`;
   };
 
   if (loading) {
@@ -281,12 +281,36 @@ function AdminMyProfilePage() {
                 </div>
                 <div>
                   <label className="block text-gray-300 text-sm mb-1">{t('date_of_birth') || 'Date de naissance'}</label>
-                  <input
-                    type="date"
-                    value={editForm.date_of_birth || ''}
-                    onChange={(e) => setEditForm({ ...editForm, date_of_birth: e.target.value })}
-                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
+                  <div className="flex gap-2">
+                    <select
+                      value={(editForm.date_of_birth || '').split('-')[0] || ''}
+                      onChange={(e) => {
+                        const day = (editForm.date_of_birth || '').split('-')[1] || '';
+                        setEditForm({ ...editForm, date_of_birth: e.target.value && day ? `${e.target.value}-${day}` : e.target.value ? `${e.target.value}-` : '' });
+                      }}
+                      className="flex-1 px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="">{t('month') || 'Mois'}</option>
+                      {Array.from({ length: 12 }, (_, i) => (
+                        <option key={i + 1} value={String(i + 1).padStart(2, '0')}>
+                          {new Date(2000, i).toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-US', { month: 'long' })}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={(editForm.date_of_birth || '').split('-')[1] || ''}
+                      onChange={(e) => {
+                        const month = (editForm.date_of_birth || '').split('-')[0] || '';
+                        setEditForm({ ...editForm, date_of_birth: month && e.target.value ? `${month}-${e.target.value}` : '' });
+                      }}
+                      className="flex-1 px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="">{t('day') || 'Jour'}</option>
+                      {Array.from({ length: 31 }, (_, i) => (
+                        <option key={i + 1} value={String(i + 1).padStart(2, '0')}>{i + 1}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
 

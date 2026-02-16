@@ -41,7 +41,7 @@ function MemberProfilePage() {
         full_name: data.full_name || '',
         phone: data.phone || '',
         address: data.address || '',
-        date_of_birth: data.date_of_birth || '',
+        date_of_birth: data.date_of_birth ? (data.date_of_birth.length > 5 ? data.date_of_birth.slice(5, 10) : data.date_of_birth) : '',
         profile_photo_url: data.profile_photo_url || ''
       });
     } catch (err) {
@@ -117,7 +117,7 @@ function MemberProfilePage() {
       full_name: profile.full_name || '',
       phone: profile.phone || '',
       address: profile.address || '',
-      date_of_birth: profile.date_of_birth || '',
+      date_of_birth: profile.date_of_birth ? (profile.date_of_birth.length > 5 ? profile.date_of_birth.slice(5, 10) : profile.date_of_birth) : '',
       profile_photo_url: profile.profile_photo_url || ''
     });
     setEditing(false);
@@ -292,25 +292,54 @@ function MemberProfilePage() {
             )}
           </div>
 
-          {/* Date of Birth */}
+          {/* Date of Birth (jour et mois uniquement) */}
           <div>
             <label className="block text-gray-300 text-sm mb-1 flex items-center gap-2">
               <MdCake className="text-gray-400" />
               {t('date_of_birth')}
             </label>
             {editing ? (
-              <input
-                type="date"
-                value={formData.date_of_birth}
-                onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
+              <div className="flex gap-2">
+                <select
+                  value={formData.date_of_birth ? formData.date_of_birth.split('-')[0] : ''}
+                  onChange={(e) => {
+                    const day = formData.date_of_birth ? formData.date_of_birth.split('-')[1] : '';
+                    setFormData({ ...formData, date_of_birth: e.target.value && day ? `${e.target.value}-${day}` : e.target.value ? `${e.target.value}-` : '' });
+                  }}
+                  className="flex-1 px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="">{t('month') || 'Mois'}</option>
+                  {Array.from({ length: 12 }, (_, i) => (
+                    <option key={i + 1} value={String(i + 1).padStart(2, '0')}>
+                      {new Date(2000, i).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { month: 'long' })}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={formData.date_of_birth ? formData.date_of_birth.split('-')[1] : ''}
+                  onChange={(e) => {
+                    const month = formData.date_of_birth ? formData.date_of_birth.split('-')[0] : '';
+                    setFormData({ ...formData, date_of_birth: month && e.target.value ? `${month}-${e.target.value}` : '' });
+                  }}
+                  className="flex-1 px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="">{t('day') || 'Jour'}</option>
+                  {Array.from({ length: 31 }, (_, i) => (
+                    <option key={i + 1} value={String(i + 1).padStart(2, '0')}>{i + 1}</option>
+                  ))}
+                </select>
+              </div>
             ) : (
               <p className="px-4 py-3 bg-gray-700/50 rounded-lg text-white">
                 {profile?.date_of_birth
-                  ? new Date(profile.date_of_birth).toLocaleDateString(
-                      lang === 'fr' ? 'fr-FR' : 'en-US'
-                    )
+                  ? (() => {
+                      const parts = profile.date_of_birth.includes('T') || profile.date_of_birth.length > 5
+                        ? profile.date_of_birth.slice(5, 10).split('-')
+                        : profile.date_of_birth.split('-');
+                      const month = parseInt(parts[0]) - 1;
+                      const day = parseInt(parts[1]);
+                      return `${day} ${new Date(2000, month).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { month: 'long' })}`;
+                    })()
                   : '-'}
               </p>
             )}
