@@ -80,6 +80,7 @@ function MemberEventsPage() {
   const formatDateTime = (datetime) => {
     if (!datetime) return { date: '-', time: '' };
     const date = new Date(datetime);
+    if (isNaN(date.getTime())) return { date: '-', time: '' };
     return {
       date: date.toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', {
         weekday: 'long',
@@ -95,11 +96,14 @@ function MemberEventsPage() {
   };
 
   const isUpcoming = (datetime) => {
-    return new Date(datetime) > new Date();
+    if (!datetime) return false;
+    const d = new Date(datetime);
+    if (isNaN(d.getTime())) return false;
+    return d > new Date();
   };
 
   const filteredEvents = events.filter(event => {
-    const upcoming = isUpcoming(event.event_start_date || event.start_datetime);
+    const upcoming = isUpcoming(event.event_start_date);
     if (filter === 'upcoming') return upcoming;
     if (filter === 'past') return !upcoming;
     return true;
@@ -111,9 +115,9 @@ function MemberEventsPage() {
 
   // Vue détaillée d'un événement
   if (selectedEvent) {
-    const { date: startDate, time: startTime } = formatDateTime(selectedEvent.event_start_date || selectedEvent.start_datetime);
-    const { date: endDate, time: endTime } = formatDateTime(selectedEvent.event_end_date || selectedEvent.end_datetime);
-    const upcoming = isUpcoming(selectedEvent.event_start_date || selectedEvent.start_datetime);
+    const { date: startDate, time: startTime } = formatDateTime(selectedEvent.event_start_date);
+    const { date: endDate, time: endTime } = formatDateTime(selectedEvent.event_end_date);
+    const upcoming = isUpcoming(selectedEvent.event_start_date);
     const registered = isRegistered(selectedEvent.id);
     const churchId = churchInfo?.id || churchInfo?.subdomain;
 
@@ -212,7 +216,7 @@ function MemberEventsPage() {
                   <p className="text-white">{startDate}</p>
                   {startTime && <p className="text-gray-300 text-sm">{startTime}</p>}
                 </div>
-                {(selectedEvent.event_end_date || selectedEvent.end_datetime) && (
+                {(selectedEvent.event_end_date) && (
                   <div>
                     <p className="text-gray-400 text-xs uppercase">{t('end') || 'Fin'}</p>
                     <p className="text-white">{endDate}</p>
@@ -330,8 +334,8 @@ function MemberEventsPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredEvents.map((event) => {
-            const { date, time } = formatDateTime(event.event_start_date || event.start_datetime);
-            const upcoming = isUpcoming(event.event_start_date || event.start_datetime);
+            const { date, time } = formatDateTime(event.event_start_date);
+            const upcoming = isUpcoming(event.event_start_date);
             const registered = isRegistered(event.id);
 
             return (

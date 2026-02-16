@@ -181,10 +181,12 @@ function MemberDashboardPage() {
                       </span>
                     </div>
                     <p className="text-sm text-gray-400">
-                      {new Date(event.event_start_date).toLocaleDateString(
-                        lang === 'fr' ? 'fr-FR' : 'en-US',
-                        { weekday: 'long', day: 'numeric', month: 'long' }
-                      )}
+                      {event.event_start_date && !isNaN(new Date(event.event_start_date).getTime())
+                        ? new Date(event.event_start_date).toLocaleDateString(
+                            lang === 'fr' ? 'fr-FR' : 'en-US',
+                            { weekday: 'long', day: 'numeric', month: 'long' }
+                          )
+                        : '-'}
                     </p>
                   </div>
                 </div>
@@ -219,10 +221,12 @@ function MemberDashboardPage() {
                       {lang === 'fr' ? meeting.title_fr : (meeting.title_en || meeting.title_fr)}
                     </h3>
                     <p className="text-sm text-gray-400">
-                      {new Date(meeting.meeting_date).toLocaleDateString(
-                        lang === 'fr' ? 'fr-FR' : 'en-US',
-                        { weekday: 'long', day: 'numeric', month: 'long' }
-                      )}
+                      {meeting.meeting_date && !isNaN(new Date(meeting.meeting_date).getTime())
+                        ? new Date(meeting.meeting_date).toLocaleDateString(
+                            lang === 'fr' ? 'fr-FR' : 'en-US',
+                            { weekday: 'long', day: 'numeric', month: 'long' }
+                          )
+                        : '-'}
                       {meeting.location && ` • ${meeting.location}`}
                     </p>
                   </div>
@@ -312,10 +316,12 @@ function MemberDashboardPage() {
                       {lang === 'fr' ? event.name_fr : event.name_en}
                     </h3>
                     <p className="text-sm text-gray-400">
-                      {new Date(event.start_datetime).toLocaleDateString(
-                        lang === 'fr' ? 'fr-FR' : 'en-US',
-                        { weekday: 'long', day: 'numeric', month: 'long' }
-                      )}
+                      {event.event_start_date && !isNaN(new Date(event.event_start_date).getTime())
+                        ? new Date(event.event_start_date).toLocaleDateString(
+                            lang === 'fr' ? 'fr-FR' : 'en-US',
+                            { weekday: 'long', day: 'numeric', month: 'long' }
+                          )
+                        : '-'}
                     </p>
                   </div>
                 </div>
