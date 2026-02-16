@@ -63,15 +63,45 @@ const protect = async (req, res, next) => {
       }
     } else {
       // Si l'utilisateur n'est pas trouvé dans 'church_users_v2', vérifier si c'est un Super Admin par email.
-      // Cela permet aux Super Admins de ne pas avoir forcément une entrée dans 'church_users_v2' liée à un church_id.
       if (req.user.email === process.env.SUPER_ADMIN_EMAIL) {
         req.user.church_id = null;
         req.user.church_role = 'super_admin';
       } else {
-        // Si l'utilisateur n'est ni dans 'church_users' ni un SUPER_ADMIN_EMAIL,
-        // il n'a pas de rôle d'église et donc pas d'accès aux routes protégées.
-        req.user.church_id = null;
-        req.user.church_role = null;
+        // Fallback: vérifier si l'utilisateur existe dans members_v2
+        // Cela corrige le cas où un membre a été retiré de l'équipe et sa ligne church_users_v2 a été supprimée
+        const { data: memberData } = await supabaseAdmin
+          .from('members_v2')
+          .select('id, church_id, full_name')
+          .eq('user_id', req.user.id)
+          .limit(1)
+          .single();
+
+        if (memberData) {
+          // L'utilisateur est un membre → recréer sa ligne dans church_users_v2
+          console.log(`=== protect: Recreating church_users_v2 entry for member ${req.user.email} ===`);
+          const { data: recreated } = await supabaseAdmin
+            .from('church_users_v2')
+            .insert({
+              church_id: memberData.church_id,
+              user_id: req.user.id,
+              role: 'member',
+              permissions: ['none'],
+              is_main_admin: false,
+              full_name: memberData.full_name || req.user.email
+            })
+            .select()
+            .single();
+
+          req.user.church_id = memberData.church_id;
+          req.user.church_role = 'member';
+          req.user.permissions = ['none'];
+          req.user.is_main_admin = false;
+          req.user.full_name = memberData.full_name || req.user.email;
+        } else {
+          // L'utilisateur n'est ni dans church_users_v2 ni dans members_v2
+          req.user.church_id = null;
+          req.user.church_role = null;
+        }
       }
     }
     
