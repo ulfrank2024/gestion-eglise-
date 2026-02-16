@@ -71,7 +71,9 @@ function MemberMeetingsPage() {
 
   const now = new Date();
   const filteredMeetings = meetings.filter(meeting => {
+    if (!meeting.meeting_date) return filter === 'all';
     const meetingDate = new Date(meeting.meeting_date);
+    if (isNaN(meetingDate.getTime())) return filter === 'all';
     if (filter === 'upcoming') {
       return meetingDate >= now && meeting.status !== 'cancelled';
     } else if (filter === 'past') {
@@ -153,7 +155,8 @@ function MemberMeetingsPage() {
           {filteredMeetings.map((meeting) => {
             const title = currentLang === 'fr' ? meeting.title_fr : (meeting.title_en || meeting.title_fr);
             const agenda = currentLang === 'fr' ? meeting.agenda_fr : (meeting.agenda_en || meeting.agenda_fr);
-            const meetingDate = new Date(meeting.meeting_date);
+            const meetingDate = meeting.meeting_date ? new Date(meeting.meeting_date) : null;
+            const isValidDate = meetingDate && !isNaN(meetingDate.getTime());
 
             return (
               <div
@@ -171,14 +174,14 @@ function MemberMeetingsPage() {
                     <div className="flex flex-wrap gap-4 text-sm text-gray-400 mb-3">
                       <span className="flex items-center gap-1">
                         <MdAccessTime size={16} />
-                        {meetingDate.toLocaleDateString(currentLang === 'fr' ? 'fr-FR' : 'en-US', {
+                        {isValidDate ? meetingDate.toLocaleDateString(currentLang === 'fr' ? 'fr-FR' : 'en-US', {
                           weekday: 'short',
                           day: 'numeric',
                           month: 'short',
                           year: 'numeric',
                           hour: '2-digit',
                           minute: '2-digit'
-                        })}
+                        }) : '-'}
                       </span>
                       {meeting.location && (
                         <span className="flex items-center gap-1">
