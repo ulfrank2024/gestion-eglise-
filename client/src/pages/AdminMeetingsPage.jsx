@@ -68,9 +68,9 @@ function AdminMeetingsPage() {
     setLoadingMembers(true);
     try {
       const response = await api.admin.getMembers();
-      // S'assurer que la réponse est un tableau
-      const members = Array.isArray(response) ? response : [];
-      setAvailableMembers(members);
+      // L'API retourne { members: [...], total, ... }
+      const members = response?.members || response || [];
+      setAvailableMembers(Array.isArray(members) ? members : []);
     } catch (err) {
       console.error('Error fetching members:', err);
       setAvailableMembers([]);

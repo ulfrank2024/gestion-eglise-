@@ -152,10 +152,12 @@ function AdminMeetingDetailPage() {
   const fetchAvailableMembers = async () => {
     setLoadingMembers(true);
     try {
-      const members = await api.admin.getMembers();
+      const response = await api.admin.getMembers();
+      // L'API retourne { members: [...], total, ... }
+      const members = response?.members || response || [];
       // Filtrer les membres déjà participants
       const participantIds = meeting.participants?.map(p => p.member_id) || [];
-      const available = members.filter(m => !participantIds.includes(m.id));
+      const available = (Array.isArray(members) ? members : []).filter(m => !participantIds.includes(m.id));
       setAvailableMembers(available);
     } catch (err) {
       console.error('Error fetching members:', err);
