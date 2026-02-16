@@ -214,9 +214,9 @@ router.put('/churches_v2/:churchId/users/:userId', protect, isAdminChurch, canMa
     if (role) updateData.role = role;
     if (permissions) {
       updateData.permissions = permissions;
-      // Si des permissions sont données, changer automatiquement le rôle en church_admin
+      // Si des permissions réelles sont données (pas "none"), garder le rôle church_admin
       // pour permettre l'accès au dashboard admin
-      if (permissions.length > 0 && !role) {
+      if (permissions.length > 0 && !permissions.includes('none') && !role) {
         updateData.role = 'church_admin';
       }
     }
@@ -288,13 +288,33 @@ router.delete('/churches_v2/:churchId/users/:userId', protect, isAdminChurch, ca
   }
 
   try {
-    const { error } = await supabaseAdmin
-      .from('church_users_v2')
-      .delete()
+    // Vérifier si l'utilisateur est aussi un membre de l'église
+    const { data: memberData } = await supabaseAdmin
+      .from('members_v2')
+      .select('id')
+      .eq('user_id', userId)
       .eq('church_id', churchId)
-      .eq('user_id', userId);
+      .single();
 
-    if (error) throw error;
+    if (memberData) {
+      // L'utilisateur est aussi un membre → rétrograder vers 'member' au lieu de supprimer
+      const { error } = await supabaseAdmin
+        .from('church_users_v2')
+        .update({ role: 'member', permissions: ['none'], is_main_admin: false, updated_at: new Date() })
+        .eq('church_id', churchId)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+    } else {
+      // L'utilisateur n'est PAS un membre → supprimer la ligne
+      const { error } = await supabaseAdmin
+        .from('church_users_v2')
+        .delete()
+        .eq('church_id', churchId)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+    }
 
     // Logger l'activité
     await logActivity({
@@ -306,6 +326,7 @@ router.delete('/churches_v2/:churchId/users/:userId', protect, isAdminChurch, ca
       action: ACTIONS.DELETE,
       entityType: 'team_member',
       entityName: targetUserName || 'Unknown',
+      details: { downgraded_to_member: !!memberData },
       req
     });
 

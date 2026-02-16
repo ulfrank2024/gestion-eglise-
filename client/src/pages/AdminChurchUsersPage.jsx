@@ -6,7 +6,7 @@ import ConfirmModal from '../components/ConfirmModal';
 import {
   MdGroup, MdPersonAdd, MdEmail, MdPerson, MdDelete,
   MdCheck, MdClose, MdAdminPanelSettings, MdEdit,
-  MdEvent, MdPeople, MdStar, MdSave, MdGroups
+  MdEvent, MdPeople, MdStar, MdSave, MdGroups, MdBlock
 } from 'react-icons/md';
 
 function AdminChurchUsersPage() {
@@ -93,12 +93,12 @@ function AdminChurchUsersPage() {
     setInviteForm(prev => {
       let newPermissions = [...prev.permissions];
 
-      if (permission === 'all') {
-        // Si on coche "all", on retire les autres
-        newPermissions = ['all'];
+      if (permission === 'all' || permission === 'none') {
+        // Si on coche "all" ou "none", on retire tout le reste
+        newPermissions = [permission];
       } else {
-        // Si on coche un module spécifique, on retire "all"
-        newPermissions = newPermissions.filter(p => p !== 'all');
+        // Si on coche un module spécifique, on retire "all" et "none"
+        newPermissions = newPermissions.filter(p => p !== 'all' && p !== 'none');
 
         if (newPermissions.includes(permission)) {
           newPermissions = newPermissions.filter(p => p !== permission);
@@ -159,10 +159,12 @@ function AdminChurchUsersPage() {
   const handleEditPermissionToggle = (permission) => {
     let newPermissions = [...editPermissions];
 
-    if (permission === 'all') {
-      newPermissions = ['all'];
+    if (permission === 'all' || permission === 'none') {
+      // "all" et "none" sont mutuellement exclusifs avec tout le reste
+      newPermissions = [permission];
     } else {
-      newPermissions = newPermissions.filter(p => p !== 'all');
+      // Module spécifique: retirer "all" et "none"
+      newPermissions = newPermissions.filter(p => p !== 'all' && p !== 'none');
 
       if (newPermissions.includes(permission)) {
         newPermissions = newPermissions.filter(p => p !== permission);
@@ -170,8 +172,9 @@ function AdminChurchUsersPage() {
         newPermissions.push(permission);
       }
 
+      // Si tout est décoché, passer à "none"
       if (newPermissions.length === 0) {
-        newPermissions = ['all'];
+        newPermissions = ['none'];
       }
     }
 
@@ -217,6 +220,9 @@ function AdminChurchUsersPage() {
   const getPermissionsLabel = (permissions) => {
     if (!permissions || permissions.includes('all')) {
       return t('full_access') || 'Accès complet';
+    }
+    if (permissions.includes('none')) {
+      return t('no_permission') || 'Aucune permission';
     }
     const labels = {
       events: t('events_module') || 'Événements',
@@ -365,6 +371,21 @@ function AdminChurchUsersPage() {
                 <MdGroups />
                 {t('meetings_module') || 'Réunions'}
               </label>
+
+              <label className={`flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-all ${
+                inviteForm.permissions.includes('none')
+                  ? 'bg-red-600 text-white'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}>
+                <input
+                  type="checkbox"
+                  checked={inviteForm.permissions.includes('none')}
+                  onChange={() => handlePermissionToggle('none')}
+                  className="hidden"
+                />
+                <MdBlock />
+                {t('no_permission') || 'Aucune'}
+              </label>
             </div>
             <p className="text-xs text-gray-500 mt-2">
               {t('permissions_hint') || 'Sélectionnez les modules auxquels cet administrateur aura accès'}
@@ -507,6 +528,19 @@ function AdminChurchUsersPage() {
                               />
                               <MdGroups size={14} />
                             </label>
+                            <label className={`flex items-center gap-1 px-3 py-1 rounded cursor-pointer text-sm ${
+                              editPermissions.includes('none')
+                                ? 'bg-red-600 text-white'
+                                : 'bg-gray-600 text-gray-300'
+                            }`}>
+                              <input
+                                type="checkbox"
+                                checked={editPermissions.includes('none')}
+                                onChange={() => handleEditPermissionToggle('none')}
+                                className="hidden"
+                              />
+                              <MdBlock size={14} />
+                            </label>
                           </div>
                         ) : (
                           <div className="flex flex-wrap gap-1">
@@ -515,6 +549,7 @@ function AdminChurchUsersPage() {
                                 key={perm}
                                 className={`px-2 py-1 rounded text-xs ${
                                   perm === 'all' ? 'bg-indigo-600/20 text-indigo-400' :
+                                  perm === 'none' ? 'bg-red-600/20 text-red-400' :
                                   perm === 'events' ? 'bg-green-600/20 text-green-400' :
                                   perm === 'members' ? 'bg-purple-600/20 text-purple-400' :
                                   perm === 'meetings' ? 'bg-amber-600/20 text-amber-400' :
@@ -522,6 +557,7 @@ function AdminChurchUsersPage() {
                                 }`}
                               >
                                 {perm === 'all' ? (t('full_access') || 'Complet') :
+                                 perm === 'none' ? (t('no_permission') || 'Aucune') :
                                  perm === 'events' ? (t('events_module') || 'Événements') :
                                  perm === 'members' ? (t('members_module') || 'Membres') :
                                  perm === 'meetings' ? (t('meetings_module') || 'Réunions') :

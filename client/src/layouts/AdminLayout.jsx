@@ -89,7 +89,11 @@ function AdminLayout() {
 
         const currentModule = localStorage.getItem('adminActiveModule') || 'events';
         const userPermissions = userInfo.permissions || ['all'];
-        if (!userPermissions.includes('all') && !userPermissions.includes(currentModule)) {
+        if (userPermissions.includes('none')) {
+          // Aucune permission → pas de module actif
+          setActiveModule('none');
+          localStorage.setItem('adminActiveModule', 'none');
+        } else if (!userPermissions.includes('all') && !userPermissions.includes(currentModule)) {
           const firstPermission = userPermissions[0];
           setActiveModule(firstPermission);
           localStorage.setItem('adminActiveModule', firstPermission);

@@ -3331,3 +3331,57 @@ api.member.getChoirCompilations()
 - ✅ Support bilingue FR/EN
 
 ---
+
+### 2026-02-11 - Correction suppression membre d'équipe + Permission "Aucune"
+
+**Problèmes identifiés:**
+1. Quand un admin supprime un membre d'équipe de `church_users_v2`, l'utilisateur ne peut plus se connecter car le middleware `protect` ne trouve plus sa ligne et met `church_role = null`
+2. Pas d'option pour retirer les permissions sans supprimer l'utilisateur
+
+**Solutions implémentées:**
+
+1. **Permission "none" (Aucune)** - Nouvelle option de permission
+   - Permet de retirer tous les accès aux modules sans supprimer le membre de l'équipe
+   - L'utilisateur peut toujours se connecter mais ne voit aucun module
+   - Badge rouge "Aucune permission" dans le tableau de l'équipe
+   - Disponible dans le formulaire d'invitation ET dans l'édition des permissions
+
+2. **Route DELETE améliorée** (`/server/routes/churchAdminRoutes.js`)
+   - Vérifie si l'utilisateur est aussi un membre (`members_v2`)
+   - Si OUI → rétrograde vers `role: 'member'` + `permissions: ['none']` au lieu de supprimer
+   - Si NON → supprime normalement la ligne `church_users_v2`
+   - Préserve la capacité de connexion des membres promus puis retirés de l'équipe
+
+3. **Frontend - AdminChurchUsersPage.jsx**
+   - Ajout du bouton "Aucune" (rouge, icône MdBlock) dans les sélecteurs de permissions
+   - Logique de toggle: "none" et "all" sont mutuellement exclusifs avec les modules spécifiques
+   - Quand on décoche tout en mode édition → bascule automatiquement sur "none"
+   - Affichage du badge "Aucune permission" en rouge
+
+4. **Frontend - AdminLayout.jsx**
+   - Gestion de `permissions: ["none"]` → `activeModule = 'none'`
+   - Message "Aucun module disponible" affiché correctement
+   - Section "Mon Espace" reste accessible même sans permissions de modules
+
+5. **Middleware `hasModulePermission`** (auth.js)
+   - Déjà compatible: `["none"].includes('events')` → false → accès refusé
+
+**Traductions ajoutées:**
+- `no_permission` - FR: "Aucune permission" / EN: "No permission"
+- `permissions_hint` mis à jour pour mentionner l'option "Aucune"
+- `team_permissions_note` mis à jour
+
+**Fichiers modifiés:**
+- `/server/routes/churchAdminRoutes.js`
+- `/client/src/pages/AdminChurchUsersPage.jsx`
+- `/client/src/layouts/AdminLayout.jsx`
+- `/client/src/locales/fr.json`
+- `/client/src/locales/en.json`
+
+**Résultat:**
+- ✅ Les membres promus puis retirés de l'équipe peuvent toujours se connecter
+- ✅ Option "Aucune permission" disponible pour désactiver les accès sans supprimer
+- ✅ Interface intuitive avec badges colorés
+- ✅ Rétrogradation automatique vers le rôle 'member' si applicable
+
+---
