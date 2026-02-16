@@ -22,12 +22,47 @@ router.get('/', async (req, res) => {
     const { church_id } = req.user;
     const { archived, search, limit = 50, offset = 0 } = req.query;
 
+    // Étape 1: Récupérer les membres (sans jointure imbriquée pour éviter les erreurs PostgREST)
     let query = supabaseAdmin
       .from('members_v2')
-      .select(`
-        *,
-        member_roles_v2 (
+      .select('*')
+      .eq('church_id', church_id)
+      .order('created_at', { ascending: false });
+
+    // Filtre par archivé
+    if (archived === 'true') {
+      query = query.eq('is_archived', true);
+    } else {
+      query = query.eq('is_archived', false);
+    }
+
+    // Recherche par nom ou email
+    if (search && search.trim()) {
+      query = query.or(`full_name.ilike.%${search.trim()}%,email.ilike.%${search.trim()}%`);
+    }
+
+    // Pagination
+    query = query.range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
+
+    const { data: members, error } = await query;
+
+    if (error) {
+      console.error('Error fetching members:', error);
+      return res.status(500).json({ error: 'Erreur lors de la récupération des membres' });
+    }
+
+    console.log(`GET /members - church_id: ${church_id}, archived: ${archived}, found: ${members ? members.length : 0} members`);
+
+    // Étape 2: Récupérer les rôles des membres trouvés
+    let membersWithRoles = members || [];
+    if (membersWithRoles.length > 0) {
+      const memberIds = membersWithRoles.map(m => m.id);
+
+      const { data: memberRoles, error: rolesError } = await supabaseAdmin
+        .from('member_roles_v2')
+        .select(`
           id,
+          member_id,
           role_id,
           assigned_at,
           church_roles_v2 (
@@ -36,31 +71,19 @@ router.get('/', async (req, res) => {
             name_en,
             color
           )
-        )
-      `)
-      .eq('church_id', church_id)
-      .order('created_at', { ascending: false });
+        `)
+        .in('member_id', memberIds);
 
-    // Filtre par archivé
-    if (archived === 'true') {
-      query = query.eq('is_archived', true);
-    } else if (archived === 'false' || !archived) {
-      query = query.eq('is_archived', false);
-    }
+      if (rolesError) {
+        console.error('Error fetching member roles:', rolesError);
+        // On continue sans les rôles plutôt que de bloquer
+      }
 
-    // Recherche par nom ou email
-    if (search) {
-      query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`);
-    }
-
-    // Pagination
-    query = query.range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
-
-    const { data: members, error, count } = await query;
-
-    if (error) {
-      console.error('Error fetching members:', error);
-      return res.status(500).json({ error: 'Erreur lors de la récupération des membres' });
+      // Associer les rôles aux membres
+      membersWithRoles = membersWithRoles.map(member => ({
+        ...member,
+        member_roles_v2: (memberRoles || []).filter(mr => mr.member_id === member.id)
+      }));
     }
 
     // Compter le total
@@ -71,7 +94,7 @@ router.get('/', async (req, res) => {
       .eq('is_archived', archived === 'true');
 
     res.json({
-      members,
+      members: membersWithRoles,
       total: totalCount || 0,
       limit: parseInt(limit),
       offset: parseInt(offset)
