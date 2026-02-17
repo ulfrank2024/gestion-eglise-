@@ -183,6 +183,19 @@ function SuperAdminLayout() {
               </NavLink>
             </li>
 
+            {/* Gestion des Modules */}
+            <li style={{ marginBottom: '8px' }}>
+              <NavLink
+                to="/super-admin/modules"
+                onMouseEnter={() => setHoveredItem('modules')}
+                onMouseLeave={() => setHoveredItem(null)}
+                style={({ isActive }) => getLinkStyle({ isActive, itemName: 'modules' })}
+              >
+                <MdExtension style={iconStyle} />
+                {t('modules_management') || 'Gestion des Modules'}
+              </NavLink>
+            </li>
+
             {/* Séparateur */}
             <li style={{ borderTop: '1px solid #374151', margin: '16px 0' }}></li>
 
@@ -284,17 +297,6 @@ function SuperAdminLayout() {
                     >
                       <MdHistory style={{ marginRight: '8px', fontSize: '16px' }} />
                       {t('activity_tracking') || 'Suivi d\'activité'}
-                    </NavLink>
-                  </li>
-                  <li style={{ marginBottom: '4px' }}>
-                    <NavLink
-                      to="/super-admin/modules"
-                      onMouseEnter={() => setHoveredItem('modules')}
-                      onMouseLeave={() => setHoveredItem(null)}
-                      style={({ isActive }) => getLinkStyle({ isActive, itemName: 'modules' })}
-                    >
-                      <MdExtension style={{ marginRight: '8px', fontSize: '16px' }} />
-                      {t('modules_management') || 'Gestion des Modules'}
                     </NavLink>
                   </li>
                 </ul>
