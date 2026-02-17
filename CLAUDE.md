@@ -5,6 +5,8 @@ chaque fois tu fait une mise ajour ou ajustement a la fin deploi sur github
 
 a chaque fois que tu cree une nouvelle page ajuste ca aussi pour le mode mobile 
 
+utilise toujour le Spinner animé pour le chargement 
+
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -3430,3 +3432,85 @@ api.member.getChoirCompilations()
 - ✅ Interface moderne et responsive
 
 ---
+
+### 2026-02-17 - Ajout spinner de chargement global
+
+**Contexte:**
+- Les textes "Chargement..." statiques donnaient l'impression que l'application ne fonctionnait pas
+- Besoin d'un spinner animé cohérent sur toutes les pages
+
+**Implémentation:**
+
+1. **Composant LoadingSpinner** (`/client/src/components/LoadingSpinner.jsx`)
+   - `LoadingSpinner` (default export) - Spinner pleine page avec roue animée indigo
+   - Props: `size` (sm/md/lg), `text` (message optionnel), `className`
+   - `InlineSpinner` (named export) - Petit spinner inline pour boutons
+   - Accessible: `role="status"`, `aria-label`
+   - Design: SVG animate-spin indigo-500
+
+2. **67 fichiers modifiés:**
+   - 3 layouts (AdminLayout, MemberLayout, SuperAdminLayout)
+   - 55+ pages (Admin*, SuperAdmin*, Member*, pages publiques)
+   - 1 composant (FormFieldBuilder)
+   - Remplacement des textes `{t('loading')}...` par `<LoadingSpinner />`
+
+3. **Spinner inline sur les boutons de soumission:**
+   - Pages login (Admin, SuperAdmin, Member)
+   - Formulaires création (événement, église, membre)
+   - Formulaires sauvegarde (paramètres, profil)
+   - Pages mot de passe (forgot, reset)
+
+**Résultat:**
+- ✅ Spinner animé visible sur toutes les pages de chargement
+- ✅ Spinner inline dans les boutons de soumission
+- ✅ Design cohérent (indigo) avec le thème dark
+- ✅ Accessibilité respectée
+- ✅ Build vérifié avec succès
+
+---
+
+### 2026-02-17 - Amélioration sidebar Super Admin + Refonte modals dark theme
+
+**Contexte:**
+- Le lien "Gestion des Modules" était caché dans la section dépliable "Rapports" (fermée par défaut)
+- Les modals "Modifier église" et "Supprimer église" utilisaient un thème clair incohérent
+
+**Modifications effectuées:**
+
+1. **SuperAdminLayout.jsx** - Sidebar
+   - ✅ "Gestion des Modules" déplacé en lien top-level (après "Églises")
+   - ✅ Plus besoin de déplier la section "Rapports" pour y accéder
+   - ✅ Utilise l'icône MdExtension
+
+2. **EditChurchModal.jsx** - Refonte complète dark theme
+   - ✅ Suppression de l'import ConfirmationModal.css
+   - ✅ Overlay: `bg-black bg-opacity-75 backdrop-blur-sm`
+   - ✅ Container: `bg-gray-800 rounded-lg border border-gray-700`
+   - ✅ Header: gradient `from-indigo-600 to-purple-600` avec icône MdEdit
+   - ✅ Inputs: `bg-gray-700 text-white border-gray-600`
+   - ✅ Ajout champs manquants: location, city, contact_email, contact_phone
+   - ✅ InlineSpinner sur le bouton de soumission
+   - ✅ Icônes Material Design pour chaque champ
+   - ✅ Grille responsive 2 colonnes pour les champs secondaires
+
+3. **DeleteChurchModal.jsx** - Refonte complète dark theme
+   - ✅ Suppression de l'import ConfirmationModal.css
+   - ✅ Container: `bg-gray-800 border border-red-700`
+   - ✅ Header: gradient rouge `from-red-600 to-red-800` avec icône MdDelete
+   - ✅ Message d'avertissement: `bg-red-900/30 border-red-700` avec MdWarning
+   - ✅ Bouton supprimer: gradient rouge avec icône MdDelete
+
+4. **ConfirmationModal.css** - Conservé
+   - Encore utilisé par CreateChurchModal.jsx et ConfirmationModal.jsx
+
+**Fichiers modifiés:**
+- `/client/src/layouts/SuperAdminLayout.jsx`
+- `/client/src/components/EditChurchModal.jsx`
+- `/client/src/components/DeleteChurchModal.jsx`
+
+**Résultat:**
+- ✅ "Gestion des Modules" immédiatement visible dans le sidebar
+- ✅ Modals cohérents avec le thème dark de l'interface
+- ✅ EditChurchModal avec tous les champs nécessaires
+- ✅ DeleteChurchModal avec avertissement visuel clair
+- ✅ Build vérifié avec succès
