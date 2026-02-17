@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
 import { supabase } from '../supabaseClient';
-import { MdChurch, MdPerson, MdEmail, MdPhone, MdLocationOn, MdLock, MdImage, MdSubdirectoryArrowRight } from 'react-icons/md';
+import { MdChurch, MdPerson, MdEmail, MdPhone, MdLocationOn, MdLock, MdImage, MdSubdirectoryArrowRight, MdCameraAlt } from 'react-icons/md';
 import logo from '../assets/logo_eden.png';
 
 const ChurchRegistrationPage = () => {
@@ -25,6 +25,7 @@ const ChurchRegistrationPage = () => {
     adminName: '',
     password: '',
     logoFile: null,
+    adminPhotoFile: null,
   });
 
   const [loading, setLoading] = useState(false);
@@ -53,9 +54,10 @@ const ChurchRegistrationPage = () => {
   };
 
   const handleFileChange = (e) => {
+    const { name } = e.target;
     setFormState(prevState => ({
       ...prevState,
-      logoFile: e.target.files[0]
+      [name]: e.target.files[0]
     }));
   };
 
@@ -67,30 +69,39 @@ const ChurchRegistrationPage = () => {
 
     try {
       let logoUrl = null;
+      let adminPhotoUrl = null;
 
-      // Upload du logo vers Supabase Storage si un fichier est sélectionné
-      // Utilise le bucket 'event_images' qui existe déjà
-      if (formState.logoFile) {
-        const fileExt = formState.logoFile.name.split('.').pop();
-        const fileName = `church-logos/${formState.subdomain}-${Date.now()}.${fileExt}`;
+      // Fonction utilitaire pour uploader un fichier vers Supabase Storage
+      const uploadFile = async (file, folder) => {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${folder}/${formState.subdomain}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage
           .from('event_images')
-          .upload(fileName, formState.logoFile, {
+          .upload(fileName, file, {
             cacheControl: '3600',
             upsert: false
           });
 
         if (uploadError) {
-          console.error('Logo upload error:', uploadError);
-          // Ne pas bloquer l'inscription si l'upload échoue, juste logger l'erreur
-        } else {
-          // Récupérer l'URL publique du logo
-          const { data: { publicUrl } } = supabase.storage
-            .from('event_images')
-            .getPublicUrl(fileName);
-          logoUrl = publicUrl;
+          console.error(`Upload error (${folder}):`, uploadError);
+          return null;
         }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('event_images')
+          .getPublicUrl(fileName);
+        return publicUrl;
+      };
+
+      // Upload du logo église
+      if (formState.logoFile) {
+        logoUrl = await uploadFile(formState.logoFile, 'church-logos');
+      }
+
+      // Upload de la photo de profil admin
+      if (formState.adminPhotoFile) {
+        adminPhotoUrl = await uploadFile(formState.adminPhotoFile, 'admin-photos');
       }
 
       // Construire l'objet de données à envoyer
@@ -105,6 +116,7 @@ const ChurchRegistrationPage = () => {
         adminName: formState.adminName,
         password: formState.password,
         logoUrl: logoUrl,
+        adminPhotoUrl: adminPhotoUrl,
       };
 
       await api.public.registerChurch(registrationData);
@@ -360,6 +372,21 @@ const ChurchRegistrationPage = () => {
                     placeholder="Mot de passe sécurisé"
                   />
                 </div>
+              </div>
+
+              {/* Admin Profile Photo */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <MdCameraAlt className="inline mr-2" />
+                  {t('church_registration.admin_photo') || 'Photo de profil'}
+                </label>
+                <input
+                  type="file"
+                  name="adminPhotoFile"
+                  onChange={handleFileChange}
+                  accept="image/*"
+                  className="w-full px-4 py-3 bg-gray-700 text-gray-300 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 file:cursor-pointer"
+                />
               </div>
             </div>
           </div>

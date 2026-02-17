@@ -318,7 +318,7 @@ router.post('/churches/register', async (req, res) => {
     console.log('=== CHURCH REGISTRATION START ===');
     console.log('Request body:', JSON.stringify(req.body, null, 2));
 
-    const { token, churchName, subdomain, location, city, email, phone, adminName, password, logoUrl } = req.body;
+    const { token, churchName, subdomain, location, city, email, phone, adminName, password, logoUrl, adminPhotoUrl } = req.body;
 
     if (!token || !churchName || !subdomain || !email || !password) {
         console.log('Missing required fields:', { token: !!token, churchName: !!churchName, subdomain: !!subdomain, email: !!email, password: !!password });
@@ -436,7 +436,8 @@ router.post('/churches/register', async (req, res) => {
                     role: 'church_admin',
                     full_name: adminName,
                     is_main_admin: true,
-                    permissions: ['all']
+                    permissions: ['all'],
+                    profile_photo_url: adminPhotoUrl || null
                 })
                 .eq('user_id', userId);
 
@@ -454,7 +455,8 @@ router.post('/churches/register', async (req, res) => {
                     role: 'church_admin',
                     full_name: adminName,
                     is_main_admin: true,
-                    permissions: ['all']
+                    permissions: ['all'],
+                    profile_photo_url: adminPhotoUrl || null
                 });
 
             if (roleError) {

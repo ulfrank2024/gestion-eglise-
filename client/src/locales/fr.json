@@ -365,6 +365,7 @@
     "church_registration.admin_info": "Informations de l'Administrateur",
     "church_registration.admin_name": "Nom complet de l'Administrateur",
     "church_registration.password": "Mot de passe de l'Administrateur",
+    "church_registration.admin_photo": "Photo de profil de l'Administrateur",
     "church_registration.success_message": "Inscription réussie ! Vous allez être redirigé vers la page de connexion.",
     "church_registration.error_message": "Une erreur est survenue lors de l'inscription.",
     "submitting": "Soumission en cours...",
