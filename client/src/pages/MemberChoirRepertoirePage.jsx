@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { MdLibraryMusic, MdAdd, MdDelete, MdEdit, MdSave, MdClose, MdArrowBack, MdMusicNote } from 'react-icons/md';
-import api from '../api/api';
+import { api } from '../api/api';
 
 export default function MemberChoirRepertoirePage() {
   const { t, i18n } = useTranslation();

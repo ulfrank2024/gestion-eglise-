@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MdClose, MdPause, MdPlayArrow, MdEmail, MdWarning } from 'react-icons/md';
-import api from '../api/api';
+import { api } from '../api/api';
 
 /**
  * Modal pour suspendre ou réactiver une église
