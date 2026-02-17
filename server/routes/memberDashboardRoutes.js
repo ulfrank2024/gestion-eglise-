@@ -49,7 +49,7 @@ router.get('/profile', async (req, res) => {
     // Récupérer les infos de l'église
     const { data: church } = await supabaseAdmin
       .from('churches_v2')
-      .select('name, logo_url')
+      .select('id, name, subdomain, logo_url')
       .eq('id', church_id)
       .single();
 
@@ -477,10 +477,10 @@ router.get('/dashboard', async (req, res) => {
       `)
       .eq('member_id', member_id);
 
-    // Récupérer les infos de l'église
+    // Récupérer les infos de l'église (id et subdomain nécessaires pour les pages événements)
     const { data: church } = await supabaseAdmin
       .from('churches_v2')
-      .select('name, logo_url')
+      .select('id, name, subdomain, logo_url')
       .eq('id', church_id)
       .single();
 
