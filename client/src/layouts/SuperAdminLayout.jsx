@@ -136,7 +136,11 @@ function SuperAdminLayout() {
         flexDirection: 'column',
         justifyContent: 'space-between',
         borderRight: '1px solid #374151',
-        overflowY: 'auto'
+        overflowY: 'auto',
+        position: 'sticky',
+        top: 0,
+        height: '100vh',
+        flexShrink: 0
       }}>
         <div>
           {/* Logo et Titre */}
@@ -370,7 +374,7 @@ function SuperAdminLayout() {
           </div>
         </div>
       </nav>
-      <main style={{ flex: 1, padding: '24px', color: '#ffffff', overflowY: 'auto' }}>
+      <main style={{ flex: 1, padding: '24px', color: '#ffffff', overflowY: 'auto', height: '100vh' }}>
         <Outlet />
       </main>
     </div>

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { supabaseAdmin } = require('../db/supabase');
 const { protect, isSuperAdminOrChurchAdmin, hasModulePermission } = require('../middleware/auth');
-const { sendEmail } = require('../services/mailer');
+const { sendEmail, generateMeetingInvitationEmail } = require('../services/mailer');
 const { logActivity, MODULES, ACTIONS } = require('../services/activityLogger');
 
 // Middleware combiné pour les routes meetings
@@ -355,6 +355,52 @@ router.post('/:id/participants', ...meetingsAuth, async (req, res) => {
       `);
 
     if (error) throw error;
+
+    // Envoyer un email d'invitation à chaque participant
+    try {
+      // Récupérer les détails complets de la réunion
+      const { data: meetingDetails } = await supabaseAdmin
+        .from('meetings_v2')
+        .select('title_fr, title_en, meeting_date, meeting_time, location, agenda_fr, agenda_en')
+        .eq('id', id)
+        .single();
+
+      const { data: church } = await supabaseAdmin
+        .from('churches_v2')
+        .select('name')
+        .eq('id', req.user.church_id)
+        .single();
+
+      const frontendUrl = process.env.FRONTEND_BASE_URL || 'https://gestion-eglise-delta.vercel.app';
+      const lang = req.body.language || 'fr';
+      const meetingTitle = lang === 'fr' ? meetingDetails?.title_fr : (meetingDetails?.title_en || meetingDetails?.title_fr);
+      const agenda = lang === 'fr' ? meetingDetails?.agenda_fr : (meetingDetails?.agenda_en || meetingDetails?.agenda_fr);
+
+      const emailPromises = data?.filter(p => p.members_v2?.email).map(p => {
+        const emailHtml = generateMeetingInvitationEmail({
+          memberName: p.members_v2.full_name,
+          meetingTitle: meetingTitle || 'Réunion',
+          meetingDate: meetingDetails?.meeting_date,
+          meetingTime: meetingDetails?.meeting_time,
+          meetingLocation: meetingDetails?.location,
+          agenda,
+          churchName: church?.name || 'Notre Église',
+          role: p.role || role,
+          dashboardUrl: `${frontendUrl}/member/meetings`,
+          language: lang
+        });
+
+        return sendEmail({
+          to: p.members_v2.email,
+          subject: `${church?.name || 'MY EDEN X'} - ${lang === 'fr' ? 'Invitation à une réunion' : 'Meeting Invitation'}`,
+          html: emailHtml
+        });
+      }) || [];
+
+      await Promise.allSettled(emailPromises);
+    } catch (emailErr) {
+      console.error('Error sending meeting invitation emails:', emailErr);
+    }
 
     res.json(data);
   } catch (error) {

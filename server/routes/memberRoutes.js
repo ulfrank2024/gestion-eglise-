@@ -8,6 +8,7 @@ const router = express.Router();
 const { supabaseAdmin } = require('../db/supabase');
 const { protect, isSuperAdminOrChurchAdmin } = require('../middleware/auth');
 const { logActivity, MODULES, ACTIONS } = require('../services/activityLogger');
+const { sendEmail, generateMemberCreatedByAdminEmail } = require('../services/mailer');
 
 // Appliquer le middleware d'authentification à toutes les routes
 router.use(protect);
@@ -280,6 +281,62 @@ router.post('/', async (req, res) => {
       entityName: full_name,
       req
     });
+
+    // Envoyer un email de bienvenue au nouveau membre
+    try {
+      // Récupérer le nom de l'église
+      const { data: church } = await supabaseAdmin
+        .from('churches_v2')
+        .select('name')
+        .eq('id', church_id)
+        .single();
+
+      const frontendUrl = process.env.FRONTEND_BASE_URL || 'https://gestion-eglise-delta.vercel.app';
+
+      // Créer un compte Supabase pour le membre s'il n'existe pas
+      let tempPassword = null;
+      const { data: existingUser } = await supabaseAdmin.auth.admin.listUsers();
+      const userExists = existingUser?.users?.find(u => u.email === email);
+
+      if (!userExists) {
+        tempPassword = Math.random().toString(36).slice(-8) + 'A1!';
+        const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+          email,
+          password: tempPassword,
+          email_confirm: true,
+        });
+
+        if (!createError && newUser?.user) {
+          // Créer l'entrée dans church_users_v2
+          await supabaseAdmin.from('church_users_v2').insert({
+            user_id: newUser.user.id,
+            church_id,
+            role: 'member',
+            permissions: ['none'],
+          });
+          // Lier le user_id au membre
+          await supabaseAdmin.from('members_v2').update({ user_id: newUser.user.id }).eq('id', member.id);
+        }
+      }
+
+      const emailHtml = generateMemberCreatedByAdminEmail({
+        memberName: full_name,
+        churchName: church?.name || 'Notre Église',
+        email,
+        tempPassword,
+        dashboardUrl: `${frontendUrl}/member/login`,
+        language: req.body.language || 'fr'
+      });
+
+      await sendEmail({
+        to: email,
+        subject: `${church?.name || 'MY EDEN X'} - Bienvenue dans notre communauté !`,
+        html: emailHtml
+      });
+    } catch (emailErr) {
+      console.error('Error sending welcome email to member:', emailErr);
+      // Ne pas bloquer la création si l'email échoue
+    }
 
     res.status(201).json(member);
   } catch (err) {

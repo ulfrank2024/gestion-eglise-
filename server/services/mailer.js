@@ -1189,6 +1189,441 @@ function generateNewEventNotificationEmail({ eventName, eventDate, eventDescript
   `;
 }
 
+/**
+ * Email quand un admin crée manuellement un membre
+ */
+function generateMemberCreatedByAdminEmail({ memberName, churchName, email, tempPassword, dashboardUrl, language = 'fr' }) {
+  const isFr = language === 'fr';
+  const t = isFr ? {
+    title: 'Bienvenue dans notre communauté !',
+    greeting: `Bonjour ${memberName},`,
+    intro: `L'administrateur de <strong style="color: #a5b4fc;">${churchName}</strong> vous a ajouté comme membre de notre communauté sur MY EDEN X.`,
+    credentials: 'Vos identifiants de connexion',
+    email_label: 'Email',
+    password_label: 'Mot de passe temporaire',
+    password_note: 'Nous vous recommandons de changer votre mot de passe après votre première connexion.',
+    features: 'Votre espace membre vous permet de',
+    feature_1: 'Consulter les événements de l\'église',
+    feature_2: 'Voir vos rôles et responsabilités',
+    feature_3: 'Recevoir les annonces importantes',
+    feature_4: 'Participer aux réunions',
+    button: 'Accéder à mon espace',
+    verse: '« Car là où deux ou trois sont assemblés en mon nom, je suis au milieu d\'eux. » — Matthieu 18:20',
+    footer: 'Plateforme de gestion d\'église'
+  } : {
+    title: 'Welcome to our community!',
+    greeting: `Hello ${memberName},`,
+    intro: `The administrator of <strong style="color: #a5b4fc;">${churchName}</strong> has added you as a member of our community on MY EDEN X.`,
+    credentials: 'Your login credentials',
+    email_label: 'Email',
+    password_label: 'Temporary password',
+    password_note: 'We recommend changing your password after your first login.',
+    features: 'Your member space allows you to',
+    feature_1: 'View church events',
+    feature_2: 'See your roles and responsibilities',
+    feature_3: 'Receive important announcements',
+    feature_4: 'Participate in meetings',
+    button: 'Access my space',
+    verse: '"For where two or three gather in my name, there am I with them." — Matthew 18:20',
+    footer: 'Church Management Platform'
+  };
+
+  return `
+    <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${t.title} - MY EDEN X</title></head>
+    <body style="margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background-color:#1f2937;">
+      <div style="max-width:600px;margin:0 auto;padding:20px;">
+        <div style="background:linear-gradient(135deg,#10b981 0%,#059669 100%);border-radius:16px 16px 0 0;padding:40px 30px;text-align:center;">
+          <h1 style="color:white;margin:0;font-size:28px;font-weight:bold;">🤝 MY EDEN X</h1>
+          <p style="color:rgba(255,255,255,0.9);margin:10px 0 0;font-size:16px;">${t.title}</p>
+        </div>
+        <div style="background-color:#374151;padding:40px 30px;border-radius:0 0 16px 16px;">
+          <h2 style="color:#f3f4f6;margin:0 0 20px;font-size:22px;">${t.greeting}</h2>
+          <p style="color:#d1d5db;line-height:1.6;margin:0 0 25px;font-size:16px;">${t.intro}</p>
+          ${tempPassword ? `
+          <div style="background-color:#1f2937;border-radius:12px;padding:25px;margin:25px 0;border-left:4px solid #f59e0b;">
+            <h3 style="color:#f59e0b;margin:0 0 15px;font-size:16px;">🔑 ${t.credentials}</h3>
+            <p style="color:#d1d5db;margin:0 0 8px;font-size:14px;"><strong>${t.email_label}:</strong> ${email}</p>
+            <p style="color:#d1d5db;margin:0 0 12px;font-size:14px;"><strong>${t.password_label}:</strong> <code style="background:#4b5563;padding:4px 10px;border-radius:4px;color:#fbbf24;">${tempPassword}</code></p>
+            <p style="color:#9ca3af;margin:0;font-size:12px;">⚠️ ${t.password_note}</p>
+          </div>` : ''}
+          <div style="background-color:#1f2937;border-radius:12px;padding:25px;margin:25px 0;">
+            <h3 style="color:#10b981;margin:0 0 15px;font-size:16px;">✨ ${t.features}</h3>
+            <ul style="color:#d1d5db;margin:0;padding-left:20px;font-size:14px;line-height:2;">
+              <li>${t.feature_1}</li><li>${t.feature_2}</li><li>${t.feature_3}</li><li>${t.feature_4}</li>
+            </ul>
+          </div>
+          ${dashboardUrl ? `<div style="text-align:center;margin:30px 0;">
+            <a href="${dashboardUrl}" style="display:inline-block;background:linear-gradient(135deg,#10b981,#059669);color:white;padding:14px 40px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;">${t.button}</a>
+          </div>` : ''}
+          <div style="background-color:#1f2937;border-radius:12px;padding:20px;margin:25px 0;text-align:center;">
+            <p style="color:#9ca3af;font-style:italic;margin:0;font-size:13px;line-height:1.6;">${t.verse}</p>
+          </div>
+        </div>
+        <div style="text-align:center;padding:20px;">
+          <p style="color:#6b7280;font-size:12px;margin:0;">© ${new Date().getFullYear()} MY EDEN X - ${t.footer}</p>
+        </div>
+      </div>
+    </body></html>
+  `;
+}
+
+/**
+ * Email quand un membre est ajouté à une réunion
+ */
+function generateMeetingInvitationEmail({ memberName, meetingTitle, meetingDate, meetingTime, meetingLocation, agenda, churchName, role, dashboardUrl, language = 'fr' }) {
+  const isFr = language === 'fr';
+  const roleLabels = {
+    fr: { organizer: 'Organisateur', secretary: 'Secrétaire', participant: 'Participant' },
+    en: { organizer: 'Organizer', secretary: 'Secretary', participant: 'Participant' }
+  };
+  const roleLabel = (isFr ? roleLabels.fr : roleLabels.en)[role] || role;
+
+  const t = isFr ? {
+    title: 'Invitation à une réunion',
+    greeting: `Bonjour ${memberName},`,
+    intro: `Vous êtes invité(e) à participer à une réunion au sein de <strong style="color: #a5b4fc;">${churchName}</strong>.`,
+    meeting_details: 'Détails de la réunion',
+    date: 'Date',
+    time: 'Heure',
+    location: 'Lieu',
+    your_role: 'Votre rôle',
+    agenda_label: 'Ordre du jour',
+    button: 'Voir dans mon espace',
+    verse: '« Là où il y a un conseil, les projets réussissent. » — Proverbes 15:22',
+    footer: 'Plateforme de gestion d\'église'
+  } : {
+    title: 'Meeting Invitation',
+    greeting: `Hello ${memberName},`,
+    intro: `You are invited to attend a meeting at <strong style="color: #a5b4fc;">${churchName}</strong>.`,
+    meeting_details: 'Meeting Details',
+    date: 'Date',
+    time: 'Time',
+    location: 'Location',
+    your_role: 'Your role',
+    agenda_label: 'Agenda',
+    button: 'View in my space',
+    verse: '"Plans fail for lack of counsel, but with many advisers they succeed." — Proverbs 15:22',
+    footer: 'Church Management Platform'
+  };
+
+  const formattedDate = meetingDate ? new Date(meetingDate).toLocaleDateString(isFr ? 'fr-FR' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : '-';
+
+  return `
+    <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${t.title} - MY EDEN X</title></head>
+    <body style="margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background-color:#1f2937;">
+      <div style="max-width:600px;margin:0 auto;padding:20px;">
+        <div style="background:linear-gradient(135deg,#7c3aed 0%,#6d28d9 100%);border-radius:16px 16px 0 0;padding:40px 30px;text-align:center;">
+          <h1 style="color:white;margin:0;font-size:28px;font-weight:bold;">📋 MY EDEN X</h1>
+          <p style="color:rgba(255,255,255,0.9);margin:10px 0 0;font-size:16px;">${t.title}</p>
+        </div>
+        <div style="background-color:#374151;padding:40px 30px;border-radius:0 0 16px 16px;">
+          <h2 style="color:#f3f4f6;margin:0 0 20px;font-size:22px;">${t.greeting}</h2>
+          <p style="color:#d1d5db;line-height:1.6;margin:0 0 25px;font-size:16px;">${t.intro}</p>
+          <div style="background-color:#1f2937;border-radius:12px;padding:25px;margin:25px 0;border-left:4px solid #7c3aed;">
+            <h3 style="color:#a78bfa;margin:0 0 15px;font-size:16px;">${t.meeting_details}</h3>
+            <p style="color:#f3f4f6;margin:0 0 5px;font-size:18px;font-weight:bold;">${meetingTitle}</p>
+            <p style="color:#d1d5db;margin:0 0 5px;font-size:14px;">📅 ${t.date}: ${formattedDate}</p>
+            ${meetingTime ? `<p style="color:#d1d5db;margin:0 0 5px;font-size:14px;">🕐 ${t.time}: ${meetingTime}</p>` : ''}
+            ${meetingLocation ? `<p style="color:#d1d5db;margin:0 0 5px;font-size:14px;">📍 ${t.location}: ${meetingLocation}</p>` : ''}
+            <p style="color:#d1d5db;margin:10px 0 0;font-size:14px;">👤 ${t.your_role}: <span style="background:#7c3aed;color:white;padding:3px 12px;border-radius:12px;font-size:12px;">${roleLabel}</span></p>
+          </div>
+          ${agenda ? `
+          <div style="background-color:#1f2937;border-radius:12px;padding:25px;margin:25px 0;">
+            <h3 style="color:#a78bfa;margin:0 0 15px;font-size:16px;">📝 ${t.agenda_label}</h3>
+            <p style="color:#d1d5db;margin:0;font-size:14px;line-height:1.6;white-space:pre-line;">${agenda}</p>
+          </div>` : ''}
+          ${dashboardUrl ? `<div style="text-align:center;margin:30px 0;">
+            <a href="${dashboardUrl}" style="display:inline-block;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:white;padding:14px 40px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;">${t.button}</a>
+          </div>` : ''}
+          <div style="background-color:#1f2937;border-radius:12px;padding:20px;margin:25px 0;text-align:center;">
+            <p style="color:#9ca3af;font-style:italic;margin:0;font-size:13px;line-height:1.6;">${t.verse}</p>
+          </div>
+        </div>
+        <div style="text-align:center;padding:20px;">
+          <p style="color:#6b7280;font-size:12px;margin:0;">© ${new Date().getFullYear()} MY EDEN X - ${t.footer}</p>
+        </div>
+      </div>
+    </body></html>
+  `;
+}
+
+/**
+ * Email quand un membre est ajouté à la chorale
+ */
+function generateChoirMemberAddedEmail({ memberName, voiceType, isLead, churchName, dashboardUrl, language = 'fr' }) {
+  const isFr = language === 'fr';
+  const voiceLabels = {
+    fr: { soprano: 'Soprano', alto: 'Alto', tenor: 'Ténor', bass: 'Basse' },
+    en: { soprano: 'Soprano', alto: 'Alto', tenor: 'Tenor', bass: 'Bass' }
+  };
+  const voiceLabel = (isFr ? voiceLabels.fr : voiceLabels.en)[voiceType] || voiceType;
+
+  const t = isFr ? {
+    title: 'Bienvenue dans la chorale !',
+    greeting: `Bonjour ${memberName},`,
+    intro: `Vous avez été ajouté(e) à la chorale de <strong style="color: #a5b4fc;">${churchName}</strong>. Nous sommes heureux de vous accueillir !`,
+    voice_label: 'Votre type de voix',
+    lead_label: 'Vous êtes désigné(e) comme Lead — vous pourrez diriger des chants lors des événements.',
+    features: 'En tant que choriste, vous pouvez',
+    feature_1: 'Consulter le répertoire des chants',
+    feature_2: 'Voir les plannings musicaux',
+    feature_3: 'Proposer de nouveaux chants',
+    feature_4: 'Gérer votre répertoire personnel (si Lead)',
+    button: 'Accéder à mon espace chorale',
+    verse: '« Chantez à l\'Éternel un cantique nouveau ! Chantez à l\'Éternel, vous tous, habitants de la terre ! » — Psaume 96:1',
+    footer: 'Plateforme de gestion d\'église'
+  } : {
+    title: 'Welcome to the choir!',
+    greeting: `Hello ${memberName},`,
+    intro: `You have been added to the choir of <strong style="color: #a5b4fc;">${churchName}</strong>. We are happy to welcome you!`,
+    voice_label: 'Your voice type',
+    lead_label: 'You have been designated as Lead — you can lead songs during events.',
+    features: 'As a chorister, you can',
+    feature_1: 'Browse the song repertoire',
+    feature_2: 'View musical planning',
+    feature_3: 'Suggest new songs',
+    feature_4: 'Manage your personal repertoire (if Lead)',
+    button: 'Access my choir space',
+    verse: '"Sing to the Lord a new song; sing to the Lord, all the earth." — Psalm 96:1',
+    footer: 'Church Management Platform'
+  };
+
+  return `
+    <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${t.title} - MY EDEN X</title></head>
+    <body style="margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background-color:#1f2937;">
+      <div style="max-width:600px;margin:0 auto;padding:20px;">
+        <div style="background:linear-gradient(135deg,#ec4899 0%,#be185d 100%);border-radius:16px 16px 0 0;padding:40px 30px;text-align:center;">
+          <h1 style="color:white;margin:0;font-size:28px;font-weight:bold;">🎵 MY EDEN X</h1>
+          <p style="color:rgba(255,255,255,0.9);margin:10px 0 0;font-size:16px;">${t.title}</p>
+        </div>
+        <div style="background-color:#374151;padding:40px 30px;border-radius:0 0 16px 16px;">
+          <h2 style="color:#f3f4f6;margin:0 0 20px;font-size:22px;">${t.greeting}</h2>
+          <p style="color:#d1d5db;line-height:1.6;margin:0 0 25px;font-size:16px;">${t.intro}</p>
+          <div style="background-color:#1f2937;border-radius:12px;padding:25px;margin:25px 0;text-align:center;">
+            <p style="color:#9ca3af;margin:0 0 10px;font-size:14px;">${t.voice_label}</p>
+            <div style="display:inline-block;background:linear-gradient(135deg,#ec4899,#be185d);color:white;padding:12px 30px;border-radius:25px;font-size:18px;font-weight:bold;">🎶 ${voiceLabel}</div>
+            ${isLead ? `<p style="color:#fbbf24;margin:15px 0 0;font-size:14px;font-weight:bold;">⭐ ${t.lead_label}</p>` : ''}
+          </div>
+          <div style="background-color:#1f2937;border-radius:12px;padding:25px;margin:25px 0;">
+            <h3 style="color:#ec4899;margin:0 0 15px;font-size:16px;">✨ ${t.features}</h3>
+            <ul style="color:#d1d5db;margin:0;padding-left:20px;font-size:14px;line-height:2;">
+              <li>${t.feature_1}</li><li>${t.feature_2}</li><li>${t.feature_3}</li><li>${t.feature_4}</li>
+            </ul>
+          </div>
+          ${dashboardUrl ? `<div style="text-align:center;margin:30px 0;">
+            <a href="${dashboardUrl}" style="display:inline-block;background:linear-gradient(135deg,#ec4899,#be185d);color:white;padding:14px 40px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;">${t.button}</a>
+          </div>` : ''}
+          <div style="background-color:#1f2937;border-radius:12px;padding:20px;margin:25px 0;text-align:center;">
+            <p style="color:#9ca3af;font-style:italic;margin:0;font-size:13px;line-height:1.6;">${t.verse}</p>
+          </div>
+        </div>
+        <div style="text-align:center;padding:20px;">
+          <p style="color:#6b7280;font-size:12px;margin:0;">© ${new Date().getFullYear()} MY EDEN X - ${t.footer}</p>
+        </div>
+      </div>
+    </body></html>
+  `;
+}
+
+/**
+ * Email quand un planning chorale est créé (notification aux choristes)
+ */
+function generateChoirPlanningNotificationEmail({ memberName, eventName, eventDate, eventTime, eventType, churchName, songsCount, dashboardUrl, language = 'fr' }) {
+  const isFr = language === 'fr';
+  const typeLabels = {
+    fr: { worship: 'Culte', rehearsal: 'Répétition', concert: 'Concert', other: 'Autre' },
+    en: { worship: 'Worship', rehearsal: 'Rehearsal', concert: 'Concert', other: 'Other' }
+  };
+  const typeLabel = (isFr ? typeLabels.fr : typeLabels.en)[eventType] || eventType;
+  const formattedDate = eventDate ? new Date(eventDate).toLocaleDateString(isFr ? 'fr-FR' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : '-';
+
+  const t = isFr ? {
+    title: 'Nouveau planning musical',
+    greeting: `Bonjour ${memberName},`,
+    intro: `Un nouveau planning musical a été créé pour <strong style="color: #a5b4fc;">${churchName}</strong>. Consultez les détails ci-dessous.`,
+    event_details: 'Détails de l\'événement',
+    type: 'Type',
+    date: 'Date',
+    time: 'Heure',
+    songs: 'Chants programmés',
+    button: 'Voir le planning',
+    verse: '« Louez l\'Éternel ! Car il est bon de célébrer notre Dieu. » — Psaume 147:1',
+    footer: 'Plateforme de gestion d\'église'
+  } : {
+    title: 'New Musical Planning',
+    greeting: `Hello ${memberName},`,
+    intro: `A new musical planning has been created for <strong style="color: #a5b4fc;">${churchName}</strong>. Check the details below.`,
+    event_details: 'Event Details',
+    type: 'Type',
+    date: 'Date',
+    time: 'Time',
+    songs: 'Scheduled songs',
+    button: 'View planning',
+    verse: '"Praise the Lord! For it is good to sing praises to our God." — Psalm 147:1',
+    footer: 'Church Management Platform'
+  };
+
+  return `
+    <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${t.title} - MY EDEN X</title></head>
+    <body style="margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background-color:#1f2937;">
+      <div style="max-width:600px;margin:0 auto;padding:20px;">
+        <div style="background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%);border-radius:16px 16px 0 0;padding:40px 30px;text-align:center;">
+          <h1 style="color:white;margin:0;font-size:28px;font-weight:bold;">🎼 MY EDEN X</h1>
+          <p style="color:rgba(255,255,255,0.9);margin:10px 0 0;font-size:16px;">${t.title}</p>
+        </div>
+        <div style="background-color:#374151;padding:40px 30px;border-radius:0 0 16px 16px;">
+          <h2 style="color:#f3f4f6;margin:0 0 20px;font-size:22px;">${t.greeting}</h2>
+          <p style="color:#d1d5db;line-height:1.6;margin:0 0 25px;font-size:16px;">${t.intro}</p>
+          <div style="background-color:#1f2937;border-radius:12px;padding:25px;margin:25px 0;border-left:4px solid #f59e0b;">
+            <h3 style="color:#fbbf24;margin:0 0 15px;font-size:16px;">${t.event_details}</h3>
+            <p style="color:#f3f4f6;margin:0 0 5px;font-size:18px;font-weight:bold;">${eventName}</p>
+            <p style="color:#d1d5db;margin:0 0 5px;font-size:14px;">🏷️ ${t.type}: <span style="background:#f59e0b;color:white;padding:2px 10px;border-radius:10px;font-size:12px;">${typeLabel}</span></p>
+            <p style="color:#d1d5db;margin:0 0 5px;font-size:14px;">📅 ${t.date}: ${formattedDate}</p>
+            ${eventTime ? `<p style="color:#d1d5db;margin:0 0 5px;font-size:14px;">🕐 ${t.time}: ${eventTime}</p>` : ''}
+            ${songsCount ? `<p style="color:#d1d5db;margin:10px 0 0;font-size:14px;">🎵 ${t.songs}: ${songsCount}</p>` : ''}
+          </div>
+          ${dashboardUrl ? `<div style="text-align:center;margin:30px 0;">
+            <a href="${dashboardUrl}" style="display:inline-block;background:linear-gradient(135deg,#f59e0b,#d97706);color:white;padding:14px 40px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;">${t.button}</a>
+          </div>` : ''}
+          <div style="background-color:#1f2937;border-radius:12px;padding:20px;margin:25px 0;text-align:center;">
+            <p style="color:#9ca3af;font-style:italic;margin:0;font-size:13px;line-height:1.6;">${t.verse}</p>
+          </div>
+        </div>
+        <div style="text-align:center;padding:20px;">
+          <p style="color:#6b7280;font-size:12px;margin:0;">© ${new Date().getFullYear()} MY EDEN X - ${t.footer}</p>
+        </div>
+      </div>
+    </body></html>
+  `;
+}
+
+/**
+ * Email quand un lead est assigné à un chant dans un planning
+ */
+function generateChoirSongAssignmentEmail({ memberName, songTitle, eventName, eventDate, churchName, dashboardUrl, language = 'fr' }) {
+  const isFr = language === 'fr';
+  const formattedDate = eventDate ? new Date(eventDate).toLocaleDateString(isFr ? 'fr-FR' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : '-';
+
+  const t = isFr ? {
+    title: 'Chant assigné — Vous êtes Lead !',
+    greeting: `Bonjour ${memberName},`,
+    intro: `Vous avez été désigné(e) pour diriger un chant lors d'un événement musical de <strong style="color: #a5b4fc;">${churchName}</strong>.`,
+    song_label: 'Chant à diriger',
+    event_label: 'Événement',
+    date_label: 'Date',
+    preparation: 'Préparation',
+    preparation_text: 'Assurez-vous de bien maîtriser ce chant. Consultez les paroles et la tonalité dans votre espace chorale.',
+    button: 'Voir dans mon espace',
+    verse: '« Que la parole de Christ habite parmi vous abondamment ; instruisez-vous et exhortez-vous les uns les autres par des psaumes, des hymnes et des cantiques spirituels. » — Colossiens 3:16',
+    footer: 'Plateforme de gestion d\'église'
+  } : {
+    title: 'Song Assigned — You are Lead!',
+    greeting: `Hello ${memberName},`,
+    intro: `You have been designated to lead a song during a musical event at <strong style="color: #a5b4fc;">${churchName}</strong>.`,
+    song_label: 'Song to lead',
+    event_label: 'Event',
+    date_label: 'Date',
+    preparation: 'Preparation',
+    preparation_text: 'Make sure you master this song well. Check the lyrics and key in your choir space.',
+    button: 'View in my space',
+    verse: '"Let the word of Christ dwell in you richly; teach and admonish one another with psalms, hymns, and spiritual songs." — Colossians 3:16',
+    footer: 'Church Management Platform'
+  };
+
+  return `
+    <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${t.title} - MY EDEN X</title></head>
+    <body style="margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background-color:#1f2937;">
+      <div style="max-width:600px;margin:0 auto;padding:20px;">
+        <div style="background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%);border-radius:16px 16px 0 0;padding:40px 30px;text-align:center;">
+          <h1 style="color:white;margin:0;font-size:28px;font-weight:bold;">🎤 MY EDEN X</h1>
+          <p style="color:rgba(255,255,255,0.9);margin:10px 0 0;font-size:16px;">${t.title}</p>
+        </div>
+        <div style="background-color:#374151;padding:40px 30px;border-radius:0 0 16px 16px;">
+          <h2 style="color:#f3f4f6;margin:0 0 20px;font-size:22px;">${t.greeting}</h2>
+          <p style="color:#d1d5db;line-height:1.6;margin:0 0 25px;font-size:16px;">${t.intro}</p>
+          <div style="background-color:#1f2937;border-radius:12px;padding:25px;margin:25px 0;text-align:center;">
+            <p style="color:#9ca3af;margin:0 0 10px;font-size:14px;">${t.song_label}</p>
+            <div style="display:inline-block;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;padding:12px 30px;border-radius:25px;font-size:18px;font-weight:bold;">🎵 ${songTitle}</div>
+            <p style="color:#d1d5db;margin:15px 0 5px;font-size:14px;">📋 ${t.event_label}: <strong>${eventName}</strong></p>
+            <p style="color:#d1d5db;margin:0;font-size:14px;">📅 ${t.date_label}: ${formattedDate}</p>
+          </div>
+          <div style="background-color:#1f2937;border-radius:12px;padding:25px;margin:25px 0;border-left:4px solid #f59e0b;">
+            <h3 style="color:#fbbf24;margin:0 0 15px;font-size:16px;">📚 ${t.preparation}</h3>
+            <p style="color:#d1d5db;margin:0;font-size:14px;line-height:1.6;">${t.preparation_text}</p>
+          </div>
+          ${dashboardUrl ? `<div style="text-align:center;margin:30px 0;">
+            <a href="${dashboardUrl}" style="display:inline-block;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;padding:14px 40px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;">${t.button}</a>
+          </div>` : ''}
+          <div style="background-color:#1f2937;border-radius:12px;padding:20px;margin:25px 0;text-align:center;">
+            <p style="color:#9ca3af;font-style:italic;margin:0;font-size:13px;line-height:1.6;">${t.verse}</p>
+          </div>
+        </div>
+        <div style="text-align:center;padding:20px;">
+          <p style="color:#6b7280;font-size:12px;margin:0;">© ${new Date().getFullYear()} MY EDEN X - ${t.footer}</p>
+        </div>
+      </div>
+    </body></html>
+  `;
+}
+
+/**
+ * Email quand une annonce est publiée (notification aux membres)
+ */
+function generateAnnouncementPublishedEmail({ memberName, announcementTitle, announcementContent, churchName, dashboardUrl, language = 'fr' }) {
+  const isFr = language === 'fr';
+
+  const t = isFr ? {
+    title: 'Nouvelle annonce',
+    greeting: `Bonjour ${memberName},`,
+    intro: `<strong style="color: #a5b4fc;">${churchName}</strong> a publié une nouvelle annonce. Consultez les détails ci-dessous.`,
+    button: 'Voir l\'annonce',
+    verse: '« Publiez, annoncez, ne le cachez pas ! » — Jérémie 50:2',
+    footer: 'Plateforme de gestion d\'église'
+  } : {
+    title: 'New Announcement',
+    greeting: `Hello ${memberName},`,
+    intro: `<strong style="color: #a5b4fc;">${churchName}</strong> has published a new announcement. Check the details below.`,
+    button: 'View announcement',
+    verse: '"Declare, announce, do not hide it!" — Jeremiah 50:2',
+    footer: 'Church Management Platform'
+  };
+
+  return `
+    <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${t.title} - MY EDEN X</title></head>
+    <body style="margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background-color:#1f2937;">
+      <div style="max-width:600px;margin:0 auto;padding:20px;">
+        <div style="background:linear-gradient(135deg,#0ea5e9 0%,#0284c7 100%);border-radius:16px 16px 0 0;padding:40px 30px;text-align:center;">
+          <h1 style="color:white;margin:0;font-size:28px;font-weight:bold;">📢 MY EDEN X</h1>
+          <p style="color:rgba(255,255,255,0.9);margin:10px 0 0;font-size:16px;">${t.title}</p>
+        </div>
+        <div style="background-color:#374151;padding:40px 30px;border-radius:0 0 16px 16px;">
+          <h2 style="color:#f3f4f6;margin:0 0 20px;font-size:22px;">${t.greeting}</h2>
+          <p style="color:#d1d5db;line-height:1.6;margin:0 0 25px;font-size:16px;">${t.intro}</p>
+          <div style="background-color:#1f2937;border-radius:12px;padding:25px;margin:25px 0;border-left:4px solid #0ea5e9;">
+            <h3 style="color:#38bdf8;margin:0 0 15px;font-size:18px;font-weight:bold;">${announcementTitle}</h3>
+            <p style="color:#d1d5db;margin:0;font-size:14px;line-height:1.8;white-space:pre-line;">${announcementContent}</p>
+          </div>
+          ${dashboardUrl ? `<div style="text-align:center;margin:30px 0;">
+            <a href="${dashboardUrl}" style="display:inline-block;background:linear-gradient(135deg,#0ea5e9,#0284c7);color:white;padding:14px 40px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;">${t.button}</a>
+          </div>` : ''}
+          <div style="background-color:#1f2937;border-radius:12px;padding:20px;margin:25px 0;text-align:center;">
+            <p style="color:#9ca3af;font-style:italic;margin:0;font-size:13px;line-height:1.6;">${t.verse}</p>
+          </div>
+        </div>
+        <div style="text-align:center;padding:20px;">
+          <p style="color:#6b7280;font-size:12px;margin:0;">© ${new Date().getFullYear()} MY EDEN X - ${t.footer}</p>
+        </div>
+      </div>
+    </body></html>
+  `;
+}
+
 module.exports = {
   transporter,
   sendEmail,
@@ -1203,5 +1638,11 @@ module.exports = {
   generateNotificationEmail,
   generateRoleAssignedEmail,
   generateRoleRemovedEmail,
-  generateNewEventNotificationEmail
+  generateNewEventNotificationEmail,
+  generateMemberCreatedByAdminEmail,
+  generateMeetingInvitationEmail,
+  generateChoirMemberAddedEmail,
+  generateChoirPlanningNotificationEmail,
+  generateChoirSongAssignmentEmail,
+  generateAnnouncementPublishedEmail
 };

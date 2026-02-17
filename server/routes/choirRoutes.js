@@ -7,6 +7,7 @@ const express = require('express');
 const router = express.Router();
 const { supabaseAdmin } = require('../db/supabase');
 const { protect, isSuperAdminOrChurchAdmin } = require('../middleware/auth');
+const { sendEmail, generateChoirMemberAddedEmail, generateChoirPlanningNotificationEmail, generateChoirSongAssignmentEmail } = require('../services/mailer');
 
 // Middleware pour vérifier si l'utilisateur est responsable de chorale ou admin
 const isChoirManagerOrAdmin = async (req, res, next) => {
@@ -298,6 +299,35 @@ router.post('/members', isChoirManagerOrAdmin, async (req, res) => {
       .single();
 
     if (error) throw error;
+
+    // Envoyer un email au nouveau choriste
+    try {
+      if (choriste?.member?.email) {
+        const { data: church } = await supabaseAdmin
+          .from('churches_v2')
+          .select('name')
+          .eq('id', church_id)
+          .single();
+
+        const frontendUrl = process.env.FRONTEND_BASE_URL || 'https://gestion-eglise-delta.vercel.app';
+        const emailHtml = generateChoirMemberAddedEmail({
+          memberName: choriste.member.full_name,
+          voiceType: voice_type || 'autre',
+          isLead: is_lead || false,
+          churchName: church?.name || 'Notre Église',
+          dashboardUrl: `${frontendUrl}/member/choir`,
+          language: req.body.language || 'fr'
+        });
+
+        await sendEmail({
+          to: choriste.member.email,
+          subject: `${church?.name || 'MY EDEN X'} - Bienvenue dans la chorale !`,
+          html: emailHtml
+        });
+      }
+    } catch (emailErr) {
+      console.error('Error sending choir member email:', emailErr);
+    }
 
     res.status(201).json(choriste);
   } catch (err) {
@@ -935,6 +965,47 @@ router.post('/planning', isChoirManagerOrAdmin, async (req, res) => {
 
     if (error) throw error;
 
+    // Notifier tous les choristes actifs du nouveau planning
+    try {
+      const { data: choirMembers } = await supabaseAdmin
+        .from('choir_members_v2')
+        .select('member:members_v2 (full_name, email)')
+        .eq('church_id', church_id)
+        .eq('is_active', true);
+
+      const { data: church } = await supabaseAdmin
+        .from('churches_v2')
+        .select('name')
+        .eq('id', church_id)
+        .single();
+
+      const frontendUrl = process.env.FRONTEND_BASE_URL || 'https://gestion-eglise-delta.vercel.app';
+      const lang = req.body.language || 'fr';
+
+      const emailPromises = choirMembers?.filter(cm => cm.member?.email).map(cm => {
+        const emailHtml = generateChoirPlanningNotificationEmail({
+          memberName: cm.member.full_name,
+          eventName: lang === 'fr' ? event_name_fr : (event_name_en || event_name_fr),
+          eventDate: event_date,
+          eventTime: event_time,
+          eventType: event_type || 'culte',
+          churchName: church?.name || 'Notre Église',
+          dashboardUrl: `${frontendUrl}/member/choir/planning`,
+          language: lang
+        });
+
+        return sendEmail({
+          to: cm.member.email,
+          subject: `${church?.name || 'MY EDEN X'} - ${lang === 'fr' ? 'Nouveau planning musical' : 'New Musical Planning'}`,
+          html: emailHtml
+        });
+      }) || [];
+
+      await Promise.allSettled(emailPromises);
+    } catch (emailErr) {
+      console.error('Error sending planning notification emails:', emailErr);
+    }
+
     res.status(201).json(planning);
   } catch (err) {
     console.error('Error creating planning:', err);
@@ -1047,6 +1118,71 @@ router.post('/planning/:planningId/songs', isChoirManagerOrAdmin, async (req, re
       .single();
 
     if (error) throw error;
+
+    // Si un lead est assigné, lui envoyer un email de notification
+    if (lead_choriste_id && entry?.lead_choriste?.member) {
+      try {
+        const { data: planning } = await supabaseAdmin
+          .from('choir_planning_v2')
+          .select('event_name_fr, event_name_en, event_date')
+          .eq('id', planningId)
+          .single();
+
+        const { data: church } = await supabaseAdmin
+          .from('churches_v2')
+          .select('name')
+          .eq('id', req.user.church_id)
+          .single();
+
+        const frontendUrl = process.env.FRONTEND_BASE_URL || 'https://gestion-eglise-delta.vercel.app';
+        const lang = req.body.language || 'fr';
+        const leadEmail = entry.lead_choriste.member?.email;
+
+        // Récupérer l'email du lead depuis members_v2
+        if (!leadEmail) {
+          const { data: memberData } = await supabaseAdmin
+            .from('members_v2')
+            .select('email')
+            .eq('id', entry.lead_choriste.member.id)
+            .single();
+          if (memberData?.email) {
+            const emailHtml = generateChoirSongAssignmentEmail({
+              memberName: entry.lead_choriste.member.full_name,
+              songTitle: entry.song?.title || 'Chant',
+              eventName: lang === 'fr' ? planning?.event_name_fr : (planning?.event_name_en || planning?.event_name_fr),
+              eventDate: planning?.event_date,
+              churchName: church?.name || 'Notre Église',
+              dashboardUrl: `${frontendUrl}/member/choir/planning`,
+              language: lang
+            });
+
+            await sendEmail({
+              to: memberData.email,
+              subject: `${church?.name || 'MY EDEN X'} - ${lang === 'fr' ? 'Chant assigné' : 'Song Assigned'}`,
+              html: emailHtml
+            });
+          }
+        } else {
+          const emailHtml = generateChoirSongAssignmentEmail({
+            memberName: entry.lead_choriste.member.full_name,
+            songTitle: entry.song?.title || 'Chant',
+            eventName: lang === 'fr' ? planning?.event_name_fr : (planning?.event_name_en || planning?.event_name_fr),
+            eventDate: planning?.event_date,
+            churchName: church?.name || 'Notre Église',
+            dashboardUrl: `${frontendUrl}/member/choir/planning`,
+            language: lang
+          });
+
+          await sendEmail({
+            to: leadEmail,
+            subject: `${church?.name || 'MY EDEN X'} - ${lang === 'fr' ? 'Chant assigné' : 'Song Assigned'}`,
+            html: emailHtml
+          });
+        }
+      } catch (emailErr) {
+        console.error('Error sending song assignment email:', emailErr);
+      }
+    }
 
     res.status(201).json(entry);
   } catch (err) {

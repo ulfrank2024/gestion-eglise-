@@ -124,9 +124,9 @@ function MemberLayout() {
 
       {/* Sidebar */}
       <aside className={`
-        fixed lg:static inset-y-0 left-0 z-50
-        w-64 bg-gray-800 border-r border-gray-700
-        transform transition-transform duration-300 ease-in-out
+        fixed lg:sticky lg:top-0 inset-y-0 left-0 z-50
+        w-64 h-screen bg-gray-800 border-r border-gray-700
+        transform transition-transform duration-300 ease-in-out shrink-0
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <div className="flex flex-col h-full">
@@ -219,9 +219,9 @@ function MemberLayout() {
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-auto">
         {/* Mobile header */}
-        <header className="lg:hidden bg-gray-800 border-b border-gray-700 p-4 flex items-center gap-4">
+        <header className="lg:hidden bg-gray-800 border-b border-gray-700 p-4 flex items-center gap-4 sticky top-0 z-30">
           <button
             onClick={() => setSidebarOpen(true)}
             className="text-gray-300 hover:text-white"
@@ -239,7 +239,7 @@ function MemberLayout() {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-auto p-4 lg:p-6 text-white">
+        <main className="flex-1 p-4 lg:p-6 text-white">
           <Outlet context={{ memberInfo, churchInfo }} />
         </main>
       </div>
