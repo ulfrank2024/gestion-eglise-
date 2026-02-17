@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api } from '../api/api';
 import { useTranslation } from 'react-i18next';
+import LoadingSpinner from '../components/LoadingSpinner';
 import {
   MdChurch,
   MdArrowBack,
@@ -83,11 +84,7 @@ const SuperAdminChurchDetailPage = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-gray-300 text-lg">{t('loading')}...</div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (error) {

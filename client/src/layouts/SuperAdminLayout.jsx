@@ -8,6 +8,7 @@ import {
 } from 'react-icons/md';
 import { api } from '../api/api';
 import { supabase } from '../supabaseClient';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 function SuperAdminLayout() {
   const { t, i18n } = useTranslation();
@@ -119,7 +120,7 @@ function SuperAdminLayout() {
   const toggleIconStyle = { marginLeft: 'auto', fontSize: '1.2em', color: '#9ca3af' };
 
   if (loading) {
-    return <div style={{ padding: '20px', color: '#f3f4f6', background: '#111827', minHeight: '100vh' }}>{t('loading')}...</div>;
+    return <div style={{ background: '#111827', minHeight: '100vh' }}><LoadingSpinner /></div>;
   }
 
   if (error) {

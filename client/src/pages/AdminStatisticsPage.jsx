@@ -11,6 +11,7 @@ import {
   MdBarChart, MdEvent, MdPeople, MdTrendingUp, MdCheckCircle,
   MdArrowBack
 } from 'react-icons/md';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
@@ -64,13 +65,7 @@ function AdminStatisticsPage() {
     fetchData();
   }, [location.search, t, navigate, lang]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-gray-300">{t('loading')}...</p>
-      </div>
-    );
-  }
+  if (loading) return <LoadingSpinner />;
 
   if (error) {
     return (

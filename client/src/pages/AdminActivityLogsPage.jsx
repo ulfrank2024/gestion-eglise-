@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { useNavigate } from 'react-router-dom';
 import {
   MdHistory, MdEvent, MdPeople, MdStar, MdSettings,
@@ -145,11 +146,7 @@ function AdminActivityLogsPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-gray-300">{t('loading')}...</p>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (error) {

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import AttendeesModal from '../components/AttendeesModal';
 import { api } from '../api/api'; // Utilisation de notre objet api
+import LoadingSpinner from '../components/LoadingSpinner';
 import './AdminEventsListPage.css';
 
 function AdminEventHistoryPage() {
@@ -71,7 +72,7 @@ function AdminEventHistoryPage() {
     setSelectedEventId(null);
   };
 
-  if (loading) return <p className="loading-message">{t('loading')}...</p>;
+  if (loading) return <LoadingSpinner />;
   if (error) return <p className="error-message">{t('error')}: {error}</p>;
 
   return (

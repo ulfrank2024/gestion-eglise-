@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom'; // Importation de useNavigate
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api'; // Utilisation de notre objet api
+import LoadingSpinner from '../components/LoadingSpinner';
 import logo from '../assets/logo_eden.png';
 import './WelcomeCheckinPage.css';
 
@@ -52,7 +53,7 @@ function WelcomeCheckinPage() {
   };
 
   if (loading) {
-    return <div className="loading-container"><p>{t('loading')}...</p></div>;
+    return <LoadingSpinner />;
   }
 
   if (error) {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
+import LoadingSpinner from '../components/LoadingSpinner';
 import {
   MdExtension, MdEvent, MdPeople, MdMusicNote, MdGroups,
   MdToggleOn, MdToggleOff, MdCheck, MdClose, MdSave,
@@ -107,11 +108,7 @@ function SuperAdminModulesPage() {
   ) || [];
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-gray-300">{t('loading')}...</div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (error) {

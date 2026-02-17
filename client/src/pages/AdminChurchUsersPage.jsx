@@ -8,6 +8,7 @@ import {
   MdCheck, MdClose, MdAdminPanelSettings, MdEdit,
   MdEvent, MdPeople, MdStar, MdSave, MdGroups, MdBlock
 } from 'react-icons/md';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 function AdminChurchUsersPage() {
   const { t } = useTranslation();
@@ -232,13 +233,7 @@ function AdminChurchUsersPage() {
     return permissions.map(p => labels[p] || p).join(', ');
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-gray-300">{t('loading')}...</p>
-      </div>
-    );
-  }
+  if (loading) return <LoadingSpinner />;
 
   if (error) {
     return (

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
+import LoadingSpinner from '../components/LoadingSpinner';
 import RegistrationModal from '../components/RegistrationModal';
 import {
   MdEventAvailable, MdEvent, MdCalendarToday,
@@ -121,11 +122,7 @@ function AdminMyEventsPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-gray-300">{t('loading')}...</p>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   // ─── Vue détaillée d'un événement ───

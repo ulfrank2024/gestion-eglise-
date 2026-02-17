@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../api/api';
+import LoadingSpinner from '../components/LoadingSpinner';
 import {
   MdPeople, MdArrowBack, MdBadge, MdAnnouncement,
   MdTrendingUp, MdPersonAdd, MdSearch, MdChurch,
@@ -75,11 +76,7 @@ function SuperAdminMembersByChurchPage() {
   });
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-300 text-lg">{t('loading')}...</div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (error) {

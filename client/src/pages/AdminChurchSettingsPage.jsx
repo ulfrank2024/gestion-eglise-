@@ -8,6 +8,7 @@ import {
   MdImage, MdLock, MdSave, MdVisibility, MdVisibilityOff
 } from 'react-icons/md';
 import AlertMessage from '../components/AlertMessage';
+import LoadingSpinner, { InlineSpinner } from '../components/LoadingSpinner';
 import { useToast } from '../components/Toast';
 import { getErrorMessage } from '../utils/errorHandler';
 
@@ -198,13 +199,7 @@ function AdminChurchSettingsPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-gray-300">{t('loading')}...</p>
-      </div>
-    );
-  }
+  if (loading) return <LoadingSpinner />;
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -358,7 +353,7 @@ function AdminChurchSettingsPage() {
             className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all disabled:opacity-50"
           >
             <MdSave />
-            {savingChurch ? t('saving') : t('save')}
+            {savingChurch ? <><InlineSpinner /> {t('saving')}</> : t('save')}
           </button>
         </form>
       </div>

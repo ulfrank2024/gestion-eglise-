@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api/api';
 import { useTranslation } from 'react-i18next';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { Link } from 'react-router-dom';
 import { MdChurch, MdEvent, MdPeople, MdTrendingUp, MdCalendarToday, MdCheckCircle, MdBadge, MdAnnouncement, MdArrowForward } from 'react-icons/md';
 
@@ -32,11 +33,7 @@ const SuperAdminStatisticsPage = () => {
   }, [t]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-gray-300 text-lg">{t('loading')}...</div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (error) {

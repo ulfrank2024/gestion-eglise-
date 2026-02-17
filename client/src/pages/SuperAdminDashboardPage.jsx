@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/api';
 import { useTranslation } from 'react-i18next';
+import LoadingSpinner from '../components/LoadingSpinner';
 import {
   MdChurch, MdEvent, MdPeople, MdCheckCircle,
   MdArrowForward, MdTrendingUp, MdBadge, MdAnnouncement
@@ -35,11 +36,7 @@ const SuperAdminDashboardPage = () => {
   }, [t]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-300 text-lg">{t('loading')}...</div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (error) {

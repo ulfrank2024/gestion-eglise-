@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useOutletContext } from 'react-router-dom';
 import { api } from '../api/api';
+import LoadingSpinner from '../components/LoadingSpinner';
 import RegistrationModal from '../components/RegistrationModal';
 import {
   MdEvent, MdCalendarToday, MdAccessTime, MdLocationOn,
@@ -110,7 +111,7 @@ function MemberEventsPage() {
   });
 
   if (loading) {
-    return <div className="p-6 text-gray-300">{t('loading')}...</div>;
+    return <LoadingSpinner />;
   }
 
   // Vue détaillée d'un événement

@@ -6,6 +6,7 @@ import { supabase } from '../supabaseClient';
 import { api } from '../api/api';
 import ConfirmationModal from '../components/ConfirmationModal';
 import FormFieldBuilder from '../components/FormFieldBuilder';
+import LoadingSpinner from '../components/LoadingSpinner';
 import {
   MdArrowBack, MdEdit, MdDelete, MdCheckCircle, MdQrCode,
   MdPeople, MdEmail, MdEvent, MdBarChart, MdSave, MdClose,
@@ -326,11 +327,7 @@ function AdminEventDetailPage() {
   };
 
   if (loading && !event) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-300 text-lg">{t('loading')}...</div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (error && !event) {

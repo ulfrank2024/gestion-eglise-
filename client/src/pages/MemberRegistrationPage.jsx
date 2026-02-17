@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
+import LoadingSpinner, { InlineSpinner } from '../components/LoadingSpinner';
 import { getErrorMessage } from '../utils/errorHandler';
 import defaultLogo from '../assets/logo_eden.png';
 import {
@@ -151,9 +152,7 @@ function MemberRegistrationPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
-        <div className="text-gray-300 text-lg">
-          {t('loading')}...
-        </div>
+        <LoadingSpinner />
       </div>
     );
   }
@@ -399,7 +398,7 @@ function MemberRegistrationPage() {
             className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting
-              ? t('creating_account') || 'Création du compte...'
+              ? <><InlineSpinner /> {t('creating_account') || 'Création du compte...'}</>
               : t('create_account') || 'Créer mon compte'}
           </button>
 

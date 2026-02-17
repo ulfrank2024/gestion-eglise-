@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/api';
 import { useTranslation } from 'react-i18next';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { MdVisibility } from 'react-icons/md';
 import InviteChurchModal from '../components/InviteChurchModal';
 import EditChurchModal from '../components/EditChurchModal';
@@ -72,7 +73,7 @@ const SuperAdminChurchesPage = () => {
   };
 
   if (loading) {
-    return <div className="text-gray-300">{t('loading')}...</div>;
+    return <LoadingSpinner />;
   }
 
   if (error) {

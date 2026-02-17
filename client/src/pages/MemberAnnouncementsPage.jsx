@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { MdAnnouncement, MdCalendarToday } from 'react-icons/md';
 
 function MemberAnnouncementsPage() {
@@ -28,7 +29,7 @@ function MemberAnnouncementsPage() {
   }, []);
 
   if (loading) {
-    return <div className="text-gray-300">{t('loading')}...</div>;
+    return <LoadingSpinner />;
   }
 
   return (

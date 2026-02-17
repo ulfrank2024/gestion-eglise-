@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { useNavigate } from 'react-router-dom';
 
 const SuperAdminEventsPage = () => {
@@ -26,7 +27,7 @@ const SuperAdminEventsPage = () => {
   }, [t]);
 
   if (loading) {
-    return <div className="text-center p-4 text-gray-300">{t('loading')}...</div>;
+    return <LoadingSpinner />;
   }
 
   if (error) {

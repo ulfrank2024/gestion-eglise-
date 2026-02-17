@@ -12,6 +12,7 @@ import {
 import { api } from '../api/api';
 import { supabase } from '../supabaseClient';
 import ChurchSuspendedPage from '../pages/ChurchSuspendedPage';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 function AdminLayout() {
   const { t, i18n } = useTranslation();
@@ -218,7 +219,7 @@ function AdminLayout() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-gray-300 text-lg">{t('loading')}...</div>
+        <LoadingSpinner />
       </div>
     );
   }

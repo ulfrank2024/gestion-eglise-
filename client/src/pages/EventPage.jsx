@@ -5,6 +5,7 @@ import RegistrationModal from '../components/RegistrationModal';
 import logo from '../assets/logo_eden.png';
 import './EventPage.css';
 import { api } from '../api/api'; // Utilisation de notre objet api
+import LoadingSpinner from '../components/LoadingSpinner';
 
 function EventPage() {
   const { t, i18n } = useTranslation();
@@ -78,7 +79,7 @@ function EventPage() {
     color: 'white',
   };
 
-  if (loading) return <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh'}}><p>{t('loading')}...</p></div>;
+  if (loading) return <LoadingSpinner className="h-screen" />;
   if (error) return <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh'}}><p style={{ color: 'red' }}>{t('error')}: {error}</p></div>;
   if (!event) return <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh'}}><p>{t('event_not_found')}</p></div>;
 

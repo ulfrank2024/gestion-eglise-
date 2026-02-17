@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
 import { MdChurch, MdPerson, MdEmail, MdPhone, MdLocationOn, MdLock, MdImage, MdSubdirectoryArrowRight, MdCameraAlt } from 'react-icons/md';
 import logo from '../assets/logo_eden.png';
+import { InlineSpinner } from '../components/LoadingSpinner';
 
 const ChurchRegistrationPage = () => {
   const { t, i18n } = useTranslation();
@@ -383,7 +384,7 @@ const ChurchRegistrationPage = () => {
             disabled={loading}
             className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? t('submitting') : t('submit_registration')}
+            {loading ? <><InlineSpinner /> {t('submitting')}</> : t('submit_registration')}
           </button>
         </form>
       </div>

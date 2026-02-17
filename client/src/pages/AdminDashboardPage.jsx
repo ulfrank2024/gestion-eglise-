@@ -8,6 +8,7 @@ import {
 import { api } from '../api/api';
 import { MdEvent, MdPeople, MdTrendingUp, MdCheckCircle } from 'react-icons/md';
 import AlertMessage from '../components/AlertMessage';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { getErrorMessage } from '../utils/errorHandler';
 
 const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444'];
@@ -82,13 +83,7 @@ function AdminDashboardPage() {
     checkins: event.checkinCount || 0,
   })).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-300 text-lg">{t('loading')}...</div>
-      </div>
-    );
-  }
+  if (loading) return <LoadingSpinner />;
 
   if (error) {
     return (

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
 import { useNavigate } from 'react-router-dom';
 import { MdPeople, MdDownload, MdFilterList, MdVisibility, MdClose, MdEvent } from 'react-icons/md';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 function AdminAllAttendeesPage() {
   const { t, i18n } = useTranslation();
@@ -228,13 +229,7 @@ function AdminAllAttendeesPage() {
     printWindow.print();
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-gray-300">{t('loading')}...</p>
-      </div>
-    );
-  }
+  if (loading) return <LoadingSpinner />;
 
   if (error) {
     return (

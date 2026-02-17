@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
 import { supabase } from '../supabaseClient';
 import defaultLogo from '../assets/logo_eden.png';
+import LoadingSpinner from '../components/LoadingSpinner';
 import {
   MdDashboard, MdPerson, MdEvent, MdBadge, MdNotifications,
   MdAnnouncement, MdLogout, MdMenu, MdClose, MdGroups, MdMusicNote
@@ -99,7 +100,7 @@ function MemberLayout() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
-        <div className="text-gray-300 text-lg">{t('loading')}...</div>
+        <LoadingSpinner />
       </div>
     );
   }

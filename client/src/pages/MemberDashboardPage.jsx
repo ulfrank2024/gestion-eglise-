@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useOutletContext, Link } from 'react-router-dom';
 import { api } from '../api/api';
+import LoadingSpinner from '../components/LoadingSpinner';
 import {
   MdEvent, MdBadge, MdNotifications, MdAnnouncement,
   MdArrowForward, MdPerson, MdGroups, MdMusicNote, MdCheckCircle, MdStar
@@ -33,9 +34,7 @@ function MemberDashboardPage() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="text-gray-300">{t('loading')}...</div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (error) {

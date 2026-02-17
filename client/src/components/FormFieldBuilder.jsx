@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import ConfirmationModal from './ConfirmationModal';
 import './FormFieldBuilder.css';
 import { MdInfoOutline, MdAdd, MdDelete } from 'react-icons/md';
+import LoadingSpinner from './LoadingSpinner';
 
 function FormFieldBuilder({ eventId, churchId }) {
   const { t, i18n } = useTranslation();
@@ -183,7 +184,7 @@ function FormFieldBuilder({ eventId, churchId }) {
     );
   };
 
-  if (loading) return <p className="loading-text">{t('loading_fields')}...</p>;
+  if (loading) return <LoadingSpinner size="md" />;
 
   return (
     <div className="form-builder-container">

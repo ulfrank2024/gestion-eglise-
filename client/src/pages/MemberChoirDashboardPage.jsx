@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { MdMusicNote, MdLibraryMusic, MdCalendarMonth, MdPerson, MdStar, MdArrowForward } from 'react-icons/md';
 import { api } from '../api/api';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 export default function MemberChoirDashboardPage() {
   const { t, i18n } = useTranslation();
@@ -28,11 +29,7 @@ export default function MemberChoirDashboardPage() {
   }, [t]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (error) {

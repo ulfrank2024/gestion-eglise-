@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/api';
+import LoadingSpinner from '../components/LoadingSpinner';
 import logo from '../assets/logo_eden.png';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCalendarAlt, faInfoCircle, faUserShield } from '@fortawesome/free-solid-svg-icons';
@@ -43,7 +44,7 @@ function PublicEventsListPage() {
     navigate('/admin/login');
   };
 
-  if (loading) return <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh'}}><p>{t('loading')}...</p></div>;
+  if (loading) return <LoadingSpinner className="h-screen" />;
   if (error) return <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh'}}><p style={{ color: 'red' }}>{t('error')}: {error}</p></div>;
 
   return (

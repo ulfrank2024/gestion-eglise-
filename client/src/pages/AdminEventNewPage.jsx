@@ -7,6 +7,7 @@ import { MdEvent, MdImage, MdCalendarToday, MdArrowBack, MdSave, MdNotifications
 import AlertMessage from '../components/AlertMessage';
 import { useToast } from '../components/Toast';
 import { getErrorMessage } from '../utils/errorHandler';
+import { InlineSpinner } from '../components/LoadingSpinner';
 
 function AdminEventNewPage() {
   const { t } = useTranslation();
@@ -327,7 +328,7 @@ function AdminEventNewPage() {
               className="flex items-center px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <MdSave className="mr-2" />
-              {loading ? t('creating') : t('submit')}
+              {loading ? <><InlineSpinner /> {t('creating')}</> : t('submit')}
             </button>
           </div>
         </form>

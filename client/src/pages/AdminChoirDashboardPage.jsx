@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
+import LoadingSpinner from '../components/LoadingSpinner';
 import {
   MdMusicNote,
   MdPeople,
@@ -68,11 +69,7 @@ const AdminChoirDashboardPage = () => {
   }, [t]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-gray-300 text-lg">{t('loading')}...</div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (error) {

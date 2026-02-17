@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useOutletContext } from 'react-router-dom';
 import { api } from '../api/api';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { supabase } from '../supabaseClient';
 import {
   MdPerson, MdEmail, MdPhone, MdLocationOn, MdCake,
@@ -125,7 +126,7 @@ function MemberProfilePage() {
   };
 
   if (loading) {
-    return <div className="text-gray-300">{t('loading')}...</div>;
+    return <LoadingSpinner />;
   }
 
   const photoUrl = formData.profile_photo_url || profile?.profile_photo_url;

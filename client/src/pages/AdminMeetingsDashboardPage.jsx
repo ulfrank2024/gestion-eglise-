@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
+import LoadingSpinner from '../components/LoadingSpinner';
 import {
   MdGroups, MdEvent, MdSchedule, MdCheckCircle, MdPlayArrow,
   MdCancel, MdAdd, MdTrendingUp, MdPeople, MdAccessTime
@@ -86,11 +87,7 @@ function AdminMeetingsDashboardPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-white">{t('loading')}...</div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (

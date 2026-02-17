@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
+import LoadingSpinner from '../components/LoadingSpinner';
 import {
   MdGroups, MdAccessTime, MdLocationOn, MdCheckCircle,
   MdSchedule, MdCancel, MdPlayArrow, MdDescription
@@ -83,11 +84,7 @@ function MemberMeetingsPage() {
   });
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-white">{t('loading')}...</div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (

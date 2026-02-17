@@ -6,6 +6,7 @@ import logo from '../assets/logo_eden.png';
 import AlertMessage from '../components/AlertMessage';
 import { getErrorMessage } from '../utils/errorHandler';
 import { MdEmail, MdArrowBack, MdSend } from 'react-icons/md';
+import { InlineSpinner } from '../components/LoadingSpinner';
 
 function AdminForgotPasswordPage() {
   const { t, i18n } = useTranslation();
@@ -137,7 +138,7 @@ function AdminForgotPasswordPage() {
                   className="flex justify-center items-center gap-2 w-full px-4 py-3 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 border border-transparent rounded-lg shadow-lg hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                 >
                   <MdSend />
-                  {loading ? t('sending') : t('forgot_password.send_link')}
+                  {loading ? <><InlineSpinner /> {t('sending')}</> : t('forgot_password.send_link')}
                 </button>
 
                 <div className="text-center pt-4 border-t border-gray-700">

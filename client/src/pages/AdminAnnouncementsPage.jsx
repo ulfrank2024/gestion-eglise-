@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
+import LoadingSpinner from '../components/LoadingSpinner';
 import ConfirmModal from '../components/ConfirmModal';
 import {
   MdAnnouncement, MdAdd, MdEdit, MdDelete, MdPublish,
@@ -127,11 +128,7 @@ function AdminAnnouncementsPage() {
   };
 
   if (loading) {
-    return (
-      <div className="p-6 text-gray-300">
-        {t('loading')}...
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (

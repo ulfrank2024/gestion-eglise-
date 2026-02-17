@@ -5,6 +5,7 @@ import { api } from '../api/api';
 import logo from '../assets/logo_eden.png';
 import { MdAdminPanelSettings, MdPerson, MdChurch } from 'react-icons/md';
 import InstallPWA from '../components/InstallPWA';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 function HomePage() {
   const { t, i18n } = useTranslation();
@@ -49,7 +50,7 @@ function HomePage() {
   if (checking) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
-        <div className="text-gray-300 text-lg">{t('loading')}...</div>
+        <LoadingSpinner />
       </div>
     );
   }

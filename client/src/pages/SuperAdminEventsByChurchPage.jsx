@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const SuperAdminEventsByChurchPage = () => {
   const { t } = useTranslation();
@@ -36,7 +37,7 @@ const SuperAdminEventsByChurchPage = () => {
   }, [churchId, t]);
 
   if (loading) {
-    return <div className="text-center p-4 text-gray-300">{t('loading')}...</div>;
+    return <LoadingSpinner />;
   }
 
   if (error) {

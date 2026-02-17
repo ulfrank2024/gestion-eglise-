@@ -5,6 +5,7 @@ import AttendeesModal from '../components/AttendeesModal';
 import { api } from '../api/api';
 import { MdEvent, MdAdd, MdPeople, MdVisibility, MdFilterList } from 'react-icons/md';
 import AlertMessage from '../components/AlertMessage';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { getErrorMessage } from '../utils/errorHandler';
 
 function AdminEventsListPage() {
@@ -75,13 +76,7 @@ function AdminEventsListPage() {
     setSelectedEventId(null);
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-300 text-lg">{t('loading')}...</div>
-      </div>
-    );
-  }
+  if (loading) return <LoadingSpinner />;
 
   if (error) {
     return (

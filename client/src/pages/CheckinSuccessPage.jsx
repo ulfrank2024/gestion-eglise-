@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { FaCheckCircle } from 'react-icons/fa';
 import { useLocation } from 'react-router-dom';
 import { api } from '../api/api';
+import LoadingSpinner from '../components/LoadingSpinner';
 import './CheckinSuccessPage.css';
 
 function CheckinSuccessPage() {
@@ -37,7 +38,7 @@ function CheckinSuccessPage() {
   }, [location.search, i18n.language, t]);
 
   if (loading) {
-    return <div className="checkin-success-container"><p>{t('loading')}...</p></div>;
+    return <LoadingSpinner />;
   }
 
   return (

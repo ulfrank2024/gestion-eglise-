@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import { NavLink } from 'react-router-dom';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 function AdminAllChurchesPage() {
   const { t } = useTranslation();
@@ -37,7 +38,7 @@ function AdminAllChurchesPage() {
     fetchChurches();
   }, []);
 
-  if (loading) return <div>{t('loading')}...</div>;
+  if (loading) return <LoadingSpinner />;
   if (error) return <div>{t('error')}: {error}</div>;
 
   return (

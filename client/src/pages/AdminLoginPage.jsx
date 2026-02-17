@@ -7,6 +7,7 @@ import logo from '../assets/logo_eden.png';
 import AlertMessage from '../components/AlertMessage';
 import { getErrorMessage } from '../utils/errorHandler';
 import InstallPWA from '../components/InstallPWA';
+import { InlineSpinner } from '../components/LoadingSpinner';
 
 function AdminLoginPage() {
   const { t, i18n } = useTranslation();
@@ -162,7 +163,7 @@ function AdminLoginPage() {
                 disabled={loading}
                 className="flex justify-center w-full px-4 py-3 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 border border-transparent rounded-md shadow-lg hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               >
-                {loading ? t('login.logging_in') : t('login.sign_in')}
+                {loading ? <><InlineSpinner /> {t('login.logging_in')}</> : t('login.sign_in')}
               </button>
             </div>
           </form>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
+import LoadingSpinner from '../components/LoadingSpinner';
 import {
   MdNotifications, MdCheck, MdInfo, MdWarning, MdCheckCircle,
   MdMarkEmailRead
@@ -79,7 +80,7 @@ function MemberNotificationsPage() {
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
   if (loading) {
-    return <div className="text-gray-300">{t('loading')}...</div>;
+    return <LoadingSpinner />;
   }
 
   return (

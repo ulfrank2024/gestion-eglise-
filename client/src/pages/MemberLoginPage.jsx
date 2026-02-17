@@ -7,6 +7,7 @@ import AlertMessage from '../components/AlertMessage';
 import { getErrorMessage } from '../utils/errorHandler';
 import { MdEmail, MdLock, MdLogin } from 'react-icons/md';
 import InstallPWA from '../components/InstallPWA';
+import { InlineSpinner } from '../components/LoadingSpinner';
 
 function MemberLoginPage() {
   const { t, i18n } = useTranslation();
@@ -131,7 +132,7 @@ function MemberLoginPage() {
             className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <MdLogin size={20} />
-            {loading ? t('login.logging_in') : t('login.sign_in')}
+            {loading ? <><InlineSpinner /> {t('login.logging_in')}</> : t('login.sign_in')}
           </button>
         </form>
 
