@@ -340,6 +340,66 @@ router.get('/songs/:id', async (req, res) => {
 });
 
 /**
+ * POST /api/member/choir/songs
+ * Créer un nouveau chant (tout choriste peut proposer un chant)
+ */
+router.post('/songs', async (req, res) => {
+  try {
+    const { member_id, church_id } = req.user;
+    const { title, author, lyrics, tempo, key_signature, category_id, notes } = req.body;
+
+    // Vérifier que le membre est choriste
+    const { data: choirMember } = await supabaseAdmin
+      .from('choir_members_v2')
+      .select('id')
+      .eq('member_id', member_id)
+      .eq('church_id', church_id)
+      .eq('is_active', true)
+      .single();
+
+    if (!choirMember) {
+      return res.status(403).json({ error: 'Vous ne faites pas partie de la chorale' });
+    }
+
+    if (!title || !title.trim()) {
+      return res.status(400).json({ error: 'Le titre du chant est requis' });
+    }
+
+    const songData = {
+      church_id,
+      title: title.trim(),
+      author: author?.trim() || null,
+      lyrics: lyrics?.trim() || null,
+      tempo: tempo || null,
+      key_signature: key_signature?.trim() || null,
+      category_id: category_id || null,
+      notes: notes?.trim() || null
+    };
+
+    const { data: song, error } = await supabaseAdmin
+      .from('choir_songs_v2')
+      .insert(songData)
+      .select(`
+        *,
+        choir_song_categories_v2 (
+          id,
+          name_fr,
+          name_en,
+          color
+        )
+      `)
+      .single();
+
+    if (error) throw error;
+
+    res.status(201).json(song);
+  } catch (err) {
+    console.error('Error in POST /member/choir/songs:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+/**
  * POST /api/member/choir/repertoire
  * Ajouter un chant à mon répertoire (si je suis lead)
  */

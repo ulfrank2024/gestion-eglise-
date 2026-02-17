@@ -784,6 +784,12 @@ export const api = {
       return data;
     },
 
+    // Créer un nouveau chant
+    createChoirSong: async (songData) => {
+      const { data } = await apiClient.post('/member/choir/songs', songData);
+      return data;
+    },
+
     // Détails d'un chant
     getChoirSong: async (songId) => {
       const { data } = await apiClient.get(`/member/choir/songs/${songId}`);

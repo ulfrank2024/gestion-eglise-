@@ -1088,7 +1088,12 @@
       "no_past_plannings": "Aucun événement musical passé.",
       "my_songs_to_lead": "Mes chants à diriger",
       "program": "Programme musical",
-      "view_full_program": "Voir le programme complet"
+      "view_full_program": "Voir le programme complet",
+      "create_song": "Créer le chant",
+      "title_required": "Le titre du chant est requis",
+      "lyrics_placeholder": "Collez les paroles du chant ici...",
+      "notes_placeholder": "Notes supplémentaires...",
+      "no_category": "Sans catégorie"
     },
 
     "modules_management": "Gestion des Modules",
