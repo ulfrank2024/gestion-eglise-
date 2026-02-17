@@ -679,7 +679,9 @@ export const api = {
       return data;
     },
     registerChurch: async (registrationData) => {
-      const { data } = await apiClient.post('/public/churches/register', registrationData);
+      const isFormData = registrationData instanceof FormData;
+      const config = isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+      const { data } = await apiClient.post('/public/churches/register', registrationData, config);
       return data;
     },
     // --- Member Registration ---

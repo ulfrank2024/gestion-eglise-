@@ -1,4 +1,5 @@
 const express = require('express');
+const multer = require('multer');
 const { supabase, supabaseAdmin } = require('../db/supabase');
 const router = express.Router();
 const {
@@ -8,6 +9,12 @@ const {
   generateMemberWelcomeEmail
 } = require('../services/mailer');
 const { logActivity, MODULES, ACTIONS } = require('../services/activityLogger');
+
+// Configuration multer pour l'upload en mémoire (registration)
+const registrationUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+});
 
 /**
  * Résout un churchId qui peut être soit un UUID soit un subdomain
@@ -314,11 +321,15 @@ router.get('/:churchId/checkin/:eventId', async (req, res) => {
   }
 });
 
-router.post('/churches/register', async (req, res) => {
+router.post('/churches/register', registrationUpload.fields([
+    { name: 'logoFile', maxCount: 1 },
+    { name: 'adminPhotoFile', maxCount: 1 }
+]), async (req, res) => {
     console.log('=== CHURCH REGISTRATION START ===');
-    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    console.log('Request body keys:', Object.keys(req.body));
+    console.log('Files received:', req.files ? Object.keys(req.files) : 'none');
 
-    const { token, churchName, subdomain, location, city, email, phone, adminName, password, logoUrl, adminPhotoUrl } = req.body;
+    const { token, churchName, subdomain, location, city, email, phone, adminName, password } = req.body;
 
     if (!token || !churchName || !subdomain || !email || !password) {
         console.log('Missing required fields:', { token: !!token, churchName: !!churchName, subdomain: !!subdomain, email: !!email, password: !!password });
@@ -326,6 +337,42 @@ router.post('/churches/register', async (req, res) => {
     }
 
     try {
+        // Upload des fichiers vers Supabase Storage avec supabaseAdmin (bypass RLS)
+        let logoUrl = null;
+        let adminPhotoUrl = null;
+
+        const uploadFileToStorage = async (file, folder) => {
+            const fileExt = file.originalname.split('.').pop();
+            const fileName = `${folder}/${subdomain}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${fileExt}`;
+
+            const { error: uploadError } = await supabaseAdmin.storage
+                .from('event_images')
+                .upload(fileName, file.buffer, {
+                    contentType: file.mimetype,
+                    cacheControl: '3600',
+                    upsert: true
+                });
+
+            if (uploadError) {
+                console.error(`Upload error (${folder}):`, uploadError);
+                return null;
+            }
+
+            const { data: { publicUrl } } = supabaseAdmin.storage
+                .from('event_images')
+                .getPublicUrl(fileName);
+
+            console.log(`File uploaded to ${folder}: ${publicUrl}`);
+            return publicUrl;
+        };
+
+        if (req.files?.logoFile?.[0]) {
+            logoUrl = await uploadFileToStorage(req.files.logoFile[0], 'church-logos');
+        }
+
+        if (req.files?.adminPhotoFile?.[0]) {
+            adminPhotoUrl = await uploadFileToStorage(req.files.adminPhotoFile[0], 'admin-photos');
+        }
         // 1. Valider le token
         console.log('Step 1: Validating token...');
         const { data: invitation, error: tokenError } = await supabaseAdmin

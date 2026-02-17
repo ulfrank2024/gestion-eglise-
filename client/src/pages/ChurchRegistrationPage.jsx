@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
-import { supabase } from '../supabaseClient';
 import { MdChurch, MdPerson, MdEmail, MdPhone, MdLocationOn, MdLock, MdImage, MdSubdirectoryArrowRight, MdCameraAlt } from 'react-icons/md';
 import logo from '../assets/logo_eden.png';
 
@@ -68,58 +67,26 @@ const ChurchRegistrationPage = () => {
     setSuccess('');
 
     try {
-      let logoUrl = null;
-      let adminPhotoUrl = null;
+      // Envoyer les fichiers via FormData au backend (bypass RLS)
+      const formData = new FormData();
+      formData.append('token', token);
+      formData.append('churchName', formState.churchName);
+      formData.append('subdomain', formState.subdomain);
+      formData.append('location', formState.location || '');
+      formData.append('city', formState.city || '');
+      formData.append('email', formState.email);
+      formData.append('phone', formState.phone || '');
+      formData.append('adminName', formState.adminName);
+      formData.append('password', formState.password);
 
-      // Fonction utilitaire pour uploader un fichier vers Supabase Storage
-      const uploadFile = async (file, folder) => {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${folder}/${formState.subdomain}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${fileExt}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('event_images')
-          .upload(fileName, file, {
-            cacheControl: '3600',
-            upsert: false
-          });
-
-        if (uploadError) {
-          console.error(`Upload error (${folder}):`, uploadError);
-          return null;
-        }
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('event_images')
-          .getPublicUrl(fileName);
-        return publicUrl;
-      };
-
-      // Upload du logo église
       if (formState.logoFile) {
-        logoUrl = await uploadFile(formState.logoFile, 'church-logos');
+        formData.append('logoFile', formState.logoFile);
       }
-
-      // Upload de la photo de profil admin
       if (formState.adminPhotoFile) {
-        adminPhotoUrl = await uploadFile(formState.adminPhotoFile, 'admin-photos');
+        formData.append('adminPhotoFile', formState.adminPhotoFile);
       }
 
-      // Construire l'objet de données à envoyer
-      const registrationData = {
-        token,
-        churchName: formState.churchName,
-        subdomain: formState.subdomain,
-        location: formState.location,
-        city: formState.city,
-        email: formState.email,
-        phone: formState.phone,
-        adminName: formState.adminName,
-        password: formState.password,
-        logoUrl: logoUrl,
-        adminPhotoUrl: adminPhotoUrl,
-      };
-
-      await api.public.registerChurch(registrationData);
+      await api.public.registerChurch(formData);
 
       setSuccess(t('church_registration.success_message') || 'Inscription réussie ! Vous allez être redirigé vers la page de connexion.');
       setTimeout(() => {
