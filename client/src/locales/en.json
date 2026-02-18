@@ -1071,6 +1071,17 @@
     "update_now": "Refresh now",
     "update_later": "Later",
 
+    "block_member": "Block Member",
+    "unblock_member": "Unblock Member",
+    "member_blocked": "Member Blocked",
+    "member_unblocked": "Member Unblocked",
+    "member_blocked_success": "The member has been blocked. A notification email has been sent.",
+    "member_unblocked_success": "The member has been unblocked. A notification email has been sent.",
+    "blocked": "Blocked",
+    "confirm_block_member": "Are you sure you want to block this member? They will no longer be able to log in.",
+    "confirm_unblock_member": "Are you sure you want to unblock this member?",
+    "account_blocked": "Your account has been suspended by the administrator. Please contact your church.",
+
     "checkin_form_title": "Confirm My Attendance",
     "checkin_form_subtitle": "Welcome! Fill in this form (optional)",
     "checkin_form_optional_hint": "All fields are optional. Click Skip to continue without filling in.",

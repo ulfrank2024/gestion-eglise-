@@ -1017,6 +1017,17 @@
     "update_now": "Actualiser maintenant",
     "update_later": "Plus tard",
 
+    "block_member": "Bloquer le membre",
+    "unblock_member": "Débloquer le membre",
+    "member_blocked": "Membre bloqué",
+    "member_unblocked": "Membre débloqué",
+    "member_blocked_success": "Le membre a été bloqué. Un email de notification lui a été envoyé.",
+    "member_unblocked_success": "Le membre a été débloqué. Un email de notification lui a été envoyé.",
+    "blocked": "Bloqué",
+    "confirm_block_member": "Êtes-vous sûr de vouloir bloquer ce membre ? Il ne pourra plus se connecter.",
+    "confirm_unblock_member": "Êtes-vous sûr de vouloir débloquer ce membre ?",
+    "account_blocked": "Votre compte a été suspendu par l'administrateur. Veuillez contacter votre église.",
+
     "checkin_form_title": "Confirmer ma présence",
     "checkin_form_subtitle": "Bienvenue ! Remplissez ce formulaire (optionnel)",
     "checkin_form_optional_hint": "Tous les champs sont optionnels. Cliquez sur Passer pour continuer sans remplir.",

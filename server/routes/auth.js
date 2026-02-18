@@ -20,9 +20,25 @@ router.post('/login', async (req, res) => {
     if (data.user) {
       const { data: churchUser } = await supabaseAdmin
         .from('church_users_v2')
-        .select('church_id, full_name')
+        .select('church_id, full_name, role')
         .eq('user_id', data.user.id)
         .single();
+
+      // Vérifier si le membre est bloqué (uniquement pour les membres, pas les admins)
+      if (churchUser?.role === 'member' && churchUser?.church_id) {
+        const { data: memberRecord } = await supabaseAdmin
+          .from('members_v2')
+          .select('is_blocked')
+          .eq('user_id', data.user.id)
+          .eq('church_id', churchUser.church_id)
+          .single();
+
+        if (memberRecord?.is_blocked) {
+          // Déconnecter immédiatement la session Supabase
+          await supabaseAdmin.auth.admin.signOut(data.session.access_token).catch(() => {});
+          return res.status(403).json({ error: 'account_blocked' });
+        }
+      }
 
       await logActivity({
         churchId: churchUser?.church_id || null,

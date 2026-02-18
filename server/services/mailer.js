@@ -1646,3 +1646,103 @@ module.exports = {
   generateChoirSongAssignmentEmail,
   generateAnnouncementPublishedEmail
 };
+
+// ← les deux fonctions suivantes sont déclarées APRÈS le module.exports pour éviter de modifier la liste ci-dessus
+function generateMemberBlockedEmail({ memberName, churchName, supportEmail, language = 'fr' }) {
+  const isFrench = language === 'fr';
+  const texts = {
+    fr: {
+      title: 'Accès suspendu',
+      greeting: `Bonjour ${memberName},`,
+      body: `Votre accès à l'espace membre de <strong style="color:#a5b4fc;">${churchName}</strong> a été <strong style="color:#f87171;">temporairement suspendu</strong> par l'administrateur.`,
+      what: 'Que faire ?',
+      what_body: `Si vous pensez qu'il s'agit d'une erreur, veuillez contacter votre pasteur ou l'administrateur de l'église.`,
+      contact: supportEmail ? `Contacter : <a href="mailto:${supportEmail}" style="color:#818cf8;">${supportEmail}</a>` : '',
+      footer: 'Plateforme de gestion d\'église',
+      verse: '"Soyez bons et miséricordieux les uns envers les autres." — Éphésiens 4:32'
+    },
+    en: {
+      title: 'Access Suspended',
+      greeting: `Hello ${memberName},`,
+      body: `Your access to the member area of <strong style="color:#a5b4fc;">${churchName}</strong> has been <strong style="color:#f87171;">temporarily suspended</strong> by the administrator.`,
+      what: 'What to do?',
+      what_body: `If you believe this is an error, please contact your pastor or church administrator.`,
+      contact: supportEmail ? `Contact: <a href="mailto:${supportEmail}" style="color:#818cf8;">${supportEmail}</a>` : '',
+      footer: 'Church Management Platform',
+      verse: '"Be kind and compassionate to one another." — Ephesians 4:32'
+    }
+  };
+  const tx = texts[isFrench ? 'fr' : 'en'];
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${tx.title} - MY EDEN X</title></head>
+  <body style="margin:0;padding:0;font-family:'Segoe UI',sans-serif;background-color:#1f2937;">
+    <div style="max-width:600px;margin:0 auto;padding:20px;">
+      <div style="background:linear-gradient(135deg,#dc2626 0%,#991b1b 100%);border-radius:16px 16px 0 0;padding:40px 30px;text-align:center;">
+        <h1 style="color:white;margin:0;font-size:28px;">🚫 MY EDEN X</h1>
+        <p style="color:rgba(255,255,255,0.9);margin:10px 0 0;font-size:16px;">${tx.title}</p>
+      </div>
+      <div style="background-color:#374151;padding:40px 30px;border-radius:0 0 16px 16px;">
+        <h2 style="color:#f3f4f6;margin:0 0 20px;font-size:22px;">${tx.greeting}</h2>
+        <p style="color:#d1d5db;line-height:1.6;margin:0 0 25px;font-size:16px;">${tx.body}</p>
+        <div style="background-color:#1f2937;border-radius:12px;padding:25px;margin:25px 0;border-left:4px solid #f87171;">
+          <h3 style="color:#f87171;margin:0 0 10px;font-size:16px;">${tx.what}</h3>
+          <p style="color:#d1d5db;margin:0;font-size:14px;">${tx.what_body}</p>
+          ${tx.contact ? `<p style="color:#d1d5db;margin:10px 0 0;font-size:14px;">${tx.contact}</p>` : ''}
+        </div>
+        <div style="text-align:center;margin-top:30px;padding-top:20px;border-top:1px solid #4b5563;">
+          <p style="color:#9ca3af;font-style:italic;font-size:13px;margin:0;">${tx.verse}</p>
+        </div>
+      </div>
+      <div style="text-align:center;padding:20px;">
+        <p style="color:#6b7280;font-size:12px;margin:0;">© ${new Date().getFullYear()} MY EDEN X - ${tx.footer}</p>
+      </div>
+    </div>
+  </body></html>`;
+}
+
+function generateMemberUnblockedEmail({ memberName, churchName, dashboardUrl, language = 'fr' }) {
+  const isFrench = language === 'fr';
+  const texts = {
+    fr: {
+      title: 'Accès rétabli',
+      greeting: `Bonjour ${memberName},`,
+      body: `Bonne nouvelle ! Votre accès à l'espace membre de <strong style="color:#a5b4fc;">${churchName}</strong> a été <strong style="color:#34d399;">rétabli</strong>.`,
+      cta: 'Se connecter',
+      footer: 'Plateforme de gestion d\'église',
+      verse: '"La miséricorde triomphe du jugement." — Jacques 2:13'
+    },
+    en: {
+      title: 'Access Restored',
+      greeting: `Hello ${memberName},`,
+      body: `Good news! Your access to the member area of <strong style="color:#a5b4fc;">${churchName}</strong> has been <strong style="color:#34d399;">restored</strong>.`,
+      cta: 'Log in',
+      footer: 'Church Management Platform',
+      verse: '"Mercy triumphs over judgment." — James 2:13'
+    }
+  };
+  const tx = texts[isFrench ? 'fr' : 'en'];
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${tx.title} - MY EDEN X</title></head>
+  <body style="margin:0;padding:0;font-family:'Segoe UI',sans-serif;background-color:#1f2937;">
+    <div style="max-width:600px;margin:0 auto;padding:20px;">
+      <div style="background:linear-gradient(135deg,#059669 0%,#047857 100%);border-radius:16px 16px 0 0;padding:40px 30px;text-align:center;">
+        <h1 style="color:white;margin:0;font-size:28px;">✅ MY EDEN X</h1>
+        <p style="color:rgba(255,255,255,0.9);margin:10px 0 0;font-size:16px;">${tx.title}</p>
+      </div>
+      <div style="background-color:#374151;padding:40px 30px;border-radius:0 0 16px 16px;">
+        <h2 style="color:#f3f4f6;margin:0 0 20px;font-size:22px;">${tx.greeting}</h2>
+        <p style="color:#d1d5db;line-height:1.6;margin:0 0 25px;font-size:16px;">${tx.body}</p>
+        <div style="text-align:center;margin:30px 0;">
+          <a href="${dashboardUrl}" style="display:inline-block;background:linear-gradient(135deg,#059669 0%,#047857 100%);color:white;text-decoration:none;padding:16px 40px;border-radius:8px;font-weight:bold;font-size:16px;">${tx.cta}</a>
+        </div>
+        <div style="text-align:center;margin-top:30px;padding-top:20px;border-top:1px solid #4b5563;">
+          <p style="color:#9ca3af;font-style:italic;font-size:13px;margin:0;">${tx.verse}</p>
+        </div>
+      </div>
+      <div style="text-align:center;padding:20px;">
+        <p style="color:#6b7280;font-size:12px;margin:0;">© ${new Date().getFullYear()} MY EDEN X - ${tx.footer}</p>
+      </div>
+    </div>
+  </body></html>`;
+}
+
+module.exports.generateMemberBlockedEmail = generateMemberBlockedEmail;
+module.exports.generateMemberUnblockedEmail = generateMemberUnblockedEmail;

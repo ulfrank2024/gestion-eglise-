@@ -6,7 +6,8 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import ConfirmModal from '../components/ConfirmModal';
 import {
   MdPeople, MdAdd, MdSearch, MdArchive, MdUnarchive,
-  MdEdit, MdDelete, MdFilterList, MdPerson, MdBadge, MdClose, MdCheck, MdVisibility
+  MdEdit, MdDelete, MdFilterList, MdPerson, MdBadge, MdClose, MdCheck, MdVisibility,
+  MdBlock, MdLockOpen
 } from 'react-icons/md';
 
 function AdminMembersListPage() {
@@ -18,6 +19,7 @@ function AdminMembersListPage() {
   const [statistics, setStatistics] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [search, setSearch] = useState('');
   const [showArchived, setShowArchived] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -95,6 +97,21 @@ function AdminMembersListPage() {
   const handleArchive = async (memberId, archive) => {
     try {
       await api.admin.archiveMember(memberId, archive);
+      fetchData();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleBlock = async (memberId, shouldBlock) => {
+    const msg = shouldBlock
+      ? t('confirm_block_member')
+      : t('confirm_unblock_member');
+    if (!window.confirm(msg)) return;
+    try {
+      await api.admin.blockMember(memberId, shouldBlock);
+      setSuccess(shouldBlock ? t('member_blocked_success') : t('member_unblocked_success'));
+      setTimeout(() => setSuccess(''), 4000);
       fetchData();
     } catch (err) {
       setError(err.message);
@@ -300,6 +317,11 @@ function AdminMembersListPage() {
           {error}
         </div>
       )}
+      {success && (
+        <div className="mb-4 p-4 bg-green-900/30 border border-green-700 rounded-lg text-green-400">
+          {success}
+        </div>
+      )}
 
       {/* Tableau des membres */}
       <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
@@ -341,7 +363,12 @@ function AdminMembersListPage() {
                       )}
                       <div>
                         <p className="text-white font-medium">{member.full_name}</p>
-                        {!member.is_active && (
+                        {member.is_blocked && (
+                          <span className="inline-flex items-center gap-1 text-xs bg-red-900/40 text-red-400 px-2 py-0.5 rounded-full mt-0.5">
+                            <MdBlock size={10} /> {t('blocked')}
+                          </span>
+                        )}
+                        {!member.is_active && !member.is_blocked && (
                           <span className="text-xs text-amber-400">{t('inactive') || 'Inactif'}</span>
                         )}
                       </div>
@@ -382,6 +409,17 @@ function AdminMembersListPage() {
                         title={t('manage_roles') || 'Gérer les rôles'}
                       >
                         <MdBadge size={18} />
+                      </button>
+                      <button
+                        onClick={() => handleBlock(member.id, !member.is_blocked)}
+                        className={`p-2 rounded-lg transition-colors ${
+                          member.is_blocked
+                            ? 'text-green-400 hover:text-green-300 hover:bg-gray-700'
+                            : 'text-red-400 hover:text-red-300 hover:bg-gray-700'
+                        }`}
+                        title={member.is_blocked ? t('unblock_member') : t('block_member')}
+                      >
+                        {member.is_blocked ? <MdLockOpen size={18} /> : <MdBlock size={18} />}
                       </button>
                       <button
                         onClick={() => handleArchive(member.id, !member.is_archived)}

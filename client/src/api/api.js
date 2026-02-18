@@ -322,6 +322,10 @@ export const api = {
       const { data } = await apiClient.put(`/admin/members/${memberId}/archive`, { is_archived: isArchived });
       return data;
     },
+    blockMember: async (memberId, blocked) => {
+      const { data } = await apiClient.put(`/admin/members/${memberId}/block`, { blocked });
+      return data;
+    },
     deleteMember: async (memberId) => {
       await apiClient.delete(`/admin/members/${memberId}`);
     },

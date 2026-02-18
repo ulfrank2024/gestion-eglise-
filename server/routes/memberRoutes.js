@@ -8,7 +8,12 @@ const router = express.Router();
 const { supabaseAdmin } = require('../db/supabase');
 const { protect, isSuperAdminOrChurchAdmin } = require('../middleware/auth');
 const { logActivity, MODULES, ACTIONS } = require('../services/activityLogger');
-const { sendEmail, generateMemberCreatedByAdminEmail } = require('../services/mailer');
+const {
+  sendEmail,
+  generateMemberCreatedByAdminEmail,
+  generateMemberBlockedEmail,
+  generateMemberUnblockedEmail
+} = require('../services/mailer');
 
 // Appliquer le middleware d'authentification à toutes les routes
 router.use(protect);
@@ -494,6 +499,125 @@ router.delete('/:id', async (req, res) => {
     res.json({ message: 'Membre supprimé avec succès' });
   } catch (err) {
     console.error('Error in DELETE /members/:id:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+/**
+ * PUT /api/admin/members/:id/block
+ * Bloquer ou débloquer un membre
+ */
+router.put('/:id/block', async (req, res) => {
+  try {
+    const { church_id } = req.user;
+    const { id } = req.params;
+    const { blocked } = req.body; // true = bloquer, false = débloquer
+
+    // Récupérer les infos du membre
+    const { data: member, error: fetchError } = await supabaseAdmin
+      .from('members_v2')
+      .select('full_name, email, is_blocked, church_id')
+      .eq('id', id)
+      .eq('church_id', church_id)
+      .single();
+
+    if (fetchError || !member) {
+      return res.status(404).json({ error: 'Membre non trouvé' });
+    }
+
+    // Mettre à jour le statut is_blocked
+    const { error: updateError } = await supabaseAdmin
+      .from('members_v2')
+      .update({ is_blocked: !!blocked })
+      .eq('id', id)
+      .eq('church_id', church_id);
+
+    if (updateError) throw updateError;
+
+    // Récupérer le nom de l'église pour les emails
+    const { data: church } = await supabaseAdmin
+      .from('churches_v2')
+      .select('name, contact_email')
+      .eq('id', church_id)
+      .single();
+
+    const churchName = church?.name || 'MY EDEN X';
+    const frontendUrl = process.env.FRONTEND_BASE_URL || 'http://localhost:3000';
+
+    // Notification in-app pour le membre
+    const notifTitle = blocked
+      ? (req.headers['accept-language']?.startsWith('en') ? 'Account suspended' : 'Compte suspendu')
+      : (req.headers['accept-language']?.startsWith('en') ? 'Access restored' : 'Accès rétabli');
+    const notifMessage = blocked
+      ? `Votre accès à l'espace membre a été suspendu par l'administrateur.`
+      : `Votre accès à l'espace membre a été rétabli par l'administrateur.`;
+
+    await supabaseAdmin
+      .from('notifications_v2')
+      .insert({
+        church_id,
+        member_id: id,
+        title: notifTitle,
+        message: notifMessage,
+        type: blocked ? 'warning' : 'success',
+        icon: blocked ? '🚫' : '✅',
+        is_read: false
+      })
+      .catch(err => console.error('Notification insert error (non-bloquant):', err.message));
+
+    // Email au membre
+    if (member.email) {
+      try {
+        if (blocked) {
+          const html = generateMemberBlockedEmail({
+            memberName: member.full_name || member.email,
+            churchName,
+            supportEmail: church?.contact_email,
+            language: 'fr'
+          });
+          await sendEmail({
+            to: member.email,
+            subject: `[${churchName}] Votre accès a été suspendu`,
+            html
+          });
+        } else {
+          const html = generateMemberUnblockedEmail({
+            memberName: member.full_name || member.email,
+            churchName,
+            dashboardUrl: `${frontendUrl}/member/login`,
+            language: 'fr'
+          });
+          await sendEmail({
+            to: member.email,
+            subject: `[${churchName}] Votre accès a été rétabli`,
+            html
+          });
+        }
+      } catch (emailErr) {
+        console.error('Error sending block/unblock email:', emailErr.message);
+      }
+    }
+
+    // Logger l'activité
+    await logActivity({
+      churchId: church_id,
+      userId: req.user.id,
+      userName: req.user.full_name || req.user.email,
+      userEmail: req.user.email,
+      module: MODULES.MEMBERS,
+      action: blocked ? 'BLOCK' : 'UNBLOCK',
+      entityType: 'member',
+      entityId: id,
+      entityName: member.full_name,
+      req
+    });
+
+    res.json({
+      message: blocked ? 'Membre bloqué avec succès' : 'Membre débloqué avec succès',
+      is_blocked: !!blocked
+    });
+  } catch (err) {
+    console.error('Error in PUT /members/:id/block:', err);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });

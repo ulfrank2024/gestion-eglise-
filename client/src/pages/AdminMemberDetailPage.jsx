@@ -7,7 +7,8 @@ import ConfirmModal from '../components/ConfirmModal';
 import {
   MdPerson, MdEmail, MdPhone, MdLocationOn, MdCalendarToday,
   MdArrowBack, MdEdit, MdSave, MdCancel, MdBadge, MdEvent,
-  MdArchive, MdUnarchive, MdDelete, MdCheck, MdClose
+  MdArchive, MdUnarchive, MdDelete, MdCheck, MdClose,
+  MdBlock, MdLockOpen
 } from 'react-icons/md';
 
 function AdminMemberDetailPage() {
@@ -80,6 +81,18 @@ function AdminMemberDetailPage() {
   const handleArchive = async () => {
     try {
       await api.admin.archiveMember(memberId, !member.is_archived);
+      await fetchMember();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleBlock = async () => {
+    const shouldBlock = !member.is_blocked;
+    const msg = shouldBlock ? t('confirm_block_member') : t('confirm_unblock_member');
+    if (!window.confirm(msg)) return;
+    try {
+      await api.admin.blockMember(memberId, shouldBlock);
       await fetchMember();
     } catch (err) {
       setError(err.message);
@@ -248,7 +261,12 @@ function AdminMemberDetailPage() {
                   ) : (
                     <h1 className="text-2xl font-bold text-white">{member.full_name}</h1>
                   )}
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    {member.is_blocked && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-900/40 text-red-400 text-sm rounded-full border border-red-700/40">
+                        <MdBlock size={12} /> {t('blocked')}
+                      </span>
+                    )}
                     {member.is_archived ? (
                       <span className="px-2 py-0.5 bg-amber-600/20 text-amber-400 text-sm rounded-full">
                         {t('archived')}
@@ -475,6 +493,22 @@ function AdminMemberDetailPage() {
               <h2 className="text-lg font-semibold text-white">{t('actions')}</h2>
             </div>
             <div className="p-4 space-y-3">
+              {/* Bloquer / Débloquer */}
+              <button
+                onClick={handleBlock}
+                className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-colors ${
+                  member.is_blocked
+                    ? 'bg-green-600/20 text-green-400 hover:bg-green-600/30 border border-green-700/40'
+                    : 'bg-red-600/20 text-red-400 hover:bg-red-600/30 border border-red-700/40'
+                }`}
+              >
+                {member.is_blocked ? (
+                  <><MdLockOpen size={20} />{t('unblock_member')}</>
+                ) : (
+                  <><MdBlock size={20} />{t('block_member')}</>
+                )}
+              </button>
+
               <button
                 onClick={handleArchive}
                 className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-colors ${

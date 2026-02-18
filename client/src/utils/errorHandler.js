@@ -39,6 +39,7 @@ const ERROR_CODES = {
   // Erreurs de permission
   'no_permission': 'error_no_permission',
   'main_admin_required': 'error_main_admin_required',
+  'account_blocked': 'account_blocked',
 
   // Erreurs génériques
   'unknown': 'error_unknown',
