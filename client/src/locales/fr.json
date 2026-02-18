@@ -616,6 +616,8 @@
     "registration_success_message": "Votre compte a été créé. Vous pouvez maintenant vous connecter.",
     "go_to_login": "Se connecter",
     "full_name_placeholder": "Jean Dupont",
+    "fill_all_required_fields": "Remplissez tous les champs requis",
+    "additional_information": "Informations supplémentaires",
     "confirm_password": "Confirmer",
     "creating_account": "Création du compte...",
     "create_account": "Créer mon compte",

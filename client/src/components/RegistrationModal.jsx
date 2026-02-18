@@ -2,27 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
 import { getErrorMessage } from '../utils/errorHandler';
+import {
+  MdClose, MdPerson, MdEmail, MdPhone, MdHowToReg,
+  MdCheckCircle, MdError, MdExpandMore
+} from 'react-icons/md';
+import { InlineSpinner } from './LoadingSpinner';
 import './RegistrationModal.css';
 
 function RegistrationModal({ isOpen, onClose, eventId, churchId }) {
   const { t, i18n } = useTranslation();
 
-  // États pour les champs fixes
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
 
-  // États pour les champs dynamiques et la logique du formulaire
   const [customFormFields, setCustomFormFields] = useState([]);
   const [customFormData, setCustomFormData] = useState({});
 
   const [registrationMessage, setRegistrationMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      // Réinitialiser tous les états à l'ouverture
       setFullName('');
       setEmail('');
       setPhone('');
@@ -31,6 +34,7 @@ function RegistrationModal({ isOpen, onClose, eventId, churchId }) {
       setRegistrationMessage('');
       setError('');
       setLoading(true);
+      setSuccess(false);
 
       const fetchFormFields = async () => {
         try {
@@ -41,18 +45,15 @@ function RegistrationModal({ isOpen, onClose, eventId, churchId }) {
           const data = await api.public.getEventFormFields(churchId, eventId);
           setCustomFormFields(data);
 
-          // Initialiser les données du formulaire
           const initialCustomFormData = {};
           data.forEach(field => {
             if (field.field_type === 'checkbox') {
-              // Ne pas initialiser pour forcer l'utilisateur à choisir
               initialCustomFormData[field.label_en] = null;
             } else if (field.field_type === 'select') {
-              // Pour les champs select, initialiser en fonction du type de sélection
               if (field.selection_type === 'multiple') {
-                initialCustomFormData[field.label_en] = []; // Tableau pour sélection multiple
+                initialCustomFormData[field.label_en] = [];
               } else {
-                initialCustomFormData[field.label_en] = ''; // Chaîne vide pour sélection unique
+                initialCustomFormData[field.label_en] = '';
               }
             } else {
               initialCustomFormData[field.label_en] = '';
@@ -79,32 +80,19 @@ function RegistrationModal({ isOpen, onClose, eventId, churchId }) {
     }));
   };
 
-  // Gérer les changements pour les champs select à sélection multiple
   const handleMultiSelectChange = (fieldName, optionValue, isChecked) => {
     setCustomFormData(prev => {
       const currentValues = prev[fieldName] || [];
       if (isChecked) {
-        // Ajouter la valeur si elle n'est pas déjà présente
-        return {
-          ...prev,
-          [fieldName]: [...currentValues, optionValue],
-        };
+        return { ...prev, [fieldName]: [...currentValues, optionValue] };
       } else {
-        // Retirer la valeur
-        return {
-          ...prev,
-          [fieldName]: currentValues.filter(v => v !== optionValue),
-        };
+        return { ...prev, [fieldName]: currentValues.filter(v => v !== optionValue) };
       }
     });
   };
 
-  // Gérer les changements pour les champs select à sélection unique (radio)
   const handleSingleSelectChange = (fieldName, optionValue) => {
-    setCustomFormData(prev => ({
-      ...prev,
-      [fieldName]: optionValue,
-    }));
+    setCustomFormData(prev => ({ ...prev, [fieldName]: optionValue }));
   };
 
   const handleRegistration = async (e) => {
@@ -119,7 +107,6 @@ function RegistrationModal({ isOpen, onClose, eventId, churchId }) {
       return;
     }
 
-    // Validation des champs fixes obligatoires
     if (!fullName || !email) {
       setError(t('name_and_email_are_required'));
       setLoading(false);
@@ -129,33 +116,28 @@ function RegistrationModal({ isOpen, onClose, eventId, churchId }) {
     const payload = {
       fullName,
       email,
-      formResponses: {
-        phone,
-        ...customFormData,
-      },
+      formResponses: { phone, ...customFormData },
     };
 
     try {
       await api.public.registerAttendee(churchId, eventId, payload);
 
+      setSuccess(true);
       setRegistrationMessage(t('registration_successful'));
       const registeredEvents = JSON.parse(localStorage.getItem('registeredEvents')) || {};
       registeredEvents[eventId] = true;
       localStorage.setItem('registeredEvents', JSON.stringify(registeredEvents));
 
-      setTimeout(() => {
-        onClose(true);
-      }, 1500);
+      setTimeout(() => { onClose(true); }, 2000);
 
     } catch (err) {
       if (err.response && err.response.status === 409) {
+        setSuccess(true);
         setRegistrationMessage(t('already_registered'));
         const registeredEvents = JSON.parse(localStorage.getItem('registeredEvents')) || {};
         registeredEvents[eventId] = true;
         localStorage.setItem('registeredEvents', JSON.stringify(registeredEvents));
-        setTimeout(() => {
-            onClose(true);
-        }, 1500);
+        setTimeout(() => { onClose(true); }, 2000);
       } else {
         setError(getErrorMessage(err, t));
       }
@@ -175,93 +157,104 @@ function RegistrationModal({ isOpen, onClose, eventId, churchId }) {
 
     switch (field.field_type) {
       case 'checkbox':
-        // Case à cocher Oui/Non - affichée comme radio buttons pour plus de clarté
         return (
-          <div key={field.id} className="yesNoFieldContainer">
-            <label className="formField">{label}{field.is_required && ' *'}</label>
-            <div className="yesNoGroup">
-              <div className="yesNoOption">
-                <input
-                  type="radio"
-                  id={`${field.id}-yes`}
-                  name={fieldName}
-                  value="yes"
-                  checked={customFormData[fieldName] === true}
-                  onChange={() => setCustomFormData(prev => ({ ...prev, [fieldName]: true }))}
-                  required={field.is_required}
-                />
-                <label htmlFor={`${field.id}-yes`}>{t('yes')}</label>
-              </div>
-              <div className="yesNoOption">
-                <input
-                  type="radio"
-                  id={`${field.id}-no`}
-                  name={fieldName}
-                  value="no"
-                  checked={customFormData[fieldName] === false}
-                  onChange={() => setCustomFormData(prev => ({ ...prev, [fieldName]: false }))}
-                />
-                <label htmlFor={`${field.id}-no`}>{t('no')}</label>
-              </div>
+          <div key={field.id} className="space-y-2">
+            <label className="block text-sm font-medium text-gray-300">
+              {label}{field.is_required && <span className="text-red-400 ml-1">*</span>}
+            </label>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setCustomFormData(prev => ({ ...prev, [fieldName]: true }))}
+                className={`flex-1 py-2.5 px-4 rounded-lg border text-sm font-medium transition-all ${
+                  customFormData[fieldName] === true
+                    ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-500/20'
+                    : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-indigo-500 hover:text-white'
+                }`}
+              >
+                {t('yes')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setCustomFormData(prev => ({ ...prev, [fieldName]: false }))}
+                className={`flex-1 py-2.5 px-4 rounded-lg border text-sm font-medium transition-all ${
+                  customFormData[fieldName] === false
+                    ? 'bg-gray-600 border-gray-500 text-white shadow-lg'
+                    : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-gray-500 hover:text-white'
+                }`}
+              >
+                {t('no')}
+              </button>
             </div>
           </div>
         );
 
       case 'select':
-        // Champ avec options multiples
-        if (!field.options || field.options.length === 0) {
-          return null;
-        }
+        if (!field.options || field.options.length === 0) return null;
 
         if (field.selection_type === 'multiple') {
-          // Sélection multiple - afficher des checkboxes
           return (
-            <div key={field.id} className="selectFieldContainer">
-              <label className="formField">{label}{field.is_required && ' *'}</label>
-              <p className="selectHint">{t('select_options')}</p>
-              <div className="optionsGroup">
+            <div key={field.id} className="space-y-2">
+              <label className="block text-sm font-medium text-gray-300">
+                {label}{field.is_required && <span className="text-red-400 ml-1">*</span>}
+              </label>
+              <p className="text-xs text-gray-500 italic">{t('select_options')}</p>
+              <div className="bg-gray-700/50 border border-gray-600 rounded-lg p-3 space-y-2">
                 {field.options.map((option, idx) => {
                   const optionValue = option.label_en;
                   const isChecked = (customFormData[fieldName] || []).includes(optionValue);
                   return (
-                    <div key={idx} className="optionItem">
+                    <label
+                      key={idx}
+                      className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-all ${
+                        isChecked
+                          ? 'bg-indigo-600/20 border border-indigo-500/50'
+                          : 'bg-gray-700 border border-transparent hover:border-gray-500'
+                      }`}
+                    >
                       <input
                         type="checkbox"
-                        id={`${field.id}-${idx}`}
-                        name={fieldName}
-                        value={optionValue}
+                        className="w-4 h-4 accent-indigo-500 cursor-pointer"
                         checked={isChecked}
                         onChange={(e) => handleMultiSelectChange(fieldName, optionValue, e.target.checked)}
                       />
-                      <label htmlFor={`${field.id}-${idx}`}>{getOptionLabel(option)}</label>
-                    </div>
+                      <span className="text-gray-200 text-sm">{getOptionLabel(option)}</span>
+                    </label>
                   );
                 })}
               </div>
             </div>
           );
         } else {
-          // Sélection unique - afficher des radio buttons
           return (
-            <div key={field.id} className="selectFieldContainer">
-              <label className="formField">{label}{field.is_required && ' *'}</label>
-              <p className="selectHint">{t('select_option')}</p>
-              <div className="optionsGroup">
+            <div key={field.id} className="space-y-2">
+              <label className="block text-sm font-medium text-gray-300">
+                {label}{field.is_required && <span className="text-red-400 ml-1">*</span>}
+              </label>
+              <p className="text-xs text-gray-500 italic">{t('select_option')}</p>
+              <div className="bg-gray-700/50 border border-gray-600 rounded-lg p-3 space-y-2">
                 {field.options.map((option, idx) => {
                   const optionValue = option.label_en;
+                  const isSelected = customFormData[fieldName] === optionValue;
                   return (
-                    <div key={idx} className="optionItem">
+                    <label
+                      key={idx}
+                      className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-all ${
+                        isSelected
+                          ? 'bg-indigo-600/20 border border-indigo-500/50'
+                          : 'bg-gray-700 border border-transparent hover:border-gray-500'
+                      }`}
+                    >
                       <input
                         type="radio"
-                        id={`${field.id}-${idx}`}
+                        className="w-4 h-4 accent-indigo-500 cursor-pointer"
                         name={fieldName}
-                        value={optionValue}
-                        checked={customFormData[fieldName] === optionValue}
+                        checked={isSelected}
                         onChange={() => handleSingleSelectChange(fieldName, optionValue)}
                         required={field.is_required}
                       />
-                      <label htmlFor={`${field.id}-${idx}`}>{getOptionLabel(option)}</label>
-                    </div>
+                      <span className="text-gray-200 text-sm">{getOptionLabel(option)}</span>
+                    </label>
                   );
                 })}
               </div>
@@ -270,10 +263,11 @@ function RegistrationModal({ isOpen, onClose, eventId, churchId }) {
         }
 
       default:
-        // Champs texte, email, etc.
         return (
-          <div key={field.id}>
-            <label htmlFor={field.id} className="formField">{label}{field.is_required && ' *'}</label>
+          <div key={field.id} className="space-y-1.5">
+            <label className="block text-sm font-medium text-gray-300">
+              {label}{field.is_required && <span className="text-red-400 ml-1">*</span>}
+            </label>
             <input
               type={field.field_type}
               id={field.id}
@@ -281,7 +275,7 @@ function RegistrationModal({ isOpen, onClose, eventId, churchId }) {
               value={customFormData[fieldName] || ''}
               onChange={handleCustomInputChange}
               required={field.is_required}
-              className="formInput"
+              className="w-full bg-gray-700 border border-gray-600 text-gray-100 placeholder-gray-500 rounded-lg px-4 py-2.5 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors text-sm"
             />
           </div>
         );
@@ -291,67 +285,157 @@ function RegistrationModal({ isOpen, onClose, eventId, churchId }) {
   if (!isOpen) return null;
 
   return (
-    <div className="modalOverlay" onClick={() => onClose(false)}>
-      <div className="modalContent" onClick={e => e.stopPropagation()}>
-        <button className="closeButton" onClick={() => onClose(false)}>&times;</button>
-        <h3>{t('registration_form')}</h3>
-
-        {registrationMessage && <p style={{ color: 'green', fontWeight: 'bold' }}>{registrationMessage}</p>}
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-
-        <form onSubmit={handleRegistration} className="registrationForm">
-
-          {/* Champs fixes */}
-          <div>
-            <label htmlFor="fullName" className="formField">{t('full_name')} *</label>
-            <input
-              type="text"
-              id="fullName"
-              name="fullName"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              required
-              className="formInput"
-            />
+    <div
+      className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      onClick={() => onClose(false)}
+    >
+      <div
+        className="bg-gray-800 rounded-xl border border-gray-700 shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col registration-modal-container"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="relative bg-gradient-to-r from-indigo-600 to-purple-600 rounded-t-xl p-5 flex items-center gap-3 flex-shrink-0">
+          <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+            <MdHowToReg size={22} className="text-white" />
           </div>
-          <div>
-            <label htmlFor="email" className="formField">{t('email')} *</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="formInput"
-            />
+          <div className="flex-1 min-w-0">
+            <h3 className="text-white font-bold text-lg leading-tight">{t('registration_form')}</h3>
+            <p className="text-indigo-100 text-xs mt-0.5">{t('fill_all_required_fields') || 'Remplissez tous les champs requis'}</p>
           </div>
-          <div>
-            <label htmlFor="phone" className="formField">{t('phone')}</label>
-            <input
-              type="tel"
-              id="phone"
-              name="phone"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="formInput"
-            />
-          </div>
+          <button
+            onClick={() => onClose(false)}
+            className="w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-colors flex-shrink-0"
+          >
+            <MdClose size={18} />
+          </button>
+        </div>
 
-          {/* Séparateur visuel */}
-          {customFormFields.length > 0 && <hr className="formSeparator" />}
+        {/* Body - scrollable */}
+        <div className="flex-1 overflow-y-auto registration-modal-body p-5">
 
-          {/* Champs personnalisés */}
-          {loading ? (
-             <p>{t('loading_fields')}...</p>
-          ) : (
-            customFormFields.map(field => renderField(field))
+          {/* Success message */}
+          {(registrationMessage || success) && (
+            <div className="flex items-start gap-3 bg-green-900/30 border border-green-700 rounded-lg p-3.5 mb-4">
+              <MdCheckCircle size={20} className="text-green-400 mt-0.5 flex-shrink-0" />
+              <p className="text-green-300 text-sm font-medium">{registrationMessage}</p>
+            </div>
           )}
 
-          <button type="submit" disabled={loading} className="submitButton">
-            {loading ? t('submitting') : t('register')}
-          </button>
-        </form>
+          {/* Error message */}
+          {error && (
+            <div className="flex items-start gap-3 bg-red-900/30 border border-red-700 rounded-lg p-3.5 mb-4">
+              <MdError size={20} className="text-red-400 mt-0.5 flex-shrink-0" />
+              <p className="text-red-300 text-sm">{error}</p>
+            </div>
+          )}
+
+          {!success && (
+            <form onSubmit={handleRegistration} className="space-y-4">
+
+              {/* Champ Nom */}
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-gray-300">
+                  {t('full_name')} <span className="text-red-400">*</span>
+                </label>
+                <div className="relative">
+                  <MdPerson size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                  <input
+                    type="text"
+                    id="fullName"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                    placeholder={t('full_name_placeholder') || 'Jean Dupont'}
+                    className="w-full bg-gray-700 border border-gray-600 text-gray-100 placeholder-gray-500 rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Champ Email */}
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-gray-300">
+                  {t('email')} <span className="text-red-400">*</span>
+                </label>
+                <div className="relative">
+                  <MdEmail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                  <input
+                    type="email"
+                    id="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    placeholder="exemple@email.com"
+                    className="w-full bg-gray-700 border border-gray-600 text-gray-100 placeholder-gray-500 rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Champ Téléphone */}
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-gray-300">
+                  {t('phone')}
+                </label>
+                <div className="relative">
+                  <MdPhone size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                  <input
+                    type="tel"
+                    id="phone"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+1 (514) 000-0000"
+                    className="w-full bg-gray-700 border border-gray-600 text-gray-100 placeholder-gray-500 rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Séparateur si champs personnalisés */}
+              {customFormFields.length > 0 && (
+                <div className="relative py-1">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-600"></div>
+                  </div>
+                  <div className="relative flex justify-center">
+                    <span className="bg-gray-800 px-3 text-xs text-gray-500">
+                      {t('additional_information') || 'Informations supplémentaires'}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Champs personnalisés */}
+              {loading ? (
+                <div className="flex items-center justify-center py-6 gap-2 text-gray-400 text-sm">
+                  <InlineSpinner size="sm" />
+                  {t('loading_fields')}...
+                </div>
+              ) : (
+                customFormFields.map(field => renderField(field))
+              )}
+
+              {/* Bouton soumettre */}
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full flex items-center justify-center gap-2 py-3 px-6 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all shadow-lg shadow-indigo-500/20"
+                >
+                  {loading ? (
+                    <>
+                      <InlineSpinner size="sm" />
+                      {t('submitting')}
+                    </>
+                  ) : (
+                    <>
+                      <MdHowToReg size={20} />
+                      {t('register')}
+                    </>
+                  )}
+                </button>
+              </div>
+
+            </form>
+          )}
+        </div>
       </div>
     </div>
   );

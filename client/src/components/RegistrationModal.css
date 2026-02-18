@@ -1,203 +1,34 @@
-.modalOverlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  }
-  
-  .modalContent {
-    background-color: white;
-    color: #ffffff;
-    padding: 30px;
-    border-radius: 8px;
-    max-width: 500px;
-    width: 90%;
-    position: relative;
-  }
-  
-  .closeButton {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-  }
+/* Scrollbar personnalisé pour le corps du modal */
+.registration-modal-body::-webkit-scrollbar {
+  width: 6px;
+}
 
-  .registrationForm {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-  }
+.registration-modal-body::-webkit-scrollbar-track {
+  background: #1f2937;
+  border-radius: 3px;
+}
 
-  .formField {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-    color: #d1d5db;
-  }
+.registration-modal-body::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 3px;
+}
 
-  .formInput {
-    width: 100%;
-    padding: 10px;
-    box-sizing: border-box;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    transition: border-color 0.2s;
-  }
+.registration-modal-body::-webkit-scrollbar-thumb:hover {
+  background: #6366f1;
+}
 
-  .formInput:focus {
-    border-color: #007bff;
-    outline: none;
-  }
+/* Animation d'entrée du modal */
+.registration-modal-container {
+  animation: modalFadeIn 0.2s ease-out;
+}
 
-  .checkboxContainer {
-    display: flex;
-    align-items: center;
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
   }
-
-  .checkboxInput {
-    margin-right: 10px;
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
   }
-
-  .submitButton {
-    padding: 10px 20px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-top: 10px;
-  }
-
-  .submitButton:disabled {
-    background-color: #aaa;
-  }
-  
-  /* Media Query for mobile screens */
-  @media (max-width: 600px) {
-    .modalContent {
-      width: calc(100% - 30px); /* 100% moins 15px de marge de chaque côté */
-      margin: 0 15px; /* Marges latérales */
-    }
-  }
-
-  .formSeparator {
-    border: none;
-    border-top: 1px solid #eee;
-    margin: 20px 0;
-  }
-
-  /* Styles pour les champs de type select (options multiples) */
-  .selectFieldContainer {
-    margin-bottom: 5px;
-  }
-
-  .selectHint {
-    font-size: 0.85rem;
-    color: #888;
-    margin: 0 0 10px 0;
-    font-style: italic;
-  }
-
-  .optionsGroup {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 10px;
-    background-color: #f8f9fa;
-    border: 1px solid #e9ecef;
-    border-radius: 6px;
-  }
-
-  .optionItem {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .optionItem input[type="radio"],
-  .optionItem input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-    accent-color: #007bff;
-  }
-
-  .optionItem label {
-    cursor: pointer;
-    font-size: 0.95rem;
-    color: #ffffff;
-  }
-
-  .optionItem label:hover {
-    color: #007bff;
-  }
-
-  .checkboxContainer input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    margin-right: 10px;
-    cursor: pointer;
-    accent-color: #007bff;
-  }
-
-  .checkboxContainer label {
-    cursor: pointer;
-  }
-
-  /* Styles pour les champs Oui/Non */
-  .yesNoFieldContainer {
-    margin-bottom: 5px;
-  }
-
-  .yesNoGroup {
-    display: flex;
-    gap: 20px;
-    padding: 10px;
-    background-color: #f8f9fa;
-    border: 1px solid #e9ecef;
-    border-radius: 6px;
-  }
-
-  .yesNoOption {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    background-color: white;
-    border: 1px solid #dee2e6;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .yesNoOption:hover {
-    border-color: #007bff;
-    background-color: #f0f7ff;
-  }
-
-  .yesNoOption:has(input:checked) {
-    border-color: #007bff;
-    background-color: #e7f1ff;
-  }
-
-  .yesNoOption input[type="radio"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-    accent-color: #007bff;
-  }
-
-  .yesNoOption label {
-    cursor: pointer;
-    font-weight: 500;
-    color: #ffffff;
-  }
+}

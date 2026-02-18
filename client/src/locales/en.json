@@ -598,6 +598,8 @@
     "delete_invitation": "Delete",
     "full_name": "Full Name",
     "full_name_placeholder": "John Doe",
+    "fill_all_required_fields": "Fill in all required fields",
+    "additional_information": "Additional information",
     "email_to_invite": "Email to Invite",
     "link_usage_count": "times used",
     "public_link_description": "Share this link with people who want to join your church",
