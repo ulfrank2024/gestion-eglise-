@@ -421,6 +421,24 @@ export const api = {
       await apiClient.delete(`/admin/notifications/${notificationId}`);
     },
 
+    // --- Notifications personnelles admin (cloche) ---
+    getMyNotifications: async () => {
+      const { data } = await apiClient.get('/admin/my-notifications');
+      return data;
+    },
+    getMyNotificationsUnreadCount: async () => {
+      const { data } = await apiClient.get('/admin/my-notifications/unread-count');
+      return data;
+    },
+    markMyNotificationRead: async (id) => {
+      const { data } = await apiClient.put(`/admin/my-notifications/${id}/read`);
+      return data;
+    },
+    markAllMyNotificationsRead: async () => {
+      const { data } = await apiClient.put('/admin/my-notifications/read-all');
+      return data;
+    },
+
     // --- Choir/Chorale ---
     // Managers (Responsables)
     getChoirManagers: async () => {
@@ -723,6 +741,10 @@ export const api = {
     },
     getNotifications: async () => {
       const { data } = await apiClient.get('/member/notifications');
+      return data;
+    },
+    getNotificationsUnreadCount: async () => {
+      const { data } = await apiClient.get('/member/notifications/unread-count');
       return data;
     },
     markNotificationRead: async (notificationId) => {

@@ -3,6 +3,7 @@ const { supabase, supabaseAdmin } = require('../db/supabase');
 const { transporter, generateThankYouEmail, sendEmail, generateNewEventNotificationEmail } = require('../services/mailer');
 const { protect, isAdminChurch, isSuperAdminOrChurchAdmin } = require('../middleware/auth');
 const { logActivity, MODULES, ACTIONS } = require('../services/activityLogger');
+const { notifyAllAdmins, notifyAllMembers, NOTIFICATION_ICONS } = require('../services/notificationService');
 const router = express.Router();
 const qrcode = require('qrcode');
 
@@ -49,7 +50,34 @@ router.post('/events_v2', protect, isSuperAdminOrChurchAdmin, async (req, res) =
       req
     });
 
-    // Si l'admin souhaite notifier les membres
+    // Notification in-app aux autres admins
+    notifyAllAdmins({
+      churchId: req.user.church_id,
+      excludeUserId: req.user.id,
+      titleFr: 'Nouvel événement créé',
+      titleEn: 'New event created',
+      messageFr: `L'événement "${name_fr}" a été créé`,
+      messageEn: `Event "${name_en || name_fr}" has been created`,
+      type: 'event',
+      icon: NOTIFICATION_ICONS.event,
+      link: `/admin/events/${createdEvent.id}`,
+    });
+
+    // Notification in-app aux membres (si demandé)
+    if (notify_members) {
+      notifyAllMembers({
+        churchId: req.user.church_id,
+        titleFr: 'Nouvel événement',
+        titleEn: 'New event',
+        messageFr: `Un nouvel événement "${name_fr}" a été publié`,
+        messageEn: `A new event "${name_en || name_fr}" has been published`,
+        type: 'event',
+        icon: NOTIFICATION_ICONS.event,
+        link: `/member/events`,
+      });
+    }
+
+    // Si l'admin souhaite notifier les membres par email
     if (notify_members) {
       try {
         // Récupérer les infos de l'église
@@ -224,6 +252,19 @@ router.put('/events_v2/:id', protect, isSuperAdminOrChurchAdmin, async (req, res
       entityId: id,
       entityName: name_fr || name_en,
       req
+    });
+
+    // Notification in-app aux autres admins
+    notifyAllAdmins({
+      churchId: req.user.church_id,
+      excludeUserId: req.user.id,
+      titleFr: 'Événement modifié',
+      titleEn: 'Event updated',
+      messageFr: `L'événement "${name_fr || name_en}" a été modifié`,
+      messageEn: `Event "${name_en || name_fr}" has been updated`,
+      type: 'event',
+      icon: NOTIFICATION_ICONS.event,
+      link: `/admin/events/${id}`,
     });
 
     res.status(200).json(data[0]);

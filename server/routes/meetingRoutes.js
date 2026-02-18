@@ -4,6 +4,7 @@ const { supabaseAdmin } = require('../db/supabase');
 const { protect, isSuperAdminOrChurchAdmin, hasModulePermission } = require('../middleware/auth');
 const { sendEmail, generateMeetingInvitationEmail } = require('../services/mailer');
 const { logActivity, MODULES, ACTIONS } = require('../services/activityLogger');
+const { notifyAllAdmins, notifyMembers, NOTIFICATION_ICONS } = require('../services/notificationService');
 
 // Middleware combiné pour les routes meetings
 const meetingsAuth = [protect, isSuperAdminOrChurchAdmin, hasModulePermission('meetings')];
@@ -204,6 +205,34 @@ router.post('/', ...meetingsAuth, async (req, res) => {
       req
     });
 
+    // Notification in-app aux autres admins
+    notifyAllAdmins({
+      churchId: req.user.church_id,
+      excludeUserId: req.user.id,
+      titleFr: 'Nouvelle réunion planifiée',
+      titleEn: 'New meeting planned',
+      messageFr: `La réunion "${title_fr}" a été créée`,
+      messageEn: `Meeting "${title_en || title_fr}" has been created`,
+      type: 'meeting',
+      icon: NOTIFICATION_ICONS.meeting,
+      link: `/admin/meetings/${meeting.id}`,
+    });
+
+    // Notification in-app aux membres participants
+    if (participant_ids && participant_ids.length > 0) {
+      notifyMembers({
+        churchId: req.user.church_id,
+        memberIds: participant_ids,
+        titleFr: 'Invitation à une réunion',
+        titleEn: 'Meeting invitation',
+        messageFr: `Vous êtes invité(e) à la réunion "${title_fr}"`,
+        messageEn: `You are invited to the meeting "${title_en || title_fr}"`,
+        type: 'meeting',
+        icon: NOTIFICATION_ICONS.meeting,
+        link: '/member/meetings',
+      });
+    }
+
     res.status(201).json(fullMeeting);
   } catch (error) {
     console.error('Error creating meeting:', error);
@@ -402,6 +431,21 @@ router.post('/:id/participants', ...meetingsAuth, async (req, res) => {
       console.error('Error sending meeting invitation emails:', emailErr);
     }
 
+    // Notification in-app aux membres ajoutés
+    if (member_ids && member_ids.length > 0) {
+      notifyMembers({
+        churchId: req.user.church_id,
+        memberIds: member_ids,
+        titleFr: 'Ajout à une réunion',
+        titleEn: 'Added to a meeting',
+        messageFr: 'Vous avez été ajouté(e) comme participant à une réunion',
+        messageEn: 'You have been added as a participant to a meeting',
+        type: 'meeting',
+        icon: NOTIFICATION_ICONS.meeting,
+        link: '/member/meetings',
+      });
+    }
+
     res.json(data);
   } catch (error) {
     console.error('Error adding participants:', error);
@@ -580,6 +624,24 @@ router.post('/:id/send-report', ...meetingsAuth, async (req, res) => {
       details: { recipients_count: emailPromises.length },
       req
     });
+
+    // Notification in-app aux participants
+    const participantMemberIds = participants
+      .filter(p => p.member_id)
+      .map(p => p.member_id);
+    if (participantMemberIds.length > 0) {
+      notifyMembers({
+        churchId: req.user.church_id,
+        memberIds: participantMemberIds,
+        titleFr: 'Rapport de réunion disponible',
+        titleEn: 'Meeting report available',
+        messageFr: `Le rapport de la réunion "${title}" est disponible`,
+        messageEn: `The report for meeting "${title}" is available`,
+        type: 'meeting',
+        icon: NOTIFICATION_ICONS.meeting,
+        link: '/member/meetings',
+      });
+    }
 
     res.json({
       message: `Rapport envoyé à ${emailPromises.length} participant(s)`,

@@ -6,6 +6,7 @@ chaque fois tu fait une mise ajour ou ajustement a la fin deploi sur github
 a chaque fois que tu cree une nouvelle page ajuste ca aussi pour le mode mobile 
 
 utilise toujour le Spinner animé pour le chargement 
+toujour tenir compte du system de notifications
 
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
@@ -3513,4 +3514,84 @@ api.member.getChoirCompilations()
 - ✅ Modals cohérents avec le thème dark de l'interface
 - ✅ EditChurchModal avec tous les champs nécessaires
 - ✅ DeleteChurchModal avec avertissement visuel clair
+- ✅ Build vérifié avec succès
+
+---
+
+### 2026-02-17 - Implémentation complète du système de notifications amélioré
+
+**Contexte:**
+- Ajout de notifications in-app automatiques pour toutes les actions importantes
+- Notifications pour les admins (nouvelle table `admin_notifications_v2`)
+- Notifications enrichies pour les membres (colonnes `link` et `icon` ajoutées)
+
+**Backend - Nouveaux fichiers:**
+
+1. **`/server/services/notificationService.js`** - Service centralisé
+   - `notifyMembers(churchId, memberIds, ...)` - Notification ciblée membres
+   - `notifyAllMembers(churchId, ...)` - Notification tous les membres actifs
+   - `notifyAdmins(churchId, userIds, ...)` - Notification ciblée admins
+   - `notifyAllAdmins(churchId, excludeUserId, ...)` - Notification tous les admins
+
+2. **`/server/routes/adminNotificationRoutes.js`** - Routes notifications admin
+   - `GET /api/admin/my-notifications` - Liste des notifications de l'admin
+   - `GET /api/admin/my-notifications/unread-count` - Compteur non lues
+   - `PUT /api/admin/my-notifications/:id/read` - Marquer comme lu
+   - `PUT /api/admin/my-notifications/read-all` - Tout marquer comme lu
+
+3. **`/server/db/add_notification_enhancements.sql`** - Script SQL
+   - Colonnes `link` et `icon` sur `notifications_v2`
+   - Nouvelle table `admin_notifications_v2`
+
+**Backend - Routes modifiées (triggers de notifications):**
+- `adminRoutes.js` - Notif admins sur création/modification événement
+- `meetingRoutes.js` - Notif admins + membres (création réunion, ajout participant, envoi rapport)
+- `announcementRoutes.js` - Notif membres lors de la publication d'une annonce
+- `roleRoutes.js` - Notif membre lors attribution/retrait de rôle
+- `memberDashboardRoutes.js` - Route `/notifications/unread-count` ajoutée
+- `publicRoutes.js` - Notif enrichies avec link/icon
+
+**Frontend:**
+
+4. **`AdminLayout.jsx`** - Cloche de notifications
+   - Cloche dans le header mobile avec badge rouge (compteur non lues)
+   - Cloche dans la sidebar desktop
+   - Panel dropdown avec liste des dernières notifications
+   - Rafraîchissement automatique chaque minute
+   - Marquer comme lu individuel ou tout
+   - Fermeture au clic en dehors
+
+5. **`/client/src/pages/AdminMyNotificationsPage.jsx`** - Page dédiée
+   - Liste complète des notifications de l'admin
+   - Filtres: Toutes / Non lues
+   - Icônes par type (événement, réunion, rôle, annonce, chorale)
+   - Marquer comme lu au clic
+   - Design dark theme cohérent
+
+6. **API Client (`api.js`):**
+   - `getMyNotifications()` - Liste notifications admin
+   - `getMyNotificationsUnreadCount()` - Compteur non lues
+   - `markMyNotificationRead(id)` - Marquer une notification
+   - `markAllMyNotificationsRead()` - Marquer tout
+   - `member.getNotificationsUnreadCount()` - Compteur membre
+
+7. **Route ajoutée (`main.jsx`):**
+   - `/admin/my-notifications` → `AdminMyNotificationsPage`
+
+8. **Traductions (fr.json et en.json):**
+   - `my_notifications`, `no_notifications`, `no_unread_notifications`
+   - `mark_all_read`, `mark_as_read`, `view_all_notifications`, `unread`
+
+**Action SQL requise:**
+⚠️ Exécuter dans Supabase SQL Editor:
+```
+/server/db/add_notification_enhancements.sql
+```
+
+**Résultat:**
+- ✅ Cloche de notifications visible dans l'interface admin (header + sidebar)
+- ✅ Notifications automatiques sur toutes les actions importantes
+- ✅ Page dédiée `/admin/my-notifications`
+- ✅ Compteur mis à jour en temps réel (polling 1 min)
+- ✅ Design dark theme cohérent
 - ✅ Build vérifié avec succès

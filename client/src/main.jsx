@@ -28,6 +28,7 @@ import AdminChurchUsersPage from './pages/AdminChurchUsersPage'; // Nouvelle pag
 import AdminActivityLogsPage from './pages/AdminActivityLogsPage'; // Page des journaux d'activité
 import AdminMyProfilePage from './pages/AdminMyProfilePage'; // Page Mon Profil
 import AdminMyEventsPage from './pages/AdminMyEventsPage'; // Page Mes Événements
+import AdminMyNotificationsPage from './pages/AdminMyNotificationsPage'; // Page Mes Notifications
 
 // Admin Pages - Module Membres
 import AdminMembersDashboardPage from './pages/AdminMembersDashboardPage';
@@ -129,6 +130,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             {/* Mon Espace */}
             <Route path="my-profile" element={<AdminMyProfilePage />} /> {/* Mon Profil */}
             <Route path="my-events" element={<AdminMyEventsPage />} /> {/* Mes Événements */}
+            <Route path="my-notifications" element={<AdminMyNotificationsPage />} /> {/* Mes Notifications */}
             {/* Module Membres */}
             <Route path="members-dashboard" element={<AdminMembersDashboardPage />} />
             <Route path="members" element={<AdminMembersListPage />} />

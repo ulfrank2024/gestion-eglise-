@@ -9,6 +9,7 @@ const { supabaseAdmin } = require('../db/supabase');
 const { protect, isSuperAdminOrChurchAdmin } = require('../middleware/auth');
 const { sendEmail, generateRoleAssignedEmail, generateRoleRemovedEmail } = require('../services/mailer');
 const { logActivity, MODULES, ACTIONS } = require('../services/activityLogger');
+const { notifyMembers, NOTIFICATION_ICONS } = require('../services/notificationService');
 
 // Appliquer le middleware d'authentification à toutes les routes
 router.use(protect);
@@ -382,6 +383,19 @@ router.post('/:roleId/assign/:memberId', async (req, res) => {
       req
     });
 
+    // Notification in-app au membre
+    notifyMembers({
+      churchId: church_id,
+      memberIds: [memberId],
+      titleFr: 'Nouveau rôle attribué',
+      titleEn: 'New role assigned',
+      messageFr: `Le rôle "${role.name_fr}" vous a été attribué`,
+      messageEn: `The role "${role.name_en || role.name_fr}" has been assigned to you`,
+      type: 'role',
+      icon: NOTIFICATION_ICONS.role,
+      link: '/member/roles',
+    });
+
     res.status(201).json(assignment);
   } catch (err) {
     console.error('Error in POST /roles/:roleId/assign/:memberId:', err);
@@ -478,6 +492,19 @@ router.delete('/:roleId/unassign/:memberId', async (req, res) => {
       entityName: role.name_fr,
       details: { member_id: memberId, member_name: member?.full_name },
       req
+    });
+
+    // Notification in-app au membre
+    notifyMembers({
+      churchId: church_id,
+      memberIds: [memberId],
+      titleFr: 'Rôle retiré',
+      titleEn: 'Role removed',
+      messageFr: `Le rôle "${role.name_fr}" vous a été retiré`,
+      messageEn: `The role "${role.name_en || role.name_fr}" has been removed from you`,
+      type: 'role',
+      icon: NOTIFICATION_ICONS.role,
+      link: '/member/roles',
     });
 
     res.json({ message: 'Rôle retiré avec succès' });

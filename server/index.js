@@ -41,6 +41,8 @@ const choirRoutes = require('./routes/choirRoutes');
 const meetingRoutes = require('./routes/meetingRoutes');
 // Routes Chorale pour les Membres
 const memberChoirRoutes = require('./routes/memberChoirRoutes');
+// Routes notifications personnelles admin
+const adminNotificationRoutes = require('./routes/adminNotificationRoutes');
 
 // Middleware
 const allowedOrigins = [
@@ -87,7 +89,8 @@ app.use('/api/admin/members', memberRoutes); // CRUD membres
 app.use('/api/admin/roles', roleRoutes); // CRUD rôles
 app.use('/api/admin/member-invitations', memberInvitationRoutes); // Invitations membres
 app.use('/api/admin/announcements', announcementRoutes); // Annonces
-app.use('/api/admin/notifications', notificationRoutes); // Notifications admin
+app.use('/api/admin/notifications', notificationRoutes); // Notifications admin (envoi aux membres)
+app.use('/api/admin/my-notifications', adminNotificationRoutes); // Notifications personnelles de l'admin
 app.use('/api/member', memberDashboardRoutes); // Dashboard membre
 app.use('/api/member/choir', memberChoirRoutes); // Routes chorale pour les membres
 // Routes du module Gestion de la Chorale

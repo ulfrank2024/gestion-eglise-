@@ -211,6 +211,30 @@ router.get('/notifications', async (req, res) => {
 });
 
 /**
+ * GET /api/member/notifications/unread-count
+ * Compteur de notifications non lues
+ */
+router.get('/notifications/unread-count', async (req, res) => {
+  try {
+    const { member_id, church_id } = req.user;
+
+    const { count, error } = await supabaseAdmin
+      .from('notifications_v2')
+      .select('*', { count: 'exact', head: true })
+      .eq('church_id', church_id)
+      .eq('is_read', false)
+      .or(`member_id.eq.${member_id},member_id.is.null`);
+
+    if (error) throw error;
+
+    res.json({ count: count || 0 });
+  } catch (err) {
+    console.error('Error in GET /member/notifications/unread-count:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+/**
  * PUT /api/member/notifications/:id/read
  * Marquer une notification comme lue
  */

@@ -8,6 +8,7 @@ const router = express.Router();
 const { supabaseAdmin } = require('../db/supabase');
 const { protect, isSuperAdminOrChurchAdmin } = require('../middleware/auth');
 const { sendEmail, generateChoirMemberAddedEmail, generateChoirPlanningNotificationEmail, generateChoirSongAssignmentEmail } = require('../services/mailer');
+const { notifyMembers, NOTIFICATION_ICONS } = require('../services/notificationService');
 
 // Middleware pour vérifier si l'utilisateur est responsable de chorale ou admin
 const isChoirManagerOrAdmin = async (req, res, next) => {
@@ -328,6 +329,19 @@ router.post('/members', isChoirManagerOrAdmin, async (req, res) => {
     } catch (emailErr) {
       console.error('Error sending choir member email:', emailErr);
     }
+
+    // Notification in-app au membre ajouté
+    notifyMembers({
+      churchId: church_id,
+      memberIds: [member_id],
+      titleFr: 'Bienvenue dans la chorale !',
+      titleEn: 'Welcome to the choir!',
+      messageFr: 'Vous avez été ajouté(e) à la chorale de l\'église',
+      messageEn: 'You have been added to the church choir',
+      type: 'choir',
+      icon: NOTIFICATION_ICONS.choir,
+      link: '/member/choir',
+    });
 
     res.status(201).json(choriste);
   } catch (err) {
@@ -1004,6 +1018,31 @@ router.post('/planning', isChoirManagerOrAdmin, async (req, res) => {
       await Promise.allSettled(emailPromises);
     } catch (emailErr) {
       console.error('Error sending planning notification emails:', emailErr);
+    }
+
+    // Notification in-app aux choristes actifs
+    try {
+      const { data: choirMemberIds } = await supabaseAdmin
+        .from('choir_members_v2')
+        .select('member_id')
+        .eq('church_id', church_id)
+        .eq('is_active', true);
+
+      if (choirMemberIds && choirMemberIds.length > 0) {
+        notifyMembers({
+          churchId: church_id,
+          memberIds: choirMemberIds.map(cm => cm.member_id),
+          titleFr: 'Nouveau planning musical',
+          titleEn: 'New musical planning',
+          messageFr: `Planning "${event_name_fr}" ajouté`,
+          messageEn: `Planning "${event_name_en || event_name_fr}" added`,
+          type: 'choir',
+          icon: NOTIFICATION_ICONS.choir,
+          link: '/member/choir/planning',
+        });
+      }
+    } catch (notifErr) {
+      console.error('Error sending choir planning notifications:', notifErr);
     }
 
     res.status(201).json(planning);

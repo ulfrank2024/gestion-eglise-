@@ -9,6 +9,7 @@ const { supabaseAdmin } = require('../db/supabase');
 const { protect, isSuperAdminOrChurchAdmin } = require('../middleware/auth');
 const { logActivity, MODULES, ACTIONS } = require('../services/activityLogger');
 const { sendEmail, generateAnnouncementPublishedEmail } = require('../services/mailer');
+const { notifyAllMembers, NOTIFICATION_ICONS } = require('../services/notificationService');
 
 // Appliquer le middleware d'authentification à toutes les routes
 router.use(protect);
@@ -253,6 +254,20 @@ router.put('/:id/publish', async (req, res) => {
       entityName: announcement.title_fr,
       req
     });
+
+    // Notification in-app aux membres si annonce publiée
+    if (is_published) {
+      notifyAllMembers({
+        churchId: church_id,
+        titleFr: 'Nouvelle annonce',
+        titleEn: 'New announcement',
+        messageFr: `"${announcement.title_fr}"`,
+        messageEn: `"${announcement.title_en || announcement.title_fr}"`,
+        type: 'announcement',
+        icon: NOTIFICATION_ICONS.announcement,
+        link: '/member/announcements',
+      });
+    }
 
     // Si l'annonce est publiée, notifier tous les membres actifs par email
     if (is_published) {

@@ -9,6 +9,7 @@ const {
   generateMemberWelcomeEmail
 } = require('../services/mailer');
 const { logActivity, MODULES, ACTIONS } = require('../services/activityLogger');
+const { notifyAllAdmins, NOTIFICATION_ICONS } = require('../services/notificationService');
 
 // Configuration multer pour l'upload en mémoire (registration)
 const registrationUpload = multer({
@@ -188,8 +189,20 @@ router.post('/:churchId/events/:eventId/register', async (req, res) => {
       action: ACTIONS.REGISTER,
       entityType: 'event',
       entityId: eventId,
-      entityName: null, // Sera enrichi ci-dessous
+      entityName: null,
       req
+    });
+
+    // Notification in-app aux admins
+    notifyAllAdmins({
+      churchId: churchId,
+      titleFr: 'Nouvelle inscription événement',
+      titleEn: 'New event registration',
+      messageFr: `${fullName} s'est inscrit(e) à un événement`,
+      messageEn: `${fullName} registered for an event`,
+      type: 'event',
+      icon: NOTIFICATION_ICONS.event,
+      link: `/admin/events/${eventId}`,
     });
 
     // Utiliser supabaseAdmin pour récupérer les détails de l'événement et de l'église (pour l'email)
@@ -868,6 +881,18 @@ router.post('/:churchId/members/register', async (req, res) => {
             entityId: member.id,
             entityName: full_name,
             req
+        });
+
+        // Notification in-app aux admins
+        notifyAllAdmins({
+          churchId: churchDbId,
+          titleFr: 'Nouveau membre inscrit',
+          titleEn: 'New member registered',
+          messageFr: `${full_name} a rejoint l'église`,
+          messageEn: `${full_name} has joined the church`,
+          type: 'member',
+          icon: NOTIFICATION_ICONS.member,
+          link: '/admin/members',
         });
 
         // Envoyer un email de bienvenue avec le template professionnel

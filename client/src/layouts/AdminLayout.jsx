@@ -7,7 +7,8 @@ import {
   MdGroupAdd, MdHistory, MdLogout, MdDashboard, MdPeople,
   MdPersonAdd, MdBadge, MdAnnouncement, MdMail, MdAccountCircle,
   MdEventAvailable, MdMusicNote, MdLibraryMusic, MdCalendarMonth,
-  MdMenu, MdClose, MdPlaylistPlay, MdGroups, MdAssignment, MdSend
+  MdMenu, MdClose, MdPlaylistPlay, MdGroups, MdAssignment, MdSend,
+  MdNotifications, MdNotificationsNone, MdMarkEmailRead, MdOpenInNew
 } from 'react-icons/md';
 import { api } from '../api/api';
 import { supabase } from '../supabaseClient';
@@ -37,6 +38,13 @@ function AdminLayout() {
 
   // Mobile sidebar state
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Notifications admin
+  const [notifCount, setNotifCount] = useState(0);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [notifLoading, setNotifLoading] = useState(false);
+  const notifRef = useRef(null);
 
   // État pour le module actif (events ou members)
   const [activeModule, setActiveModule] = useState(() => {
@@ -165,6 +173,70 @@ function AdminLayout() {
       isCancelled = true;
     };
   }, [navigate]);
+
+  // Charger le compteur de notifications non lues
+  useEffect(() => {
+    if (!userRole) return;
+    const loadUnreadCount = async () => {
+      try {
+        const data = await api.admin.getMyNotificationsUnreadCount();
+        setNotifCount(data.count || 0);
+      } catch {
+        // silencieux
+      }
+    };
+    loadUnreadCount();
+    const interval = setInterval(loadUnreadCount, 60000); // rafraîchir chaque minute
+    return () => clearInterval(interval);
+  }, [userRole]);
+
+  // Fermer le panel si clic en dehors
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (notifRef.current && !notifRef.current.contains(e.target)) {
+        setNotifOpen(false);
+      }
+    };
+    if (notifOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [notifOpen]);
+
+  const handleOpenNotifications = async () => {
+    if (!notifOpen) {
+      setNotifLoading(true);
+      setNotifOpen(true);
+      try {
+        const data = await api.admin.getMyNotifications();
+        setNotifications(data || []);
+      } catch {
+        setNotifications([]);
+      } finally {
+        setNotifLoading(false);
+      }
+    } else {
+      setNotifOpen(false);
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await api.admin.markAllMyNotificationsRead();
+      setNotifCount(0);
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    } catch {
+      // silencieux
+    }
+  };
+
+  const handleMarkRead = async (id) => {
+    try {
+      await api.admin.markMyNotificationRead(id);
+      setNotifCount(prev => Math.max(0, prev - 1));
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+    } catch {
+      // silencieux
+    }
+  };
 
   const handleLanguageChange = (lang) => {
     i18n.changeLanguage(lang);
@@ -298,6 +370,33 @@ function AdminLayout() {
             </h3>
             <p className="text-green-400 text-xs font-medium truncate px-2">{adminName}</p>
             <p className="text-gray-500 text-[10px]">{t('church_management_platform')}</p>
+            {/* Cloche de notifications desktop (sidebar) */}
+            <div className="relative mt-2 hidden lg:flex justify-center" ref={notifRef}>
+              <button
+                onClick={handleOpenNotifications}
+                className="relative flex items-center gap-2 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded-lg text-gray-300 hover:text-white text-xs transition-colors"
+              >
+                {notifCount > 0 ? <MdNotifications size={16} /> : <MdNotificationsNone size={16} />}
+                <span>{t('notifications') || 'Notifications'}</span>
+                {notifCount > 0 && (
+                  <span className="bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                    {notifCount > 9 ? '9+' : notifCount}
+                  </span>
+                )}
+              </button>
+              {notifOpen && (
+                <NotificationPanel
+                  notifications={notifications}
+                  loading={notifLoading}
+                  onMarkRead={handleMarkRead}
+                  onMarkAllRead={handleMarkAllRead}
+                  onClose={() => setNotifOpen(false)}
+                  t={t}
+                  navigate={navigate}
+                  position="right-0"
+                />
+              )}
+            </div>
           </div>
 
           {/* Sélecteur de Module */}
@@ -717,6 +816,30 @@ function AdminLayout() {
                     <MdEventAvailable size={18} />
                     {t('my_events') || 'Mes Événements'}
                   </NavLink>
+                  <NavLink
+                    to="/admin/my-notifications"
+                    onClick={closeSidebarOnMobile}
+                    className={({ isActive }) =>
+                      `flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                        isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                      }`
+                    }
+                  >
+                    <div className="relative">
+                      {notifCount > 0 ? <MdNotifications size={18} /> : <MdNotificationsNone size={18} />}
+                      {notifCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center">
+                          {notifCount > 9 ? '9+' : notifCount}
+                        </span>
+                      )}
+                    </div>
+                    {t('my_notifications') || 'Mes Notifications'}
+                    {notifCount > 0 && (
+                      <span className="ml-auto bg-red-500 text-white text-xs font-bold rounded-full px-1.5">
+                        {notifCount}
+                      </span>
+                    )}
+                  </NavLink>
                 </div>
               )}
             </div>
@@ -818,6 +941,31 @@ function AdminLayout() {
           <span className="text-white font-medium truncate flex-1">
             {churchDetails?.name || 'MY EDEN X'}
           </span>
+          {/* Cloche de notifications mobile */}
+          <div className="relative" ref={notifRef}>
+            <button
+              onClick={handleOpenNotifications}
+              className="relative text-gray-300 hover:text-white p-1"
+            >
+              {notifCount > 0 ? <MdNotifications size={22} /> : <MdNotificationsNone size={22} />}
+              {notifCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                  {notifCount > 9 ? '9+' : notifCount}
+                </span>
+              )}
+            </button>
+            {notifOpen && (
+              <NotificationPanel
+                notifications={notifications}
+                loading={notifLoading}
+                onMarkRead={handleMarkRead}
+                onMarkAllRead={handleMarkAllRead}
+                onClose={() => setNotifOpen(false)}
+                t={t}
+                navigate={navigate}
+              />
+            )}
+          </div>
           {adminPhotoUrl ? (
             <img
               src={adminPhotoUrl}
@@ -835,6 +983,101 @@ function AdminLayout() {
         <main className="flex-1 p-4 lg:p-6 text-white">
           <Outlet />
         </main>
+      </div>
+    </div>
+  );
+}
+
+// Composant panneau de notifications
+function NotificationPanel({ notifications, loading, onMarkRead, onMarkAllRead, onClose, t, navigate, position = 'right-0' }) {
+  const lang = localStorage.getItem('i18nextLng') || 'fr';
+
+  const getTitle = (n) => lang === 'fr' ? n.title_fr : (n.title_en || n.title_fr);
+  const getMessage = (n) => lang === 'fr' ? n.message_fr : (n.message_en || n.message_fr);
+
+  const typeColors = {
+    event: 'bg-indigo-500',
+    meeting: 'bg-blue-500',
+    role: 'bg-purple-500',
+    announcement: 'bg-amber-500',
+    choir: 'bg-pink-500',
+    info: 'bg-gray-500',
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    if (isNaN(d)) return '';
+    return d.toLocaleDateString(lang === 'fr' ? 'fr-CA' : 'en-CA', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+  };
+
+  return (
+    <div className={`absolute top-full mt-2 ${position} w-80 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden`}>
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600">
+        <h3 className="text-white font-semibold text-sm flex items-center gap-2">
+          <MdNotifications size={18} />
+          {t('notifications') || 'Notifications'}
+        </h3>
+        <button
+          onClick={onMarkAllRead}
+          className="text-indigo-200 hover:text-white text-xs flex items-center gap-1 transition-colors"
+          title={t('mark_all_read') || 'Tout marquer comme lu'}
+        >
+          <MdMarkEmailRead size={16} />
+        </button>
+      </div>
+
+      {/* Liste */}
+      <div className="max-h-80 overflow-y-auto">
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : notifications.length === 0 ? (
+          <div className="py-8 text-center text-gray-400 text-sm">
+            <MdNotificationsNone size={32} className="mx-auto mb-2 opacity-50" />
+            <p>{t('no_notifications') || 'Aucune notification'}</p>
+          </div>
+        ) : (
+          notifications.map(n => (
+            <div
+              key={n.id}
+              onClick={() => {
+                if (!n.is_read) onMarkRead(n.id);
+                if (n.link) { navigate(n.link); onClose(); }
+              }}
+              className={`flex gap-3 px-4 py-3 border-b border-gray-700 cursor-pointer transition-colors ${
+                n.is_read ? 'hover:bg-gray-750' : 'bg-gray-700/50 hover:bg-gray-700'
+              }`}
+            >
+              <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${typeColors[n.type] || typeColors.info}`} />
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-medium truncate ${n.is_read ? 'text-gray-400' : 'text-white'}`}>
+                  {getTitle(n)}
+                </p>
+                {getMessage(n) && (
+                  <p className="text-xs text-gray-400 truncate">{getMessage(n)}</p>
+                )}
+                <p className="text-[10px] text-gray-500 mt-0.5">{formatDate(n.created_at)}</p>
+              </div>
+              {!n.is_read && (
+                <div className="w-2 h-2 bg-indigo-400 rounded-full mt-1.5 shrink-0" />
+              )}
+              {n.link && <MdOpenInNew size={14} className="text-gray-500 mt-1 shrink-0" />}
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="px-4 py-2 border-t border-gray-700">
+        <button
+          onClick={() => { navigate('/admin/my-notifications'); onClose(); }}
+          className="w-full text-center text-indigo-400 hover:text-indigo-300 text-xs py-1 transition-colors"
+        >
+          {t('view_all_notifications') || 'Voir toutes les notifications'}
+        </button>
       </div>
     </div>
   );
