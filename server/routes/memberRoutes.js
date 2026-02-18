@@ -534,6 +534,13 @@ router.put('/:id/block', async (req, res) => {
 
     if (updateError) throw updateError;
 
+    // Répondre immédiatement au client — les opérations suivantes sont fire-and-forget
+    res.json({
+      message: blocked ? 'Membre bloqué avec succès' : 'Membre débloqué avec succès',
+      is_blocked: !!blocked
+    });
+
+    // ---- Opérations asynchrones (ne bloquent pas la réponse) ----
     // Récupérer le nom de l'église pour les emails
     const { data: church } = await supabaseAdmin
       .from('churches_v2')
@@ -546,24 +553,25 @@ router.put('/:id/block', async (req, res) => {
 
     // Notification in-app pour le membre
     const notifTitle = blocked
-      ? (req.headers['accept-language']?.startsWith('en') ? 'Account suspended' : 'Compte suspendu')
-      : (req.headers['accept-language']?.startsWith('en') ? 'Access restored' : 'Accès rétabli');
+      ? 'Compte suspendu'
+      : 'Accès rétabli';
     const notifMessage = blocked
       ? `Votre accès à l'espace membre a été suspendu par l'administrateur.`
       : `Votre accès à l'espace membre a été rétabli par l'administrateur.`;
 
-    await supabaseAdmin
-      .from('notifications_v2')
-      .insert({
-        church_id,
-        member_id: id,
-        title: notifTitle,
-        message: notifMessage,
-        type: blocked ? 'warning' : 'success',
-        icon: blocked ? '🚫' : '✅',
-        is_read: false
-      })
-      .catch(err => console.error('Notification insert error (non-bloquant):', err.message));
+    try {
+      await supabaseAdmin
+        .from('notifications_v2')
+        .insert({
+          church_id,
+          member_id: id,
+          title: notifTitle,
+          message: notifMessage,
+          is_read: false
+        });
+    } catch (notifErr) {
+      console.error('Notification insert error (non-bloquant):', notifErr.message);
+    }
 
     // Email au membre
     if (member.email) {
@@ -599,7 +607,7 @@ router.put('/:id/block', async (req, res) => {
     }
 
     // Logger l'activité
-    await logActivity({
+    logActivity({
       churchId: church_id,
       userId: req.user.id,
       userName: req.user.full_name || req.user.email,
@@ -610,15 +618,13 @@ router.put('/:id/block', async (req, res) => {
       entityId: id,
       entityName: member.full_name,
       req
-    });
+    }).catch(err => console.error('logActivity error:', err.message));
 
-    res.json({
-      message: blocked ? 'Membre bloqué avec succès' : 'Membre débloqué avec succès',
-      is_blocked: !!blocked
-    });
   } catch (err) {
     console.error('Error in PUT /members/:id/block:', err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
   }
 });
 

@@ -1644,10 +1644,11 @@ module.exports = {
   generateChoirMemberAddedEmail,
   generateChoirPlanningNotificationEmail,
   generateChoirSongAssignmentEmail,
-  generateAnnouncementPublishedEmail
+  generateAnnouncementPublishedEmail,
+  generateMemberBlockedEmail,
+  generateMemberUnblockedEmail
 };
 
-// ← les deux fonctions suivantes sont déclarées APRÈS le module.exports pour éviter de modifier la liste ci-dessus
 function generateMemberBlockedEmail({ memberName, churchName, supportEmail, language = 'fr' }) {
   const isFrench = language === 'fr';
   const texts = {
@@ -1744,5 +1745,3 @@ function generateMemberUnblockedEmail({ memberName, churchName, dashboardUrl, la
   </body></html>`;
 }
 
-module.exports.generateMemberBlockedEmail = generateMemberBlockedEmail;
-module.exports.generateMemberUnblockedEmail = generateMemberUnblockedEmail;

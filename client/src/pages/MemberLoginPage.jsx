@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
 import defaultLogo from '../assets/logo_eden.png';
@@ -12,11 +12,18 @@ import { InlineSpinner } from '../components/LoadingSpinner';
 function MemberLoginPage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (searchParams.get('blocked') === '1') {
+      setError(t('account_blocked'));
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

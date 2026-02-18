@@ -43,14 +43,25 @@ apiClient.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       console.log('=== API Interceptor: 401 Unauthorized, redirecting to login ===');
       localStorage.removeItem('supabase.auth.token');
-      // Rediriger vers la page de connexion appropriée.
-      // On vérifie si on est dans le contexte super-admin ou admin.
       if (window.location.pathname.startsWith('/super-admin')) {
         window.location.href = '/super-admin/login';
       } else {
         window.location.href = '/admin/login';
       }
     }
+
+    // 403 account_blocked sur les routes membres → déconnecter et rediriger
+    if (
+      error.response &&
+      error.response.status === 403 &&
+      error.response.data?.error === 'account_blocked' &&
+      error.config?.url?.includes('/member/')
+    ) {
+      console.log('=== API Interceptor: member account blocked, redirecting to login ===');
+      localStorage.removeItem('supabase.auth.token');
+      window.location.href = '/member/login?blocked=1';
+    }
+
     return Promise.reject(error);
   }
 );

@@ -160,13 +160,18 @@ const isMember = async (req, res, next) => {
         // Récupérer le member_id à partir de la table members_v2
         const { data: memberData, error: memberError } = await supabaseAdmin
             .from('members_v2')
-            .select('id')
+            .select('id, is_blocked')
             .eq('user_id', req.user.id)
             .eq('church_id', req.user.church_id)
             .single();
 
         if (memberError || !memberData) {
             return res.status(403).json({ error: 'Member profile not found' });
+        }
+
+        // Vérifier si le membre est bloqué
+        if (memberData.is_blocked) {
+            return res.status(403).json({ error: 'account_blocked' });
         }
 
         req.user.member_id = memberData.id;
