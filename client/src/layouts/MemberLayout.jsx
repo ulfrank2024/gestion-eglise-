@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
 import { supabase } from '../supabaseClient';
 import defaultLogo from '../assets/logo_eden.png';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { setAppBadge, clearAppBadge } from '../utils/pwaBadge';
 import {
   MdDashboard, MdPerson, MdEvent, MdBadge, MdNotifications,
   MdAnnouncement, MdLogout, MdMenu, MdClose, MdGroups, MdMusicNote
@@ -36,7 +37,9 @@ function MemberLayout() {
         // Récupérer les infos du dashboard membre
         const dashboardData = await api.member.getDashboard();
         setChurchInfo(dashboardData.church);
-        setUnreadNotifications(dashboardData.unread_notifications || 0);
+        const initialCount = dashboardData.unread_notifications || 0;
+        setUnreadNotifications(initialCount);
+        setAppBadge(initialCount);
 
         // Vérifier le statut chorale
         if (dashboardData.choir_status?.is_member) {
@@ -58,6 +61,20 @@ function MemberLayout() {
 
     fetchMemberInfo();
   }, [navigate]);
+
+  // Rafraîchir le compteur de notifications toutes les minutes
+  useEffect(() => {
+    if (loading) return;
+    const interval = setInterval(async () => {
+      try {
+        const data = await api.member.getNotificationsUnreadCount();
+        const count = data.count || 0;
+        setUnreadNotifications(count);
+        setAppBadge(count);
+      } catch { /* silencieux */ }
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [loading]);
 
   const handleLogout = async () => {
     try {
@@ -234,9 +251,21 @@ function MemberLayout() {
             alt={churchInfo?.name || 'MY EDEN X'}
             className="w-8 h-8 rounded-full object-cover"
           />
-          <span className="text-white font-medium truncate">
+          <span className="text-white font-medium truncate flex-1">
             {churchInfo?.name || 'MY EDEN X'}
           </span>
+          {/* Cloche notifications membre */}
+          <NavLink
+            to="/member/notifications"
+            className="relative text-gray-300 hover:text-white p-1"
+          >
+            <MdNotifications size={22} />
+            {unreadNotifications > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                {unreadNotifications > 9 ? '9+' : unreadNotifications}
+              </span>
+            )}
+          </NavLink>
         </header>
 
         {/* Page content */}

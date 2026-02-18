@@ -45,6 +45,26 @@ router.get('/unread-count', ...authMiddleware, async (req, res) => {
   }
 });
 
+// PUT /api/admin/my-notifications/read-all - Marquer toutes les notifications comme lues
+// IMPORTANT: Doit être AVANT /:id/read pour éviter que "read-all" soit capturé comme id
+router.put('/read-all', ...authMiddleware, async (req, res) => {
+  try {
+    const { error } = await supabaseAdmin
+      .from('admin_notifications_v2')
+      .update({ is_read: true })
+      .eq('user_id', req.user.id)
+      .eq('church_id', req.user.church_id)
+      .eq('is_read', false);
+
+    if (error) throw error;
+
+    res.json({ message: 'All notifications marked as read' });
+  } catch (error) {
+    console.error('Error marking all notifications as read:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // PUT /api/admin/my-notifications/:id/read - Marquer une notification comme lue
 router.put('/:id/read', ...authMiddleware, async (req, res) => {
   try {
@@ -63,25 +83,6 @@ router.put('/:id/read', ...authMiddleware, async (req, res) => {
     res.json(data);
   } catch (error) {
     console.error('Error marking notification as read:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// PUT /api/admin/my-notifications/read-all - Marquer toutes les notifications comme lues
-router.put('/read-all', ...authMiddleware, async (req, res) => {
-  try {
-    const { error } = await supabaseAdmin
-      .from('admin_notifications_v2')
-      .update({ is_read: true })
-      .eq('user_id', req.user.id)
-      .eq('church_id', req.user.church_id)
-      .eq('is_read', false);
-
-    if (error) throw error;
-
-    res.json({ message: 'All notifications marked as read' });
-  } catch (error) {
-    console.error('Error marking all notifications as read:', error);
     res.status(500).json({ error: error.message });
   }
 });

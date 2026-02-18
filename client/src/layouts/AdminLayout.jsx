@@ -14,6 +14,7 @@ import { api } from '../api/api';
 import { supabase } from '../supabaseClient';
 import ChurchSuspendedPage from '../pages/ChurchSuspendedPage';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { setAppBadge } from '../utils/pwaBadge';
 
 function AdminLayout() {
   const { t, i18n } = useTranslation();
@@ -180,7 +181,9 @@ function AdminLayout() {
     const loadUnreadCount = async () => {
       try {
         const data = await api.admin.getMyNotificationsUnreadCount();
-        setNotifCount(data.count || 0);
+        const count = data.count || 0;
+        setNotifCount(count);
+        setAppBadge(count);
       } catch {
         // silencieux
       }

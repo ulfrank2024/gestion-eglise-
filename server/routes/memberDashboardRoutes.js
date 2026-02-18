@@ -235,6 +235,34 @@ router.get('/notifications/unread-count', async (req, res) => {
 });
 
 /**
+ * PUT /api/member/notifications/read-all
+ * Marquer toutes les notifications comme lues
+ * IMPORTANT: Cette route doit être AVANT /:id/read pour éviter que "read-all" soit capturé comme id
+ */
+router.put('/notifications/read-all', async (req, res) => {
+  try {
+    const { member_id, church_id } = req.user;
+
+    const { error } = await supabaseAdmin
+      .from('notifications_v2')
+      .update({ is_read: true })
+      .eq('church_id', church_id)
+      .or(`member_id.eq.${member_id},member_id.is.null`)
+      .eq('is_read', false);
+
+    if (error) {
+      console.error('Error marking all notifications as read:', error);
+      return res.status(500).json({ error: 'Erreur lors de la mise à jour des notifications' });
+    }
+
+    res.json({ message: 'Toutes les notifications marquées comme lues' });
+  } catch (err) {
+    console.error('Error in PUT /member/notifications/read-all:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+/**
  * PUT /api/member/notifications/:id/read
  * Marquer une notification comme lue
  */
@@ -258,33 +286,6 @@ router.put('/notifications/:id/read', async (req, res) => {
     res.json({ message: 'Notification marquée comme lue' });
   } catch (err) {
     console.error('Error in PUT /member/notifications/:id/read:', err);
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
-});
-
-/**
- * PUT /api/member/notifications/read-all
- * Marquer toutes les notifications comme lues
- */
-router.put('/notifications/read-all', async (req, res) => {
-  try {
-    const { member_id, church_id } = req.user;
-
-    const { error } = await supabaseAdmin
-      .from('notifications_v2')
-      .update({ is_read: true })
-      .eq('church_id', church_id)
-      .or(`member_id.eq.${member_id},member_id.is.null`)
-      .eq('is_read', false);
-
-    if (error) {
-      console.error('Error marking all notifications as read:', error);
-      return res.status(500).json({ error: 'Erreur lors de la mise à jour des notifications' });
-    }
-
-    res.json({ message: 'Toutes les notifications marquées comme lues' });
-  } catch (err) {
-    console.error('Error in PUT /member/notifications/read-all:', err);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
