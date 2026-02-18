@@ -86,16 +86,17 @@ router.post('/', async (req, res) => {
     const { church_id, id: userId } = req.user;
     const { title_fr, title_en, content_fr, content_en, image_url, is_published, expires_at } = req.body;
 
-    if (!title_fr || !title_en || !content_fr || !content_en) {
-      return res.status(400).json({ error: 'Titres et contenus en français et anglais requis' });
+    // Seuls les champs FR sont obligatoires ; les champs EN utilisent le FR comme fallback
+    if (!title_fr || !content_fr) {
+      return res.status(400).json({ error: 'Le titre et le contenu en français sont requis' });
     }
 
     const announcementData = {
       church_id,
       title_fr,
-      title_en,
+      title_en: title_en || title_fr,
       content_fr,
-      content_en,
+      content_en: content_en || content_fr,
       image_url,
       is_published: is_published || false,
       expires_at,

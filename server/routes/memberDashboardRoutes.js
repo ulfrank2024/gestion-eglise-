@@ -141,6 +141,66 @@ router.get('/events', async (req, res) => {
 });
 
 /**
+ * GET /api/member/events/participated
+ * Récupérer les événements auxquels le membre s'est inscrit (via attendees_v2)
+ * IMPORTANT: Cette route doit être AVANT /events pour éviter un conflit
+ */
+router.get('/events/participated', async (req, res) => {
+  try {
+    const { church_id, email } = req.user || {};
+
+    if (!church_id || !email) {
+      return res.json([]);
+    }
+
+    // Récupérer les inscriptions du membre (par email)
+    const { data: attendees, error: attendeesError } = await supabaseAdmin
+      .from('attendees_v2')
+      .select('event_id, registered_at')
+      .eq('church_id', church_id)
+      .eq('email', email);
+
+    if (attendeesError) {
+      console.error('Error fetching attendees:', attendeesError);
+      return res.status(500).json({ error: 'Erreur lors de la récupération des inscriptions' });
+    }
+
+    if (!attendees || attendees.length === 0) {
+      return res.json([]);
+    }
+
+    const eventIds = attendees.map(a => a.event_id);
+
+    // Récupérer les détails des événements (y compris archivés)
+    const { data: events, error: eventsError } = await supabaseAdmin
+      .from('events_v2')
+      .select('*')
+      .eq('church_id', church_id)
+      .in('id', eventIds)
+      .order('event_start_date', { ascending: false });
+
+    if (eventsError) {
+      console.error('Error fetching participated events:', eventsError);
+      return res.status(500).json({ error: 'Erreur lors de la récupération des événements' });
+    }
+
+    // Enrichir avec la date d'inscription
+    const attendeeMap = {};
+    attendees.forEach(a => { attendeeMap[a.event_id] = a.registered_at; });
+
+    const enrichedEvents = (events || []).map(ev => ({
+      ...ev,
+      registered_at: attendeeMap[ev.id] || null
+    }));
+
+    res.json(enrichedEvents);
+  } catch (err) {
+    console.error('Error in GET /member/events/participated:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+/**
  * GET /api/member/roles
  * Récupérer mes rôles
  */

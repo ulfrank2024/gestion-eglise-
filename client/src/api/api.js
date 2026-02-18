@@ -735,6 +735,10 @@ export const api = {
       const { data } = await apiClient.get('/member/events');
       return data;
     },
+    getParticipatedEvents: async () => {
+      const { data } = await apiClient.get('/member/events/participated');
+      return data;
+    },
     getRoles: async () => {
       const { data } = await apiClient.get('/member/roles');
       return data;

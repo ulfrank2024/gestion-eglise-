@@ -284,13 +284,13 @@ function AdminAnnouncementsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-gray-300 text-sm mb-1">{t('title_en') || 'Titre (EN)'} *</label>
+                  <label className="block text-gray-300 text-sm mb-1">{t('title_en') || 'Titre (EN)'} <span className="text-gray-500 text-xs">({t('optional') || 'optionnel'})</span></label>
                   <input
                     type="text"
                     value={formData.title_en}
                     onChange={(e) => setFormData({ ...formData, title_en: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    required
+                    placeholder={formData.title_fr || ''}
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
               </div>
@@ -307,13 +307,13 @@ function AdminAnnouncementsPage() {
               </div>
 
               <div>
-                <label className="block text-gray-300 text-sm mb-1">{t('content_en') || 'Contenu (EN)'} *</label>
+                <label className="block text-gray-300 text-sm mb-1">{t('content_en') || 'Contenu (EN)'} <span className="text-gray-500 text-xs">({t('optional') || 'optionnel'})</span></label>
                 <textarea
                   value={formData.content_en}
                   onChange={(e) => setFormData({ ...formData, content_en: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  placeholder={formData.content_fr || ''}
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
                   rows="4"
-                  required
                 />
               </div>
 

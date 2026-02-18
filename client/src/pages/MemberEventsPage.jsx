@@ -6,7 +6,8 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import RegistrationModal from '../components/RegistrationModal';
 import {
   MdEvent, MdCalendarToday, MdAccessTime, MdLocationOn,
-  MdArrowBack, MdHowToReg, MdInfo, MdPeople, MdCheckCircle
+  MdArrowBack, MdHowToReg, MdInfo, MdPeople, MdCheckCircle,
+  MdArchive, MdHistoryEdu
 } from 'react-icons/md';
 
 function MemberEventsPage() {
@@ -15,9 +16,10 @@ function MemberEventsPage() {
   const { churchInfo, memberInfo } = useOutletContext();
 
   const [events, setEvents] = useState([]);
+  const [participatedEvents, setParticipatedEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [filter, setFilter] = useState('upcoming'); // upcoming, past, all
+  const [filter, setFilter] = useState('upcoming'); // upcoming, past, all, participated
 
   // État pour le détail d'un événement
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -31,6 +33,7 @@ function MemberEventsPage() {
   useEffect(() => {
     fetchEvents();
     loadRegisteredEvents();
+    fetchParticipatedEvents();
   }, []);
 
   const fetchEvents = async () => {
@@ -42,6 +45,15 @@ function MemberEventsPage() {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchParticipatedEvents = async () => {
+    try {
+      const data = await api.member.getParticipatedEvents();
+      setParticipatedEvents(data || []);
+    } catch (err) {
+      console.error('Error fetching participated events:', err);
     }
   };
 
@@ -103,12 +115,20 @@ function MemberEventsPage() {
     return d > new Date();
   };
 
-  const filteredEvents = events.filter(event => {
-    const upcoming = isUpcoming(event.event_start_date);
-    if (filter === 'upcoming') return upcoming;
-    if (filter === 'past') return !upcoming;
-    return true;
-  });
+  const getEventStatus = (event) => {
+    if (event.is_archived) return 'archived';
+    if (!isUpcoming(event.event_start_date)) return 'past';
+    return 'upcoming';
+  };
+
+  const filteredEvents = filter === 'participated'
+    ? participatedEvents
+    : events.filter(event => {
+        const upcoming = isUpcoming(event.event_start_date);
+        if (filter === 'upcoming') return upcoming;
+        if (filter === 'past') return !upcoming;
+        return true;
+      });
 
   if (loading) {
     return <LoadingSpinner />;
@@ -293,22 +313,29 @@ function MemberEventsPage() {
         </div>
 
         {/* Filtres */}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {[
             { key: 'upcoming', label: t('upcoming_events') || 'À venir' },
             { key: 'past', label: t('past') || 'Passés' },
-            { key: 'all', label: t('all') || 'Tous' }
+            { key: 'all', label: t('all') || 'Tous' },
+            { key: 'participated', label: t('participated') || 'Participé', count: participatedEvents.length }
           ].map(f => (
             <button
               key={f.key}
-              onClick={() => setFilter(f.key)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              onClick={() => { setFilter(f.key); setSelectedEvent(null); }}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
                 filter === f.key
                   ? 'bg-indigo-600 text-white'
                   : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
               }`}
             >
+              {f.key === 'participated' && <MdHistoryEdu size={15} />}
               {f.label}
+              {f.count !== undefined && f.count > 0 && (
+                <span className={`px-1.5 py-0.5 rounded-full text-xs ${
+                  filter === f.key ? 'bg-indigo-500' : 'bg-gray-600'
+                }`}>{f.count}</span>
+              )}
             </button>
           ))}
         </div>
@@ -329,6 +356,8 @@ function MemberEventsPage() {
               ? (t('no_upcoming_events') || 'Aucun événement à venir')
               : filter === 'past'
               ? (t('no_past_events') || 'Aucun événement passé')
+              : filter === 'participated'
+              ? (t('no_participated_events') || 'Vous n\'avez participé à aucun événement')
               : (t('no_events_yet') || 'Aucun événement')}
           </p>
         </div>
@@ -336,15 +365,16 @@ function MemberEventsPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredEvents.map((event) => {
             const { date, time } = formatDateTime(event.event_start_date);
-            const upcoming = isUpcoming(event.event_start_date);
-            const registered = isRegistered(event.id);
+            const eventStatus = getEventStatus(event);
+            const registered = isRegistered(event.id) || filter === 'participated';
+            const isParticipatedView = filter === 'participated';
 
             return (
               <div
                 key={event.id}
                 onClick={() => handleSelectEvent(event)}
                 className={`bg-gray-800 rounded-xl border overflow-hidden transition-all cursor-pointer hover:border-gray-500 hover:shadow-lg hover:shadow-black/20 ${
-                  upcoming ? 'border-indigo-700/50' : 'border-gray-700'
+                  eventStatus === 'upcoming' ? 'border-indigo-700/50' : 'border-gray-700'
                 }`}
               >
                 {/* Event Image */}
@@ -377,14 +407,25 @@ function MemberEventsPage() {
                 {/* Event Details */}
                 <div className="p-4 space-y-3">
                   {/* Status badge */}
-                  <div className="flex items-center gap-2">
-                    {upcoming ? (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {eventStatus === 'upcoming' ? (
                       <span className="px-2 py-1 bg-indigo-600/20 text-indigo-400 text-xs font-medium rounded-full">
                         {t('upcoming_events') || 'À venir'}
                       </span>
+                    ) : eventStatus === 'archived' ? (
+                      <span className="px-2 py-1 bg-gray-700 text-gray-400 text-xs font-medium rounded-full flex items-center gap-1">
+                        <MdArchive size={12} />
+                        {t('event_archived_by_admin') || 'Terminé (archivé)'}
+                      </span>
                     ) : (
-                      <span className="px-2 py-1 bg-gray-700 text-gray-400 text-xs font-medium rounded-full">
-                        {t('completed') || 'Terminé'}
+                      <span className="px-2 py-1 bg-amber-900/30 text-amber-400 text-xs font-medium rounded-full">
+                        {t('event_passed') || 'Passé'}
+                      </span>
+                    )}
+                    {isParticipatedView && event.registered_at && (
+                      <span className="px-2 py-1 bg-green-900/30 text-green-400 text-xs font-medium rounded-full flex items-center gap-1">
+                        <MdCheckCircle size={12} />
+                        {t('registered') || 'Inscrit'}
                       </span>
                     )}
                   </div>
@@ -411,6 +452,12 @@ function MemberEventsPage() {
                       <div className="flex items-center gap-2 text-sm text-gray-300">
                         <MdAccessTime className="text-gray-500 flex-shrink-0" />
                         {time}
+                      </div>
+                    )}
+                    {isParticipatedView && event.registered_at && (
+                      <div className="flex items-center gap-2 text-xs text-gray-500 pt-1">
+                        <MdHistoryEdu className="flex-shrink-0" />
+                        {t('registered_at') || 'Inscrit le'}: {formatDateTime(event.registered_at).date}
                       </div>
                     )}
                   </div>
