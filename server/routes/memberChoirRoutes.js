@@ -275,6 +275,7 @@ router.get('/songs', async (req, res) => {
         author,
         tempo,
         key_signature,
+        created_by,
         choir_song_categories_v2 (
           id,
           name_fr,
@@ -297,7 +298,23 @@ router.get('/songs', async (req, res) => {
 
     if (error) throw error;
 
-    res.json(songs || []);
+    // Enrichir avec le nom du créateur
+    let enrichedSongs = songs || [];
+    const creatorIds = [...new Set(enrichedSongs.filter(s => s.created_by).map(s => s.created_by))];
+    if (creatorIds.length > 0) {
+      const { data: creators } = await supabaseAdmin
+        .from('church_users_v2')
+        .select('user_id, full_name')
+        .in('user_id', creatorIds);
+      const creatorMap = {};
+      (creators || []).forEach(c => { creatorMap[c.user_id] = c.full_name; });
+      enrichedSongs = enrichedSongs.map(s => ({
+        ...s,
+        creator_name: s.created_by ? (creatorMap[s.created_by] || null) : null
+      }));
+    }
+
+    res.json(enrichedSongs);
   } catch (err) {
     console.error('Error in GET /member/choir/songs:', err);
     res.status(500).json({ error: 'Erreur serveur' });
@@ -310,7 +327,7 @@ router.get('/songs', async (req, res) => {
  */
 router.get('/songs/:id', async (req, res) => {
   try {
-    const { church_id } = req.user;
+    const { church_id, id: currentUserId } = req.user;
     const { id } = req.params;
 
     const { data: song, error } = await supabaseAdmin
@@ -332,7 +349,18 @@ router.get('/songs/:id', async (req, res) => {
       return res.status(404).json({ error: 'Chant non trouvé' });
     }
 
-    res.json(song);
+    // Récupérer le nom du créateur
+    let creator_name = null;
+    if (song.created_by) {
+      const { data: creator } = await supabaseAdmin
+        .from('church_users_v2')
+        .select('full_name')
+        .eq('user_id', song.created_by)
+        .single();
+      creator_name = creator?.full_name || null;
+    }
+
+    res.json({ ...song, creator_name, current_user_id: currentUserId });
   } catch (err) {
     console.error('Error in GET /member/choir/songs/:id:', err);
     res.status(500).json({ error: 'Erreur serveur' });

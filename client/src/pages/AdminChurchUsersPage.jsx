@@ -6,7 +6,7 @@ import ConfirmModal from '../components/ConfirmModal';
 import {
   MdGroup, MdPersonAdd, MdEmail, MdPerson, MdDelete,
   MdCheck, MdClose, MdAdminPanelSettings, MdEdit,
-  MdEvent, MdPeople, MdStar, MdSave, MdGroups, MdBlock
+  MdEvent, MdPeople, MdStar, MdSave, MdGroups, MdBlock, MdMusicNote
 } from 'react-icons/md';
 import LoadingSpinner from '../components/LoadingSpinner';
 
@@ -228,7 +228,8 @@ function AdminChurchUsersPage() {
     const labels = {
       events: t('events_module') || 'Événements',
       members: t('members_module') || 'Membres',
-      meetings: t('meetings_module') || 'Réunions'
+      meetings: t('meetings_module') || 'Réunions',
+      choir: t('choir_module') || 'Chorale'
     };
     return permissions.map(p => labels[p] || p).join(', ');
   };
@@ -365,6 +366,21 @@ function AdminChurchUsersPage() {
                 />
                 <MdGroups />
                 {t('meetings_module') || 'Réunions'}
+              </label>
+
+              <label className={`flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-all ${
+                inviteForm.permissions.includes('choir') && !inviteForm.permissions.includes('all')
+                  ? 'bg-pink-600 text-white'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}>
+                <input
+                  type="checkbox"
+                  checked={inviteForm.permissions.includes('choir') && !inviteForm.permissions.includes('all')}
+                  onChange={() => handlePermissionToggle('choir')}
+                  className="hidden"
+                />
+                <MdMusicNote />
+                {t('choir_module') || 'Chorale'}
               </label>
 
               <label className={`flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-all ${
@@ -523,6 +539,22 @@ function AdminChurchUsersPage() {
                               />
                               <MdGroups size={14} />
                             </label>
+                            <label
+                              className={`flex items-center gap-1 px-3 py-1 rounded cursor-pointer text-sm ${
+                                editPermissions.includes('choir') && !editPermissions.includes('all')
+                                  ? 'bg-pink-600 text-white'
+                                  : 'bg-gray-600 text-gray-300'
+                              }`}
+                              title={t('choir_module') || 'Chorale'}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={editPermissions.includes('choir') && !editPermissions.includes('all')}
+                                onChange={() => handleEditPermissionToggle('choir')}
+                                className="hidden"
+                              />
+                              <MdMusicNote size={14} />
+                            </label>
                             <label className={`flex items-center gap-1 px-3 py-1 rounded cursor-pointer text-sm ${
                               editPermissions.includes('none')
                                 ? 'bg-red-600 text-white'
@@ -548,6 +580,7 @@ function AdminChurchUsersPage() {
                                   perm === 'events' ? 'bg-green-600/20 text-green-400' :
                                   perm === 'members' ? 'bg-purple-600/20 text-purple-400' :
                                   perm === 'meetings' ? 'bg-amber-600/20 text-amber-400' :
+                                  perm === 'choir' ? 'bg-pink-600/20 text-pink-400' :
                                   'bg-gray-600/20 text-gray-400'
                                 }`}
                               >
@@ -556,6 +589,7 @@ function AdminChurchUsersPage() {
                                  perm === 'events' ? (t('events_module') || 'Événements') :
                                  perm === 'members' ? (t('members_module') || 'Membres') :
                                  perm === 'meetings' ? (t('meetings_module') || 'Réunions') :
+                                 perm === 'choir' ? (t('choir_module') || 'Chorale') :
                                  perm}
                               </span>
                             ))}

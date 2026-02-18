@@ -773,6 +773,9 @@
 
     "choir_module": "Choir",
     "choir_management": "Choir Management",
+    "song_created_by": "Added by",
+    "song_created_by_you": "You",
+    "unknown_user": "Unknown",
     "choir": {
       "dashboard_title": "Choir Management",
       "dashboard_subtitle": "Manage your choristers, repertoire and planning",

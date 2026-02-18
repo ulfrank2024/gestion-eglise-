@@ -719,6 +719,9 @@
 
     "choir_module": "Chorale",
     "choir_management": "Gestion Chorale",
+    "song_created_by": "Ajouté par",
+    "song_created_by_you": "Vous",
+    "unknown_user": "Inconnu",
     "choir": {
       "dashboard_title": "Gestion de la Chorale",
       "dashboard_subtitle": "Gérez vos choristes, répertoire et planning",

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
-import { MdMusicNote, MdArrowBack, MdAdd, MdCheck, MdPerson } from 'react-icons/md';
+import { MdMusicNote, MdArrowBack, MdAdd, MdCheck, MdPerson, MdPersonOutline } from 'react-icons/md';
 import { api } from '../api/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 
@@ -148,6 +148,21 @@ export default function MemberChoirSongDetailPage() {
             </p>
           </div>
         </div>
+
+        {/* Créateur du chant */}
+        {song.created_by && (
+          <div className="flex items-center gap-2 mb-6 p-3 bg-gray-700/50 rounded-lg border border-gray-600/50">
+            <MdPersonOutline className="text-indigo-400 flex-shrink-0" size={18} />
+            <span className="text-sm text-gray-400">
+              {t('song_created_by') || 'Ajouté par'}{' '}
+            </span>
+            <span className="text-sm font-medium text-indigo-300">
+              {song.current_user_id === song.created_by
+                ? (t('song_created_by_you') || 'Vous')
+                : (song.creator_name || t('unknown_user') || 'Inconnu')}
+            </span>
+          </div>
+        )}
 
         {/* Lyrics */}
         {song.lyrics && (
