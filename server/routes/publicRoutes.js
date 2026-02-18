@@ -464,30 +464,62 @@ router.post('/churches/register', registrationUpload.fields([
         }
         console.log('User created with ID:', userId);
 
-        // 3. Créer l'église
+        // 3. Créer l'église (ou récupérer si elle existe déjà - cas de retry)
         console.log('Step 3: Creating church...');
-        const { data: churchData, error: churchError } = await supabaseAdmin
+
+        // Vérifier si une église avec ce subdomain existe déjà (cas de re-tentative)
+        let churchId;
+        const { data: existingChurch } = await supabaseAdmin
             .from('churches_v2')
-            .insert({
-                name: churchName,
-                subdomain,
-                location,
-                city: city || null,
-                email,
-                phone,
-                logo_url: logoUrl || null, // URL du logo uploadé vers Supabase Storage
-                created_by_user_id: userId,
-            })
-            .select()
-            .single();
+            .select('id')
+            .eq('subdomain', subdomain)
+            .maybeSingle();
 
-        if (churchError) {
-            console.error('Church creation error:', churchError);
-            throw new Error('Failed to create church: ' + churchError.message);
+        if (existingChurch) {
+            // L'église existe déjà (tentative précédente partiellement réussie) → la mettre à jour
+            console.log('Church already exists with subdomain, updating...');
+            const { error: updateChurchError } = await supabaseAdmin
+                .from('churches_v2')
+                .update({
+                    name: churchName,
+                    location,
+                    city: city || null,
+                    email,
+                    phone,
+                    logo_url: logoUrl || existingChurch.logo_url || null,
+                    created_by_user_id: userId,
+                })
+                .eq('id', existingChurch.id);
+
+            if (updateChurchError) {
+                console.error('Church update error:', updateChurchError);
+                throw new Error('Failed to update church: ' + updateChurchError.message);
+            }
+            churchId = existingChurch.id;
+            console.log('Existing church reused with ID:', churchId);
+        } else {
+            const { data: churchData, error: churchError } = await supabaseAdmin
+                .from('churches_v2')
+                .insert({
+                    name: churchName,
+                    subdomain,
+                    location,
+                    city: city || null,
+                    email,
+                    phone,
+                    logo_url: logoUrl || null,
+                    created_by_user_id: userId,
+                })
+                .select()
+                .single();
+
+            if (churchError) {
+                console.error('Church creation error:', churchError);
+                throw new Error('Failed to create church: ' + churchError.message);
+            }
+            churchId = churchData.id;
+            console.log('Church created with ID:', churchId);
         }
-
-        const churchId = churchData.id;
-        console.log('Church created with ID:', churchId);
 
         // 4. Lier l'utilisateur à l'église avec le rôle 'church_admin'
         console.log('Step 4: Linking user to church...');
