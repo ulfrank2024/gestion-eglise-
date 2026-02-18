@@ -22,6 +22,7 @@ function MemberLayout() {
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [isChoirMember, setIsChoirMember] = useState(false);
   const [memberProfile, setMemberProfile] = useState(null);
+  const [enabledModules, setEnabledModules] = useState(['events', 'members', 'meetings', 'choir']);
 
   useEffect(() => {
     const fetchMemberInfo = async () => {
@@ -42,6 +43,11 @@ function MemberLayout() {
         const initialCount = dashboardData.unread_notifications || 0;
         setUnreadNotifications(initialCount);
         setAppBadge(initialCount);
+
+        // Modules activés par le Super Admin pour cette église
+        if (dashboardData.church?.enabled_modules && Array.isArray(dashboardData.church.enabled_modules)) {
+          setEnabledModules(dashboardData.church.enabled_modules);
+        }
 
         // Vérifier le statut chorale
         if (dashboardData.choir_status?.is_member) {
@@ -95,25 +101,39 @@ function MemberLayout() {
     localStorage.setItem('language', lng);
   };
 
+  // Vérifie si un module est activé pour cette église par le Super Admin
+  const isModuleEnabled = (module) => enabledModules.includes(module);
+
   const navItems = [
+    // Toujours visibles (données personnelles)
     { path: '/member/dashboard', icon: MdDashboard, label: t('member_dashboard') },
     { path: '/member/profile', icon: MdPerson, label: t('my_profile') },
-    { path: '/member/events', icon: MdEvent, label: t('my_events') },
-    { path: '/member/meetings', icon: MdGroups, label: t('meetings.title') },
-    { path: '/member/roles', icon: MdBadge, label: t('my_roles') },
-    // Espace Chorale - visible uniquement si le membre fait partie de la chorale
-    ...(isChoirMember ? [{
+    // Module Événements
+    ...(isModuleEnabled('events') ? [
+      { path: '/member/events', icon: MdEvent, label: t('my_events') }
+    ] : []),
+    // Module Réunions
+    ...(isModuleEnabled('meetings') ? [
+      { path: '/member/meetings', icon: MdGroups, label: t('meetings.title') }
+    ] : []),
+    // Module Membres (rôles, annonces)
+    ...(isModuleEnabled('members') ? [
+      { path: '/member/roles', icon: MdBadge, label: t('my_roles') },
+      { path: '/member/announcements', icon: MdAnnouncement, label: t('my_announcements') },
+    ] : []),
+    // Module Chorale - visible uniquement si activé ET membre de la chorale
+    ...(isModuleEnabled('choir') && isChoirMember ? [{
       path: '/member/choir',
       icon: MdMusicNote,
       label: t('member_choir.choir'),
     }] : []),
+    // Notifications - toujours visible
     {
       path: '/member/notifications',
       icon: MdNotifications,
       label: t('notifications'),
       badge: unreadNotifications > 0 ? unreadNotifications : null
     },
-    { path: '/member/announcements', icon: MdAnnouncement, label: t('my_announcements') },
   ];
 
   if (loading) {

@@ -624,10 +624,10 @@ router.get('/dashboard', async (req, res) => {
       `)
       .eq('member_id', member_id);
 
-    // Récupérer les infos de l'église (id et subdomain nécessaires pour les pages événements)
+    // Récupérer les infos de l'église (id, subdomain et modules activés)
     const { data: church } = await supabaseAdmin
       .from('churches_v2')
-      .select('id, name, subdomain, logo_url')
+      .select('id, name, subdomain, logo_url, enabled_modules')
       .eq('id', church_id)
       .single();
 
