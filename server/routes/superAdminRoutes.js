@@ -1228,15 +1228,15 @@ router.put('/churches_v2/:churchId/modules', protect, isSuperAdmin, async (req, 
                 body { font-family: Arial, sans-serif; background-color: #111827; color: #f3f4f6; margin: 0; padding: 20px; }
                 .container { max-width: 600px; margin: 0 auto; background-color: #1f2937; border-radius: 12px; overflow: hidden; }
                 .header { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 30px; text-align: center; }
-                .header h1 { color: white; margin: 0; font-size: 24px; }
-                .content { padding: 30px; }
+                .header h1 { color: #ffffff; margin: 0; font-size: 24px; }
+                .content { padding: 30px; background-color: #1f2937; }
                 .module-box { background-color: #374151; border-radius: 8px; padding: 16px; margin: 12px 0; }
                 .added { border-left: 4px solid #22c55e; }
                 .removed { border-left: 4px solid #ef4444; }
                 .module-list { margin: 8px 0; padding-left: 20px; }
                 .footer { background-color: #111827; padding: 20px; text-align: center; color: #9ca3af; font-size: 12px; }
                 h2 { color: #a5b4fc; margin-top: 0; }
-                p { line-height: 1.6; margin: 10px 0; }
+                p { line-height: 1.6; margin: 10px 0; color: #f3f4f6; }
               </style>
             </head>
             <body>
@@ -1245,8 +1245,8 @@ router.put('/churches_v2/:churchId/modules', protect, isSuperAdmin, async (req, 
                   <h1>🔧 ${language === 'en' ? 'Module Update' : 'Mise à jour des Modules'}</h1>
                 </div>
                 <div class="content">
-                  <p>${language === 'en' ? 'Hello,' : 'Bonjour,'}</p>
-                  <p>${language === 'en'
+                  <p style="color: #f3f4f6; line-height: 1.6; margin: 10px 0;">${language === 'en' ? 'Hello,' : 'Bonjour,'}</p>
+                  <p style="color: #f3f4f6; line-height: 1.6; margin: 10px 0;">${language === 'en'
                     ? 'The available modules for your church have been updated by the platform administrator.'
                     : 'Les modules disponibles pour votre église ont été mis à jour par l\'administrateur de la plateforme.'}</p>
 
@@ -1264,7 +1264,7 @@ router.put('/churches_v2/:churchId/modules', protect, isSuperAdmin, async (req, 
                   </div>
                   ` : ''}
 
-                  <p style="margin-top: 24px;">${language === 'en'
+                  <p style="color: #f3f4f6; line-height: 1.6; margin-top: 24px;">${language === 'en'
                     ? 'If you have any questions about these changes, please contact the platform administrator.'
                     : 'Si vous avez des questions concernant ces changements, veuillez contacter l\'administrateur de la plateforme.'}</p>
                 </div>
