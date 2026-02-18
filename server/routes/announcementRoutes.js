@@ -115,7 +115,7 @@ router.post('/', async (req, res) => {
 
     if (error) {
       console.error('Error creating announcement:', error);
-      return res.status(500).json({ error: 'Erreur lors de la création de l\'annonce' });
+      return res.status(500).json({ error: 'Erreur lors de la création de l\'annonce', detail: error.message, code: error.code });
     }
 
     // Logger l'activité
