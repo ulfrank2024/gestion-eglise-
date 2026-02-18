@@ -9,7 +9,6 @@ import {
   MdPerson, MdEmail, MdPhone, MdLock, MdCheck, MdClose,
   MdCake, MdLocationOn, MdLocationCity, MdImage
 } from 'react-icons/md';
-import { supabase } from '../supabaseClient';
 
 function MemberRegistrationPage() {
   const { t, i18n } = useTranslation();
@@ -107,23 +106,14 @@ function MemberRegistrationPage() {
     try {
       let profilePhotoUrl = null;
 
-      // Upload de la photo de profil si sélectionnée
+      // Upload de la photo de profil via le backend (bypass RLS Supabase Storage)
       if (formData.profilePhoto) {
-        const fileExt = formData.profilePhoto.name.split('.').pop();
-        const fileName = `member-photos/${churchId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('event_images')
-          .upload(fileName, formData.profilePhoto, {
-            cacheControl: '3600',
-            upsert: false
-          });
-
-        if (!uploadError) {
-          const { data: { publicUrl } } = supabase.storage
-            .from('event_images')
-            .getPublicUrl(fileName);
-          profilePhotoUrl = publicUrl;
+        try {
+          const { url } = await api.public.uploadRegistrationPhoto(formData.profilePhoto);
+          profilePhotoUrl = url;
+        } catch (uploadErr) {
+          console.error('Photo upload failed:', uploadErr);
+          // On continue l'inscription même sans photo
         }
       }
 

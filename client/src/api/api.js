@@ -715,6 +715,14 @@ export const api = {
       const { data } = await apiClient.post(`/public/${churchId}/members/register`, memberData);
       return data;
     },
+    uploadRegistrationPhoto: async (file) => {
+      const formData = new FormData();
+      formData.append('photo', file);
+      const { data } = await apiClient.post('/public/upload-photo', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      return data;
+    },
   },
 
   member: {

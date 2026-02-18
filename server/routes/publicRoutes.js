@@ -58,6 +58,40 @@ async function resolveChurchId(churchIdOrSubdomain) {
   return church.id;
 }
 
+// POST /api/public/upload-photo - Upload photo sans authentification (pour inscription membre)
+router.post('/upload-photo', registrationUpload.single('photo'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Aucun fichier envoyé' });
+    }
+
+    const fileExt = req.file.originalname.split('.').pop();
+    const fileName = `member-photos/registration-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${fileExt}`;
+
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from('event_images')
+      .upload(fileName, req.file.buffer, {
+        contentType: req.file.mimetype,
+        cacheControl: '3600',
+        upsert: true
+      });
+
+    if (uploadError) {
+      console.error('Registration photo upload error:', uploadError);
+      return res.status(500).json({ error: uploadError.message });
+    }
+
+    const { data: { publicUrl } } = supabaseAdmin.storage
+      .from('event_images')
+      .getPublicUrl(fileName);
+
+    res.json({ url: publicUrl });
+  } catch (err) {
+    console.error('Error uploading registration photo:', err);
+    res.status(500).json({ error: 'Erreur lors de l\'upload' });
+  }
+});
+
 // GET /api/public/:churchId/events - Lister tous les événements publics actifs pour une église
 router.get('/:churchId/events', async (req, res) => {
   const { churchId: churchIdOrSubdomain } = req.params;
