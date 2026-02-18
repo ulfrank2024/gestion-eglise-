@@ -480,6 +480,7 @@
     "address_placeholder": "123 Rue Exemple",
     "admin_phone": "Téléphone de l'administrateur",
     "profile_photo": "Photo de profil",
+    "click_photo_to_change": "Cliquez sur la photo pour la modifier",
 
     "events_module": "Événements",
     "members_module": "Membres",

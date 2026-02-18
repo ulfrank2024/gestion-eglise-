@@ -482,6 +482,7 @@
     "address_placeholder": "123 Example Street",
     "admin_phone": "Administrator Phone",
     "profile_photo": "Profile Photo",
+    "click_photo_to_change": "Click on the photo to change it",
 
     "events_module": "Events",
     "members_module": "Members",

@@ -167,8 +167,8 @@ function MemberProfilePage() {
                 </div>
               )}
 
-              {/* Upload overlay */}
-              <label className={`absolute inset-0 flex items-center justify-center bg-black/50 rounded-full cursor-pointer transition-opacity ${uploadingPhoto ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+              {/* Upload overlay - toujours visible sur mobile, hover sur desktop */}
+              <label className={`absolute inset-0 flex items-center justify-center bg-black/50 rounded-full cursor-pointer transition-opacity ${uploadingPhoto ? 'opacity-100' : 'opacity-60 lg:opacity-0 lg:group-hover:opacity-100'}`}>
                 <input
                   type="file"
                   accept="image/*"
@@ -199,7 +199,7 @@ function MemberProfilePage() {
           {/* Photo upload hint */}
           <p className="text-indigo-200 text-xs mt-4 flex items-center gap-1">
             <MdCameraAlt size={14} />
-            {t('click_photo_to_change') || 'Survolez la photo pour la modifier'}
+            {t('click_photo_to_change') || 'Cliquez sur la photo pour la modifier'}
           </p>
         </div>
 
