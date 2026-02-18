@@ -633,6 +633,7 @@
     "confirm_delete_announcement_message": "Are you sure you want to delete the announcement \"{{title}}\"?",
     "delete_announcement": "Delete announcement",
     "no_announcements": "No announcements",
+    "all_months": "All months",
     "create_first_announcement": "Create your first announcement to communicate with your members",
 
     "notifications": "Notifications",
