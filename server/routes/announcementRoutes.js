@@ -97,9 +97,9 @@ router.post('/', async (req, res) => {
       title_en: title_en || title_fr,
       content_fr,
       content_en: content_en || content_fr,
-      image_url,
+      image_url: image_url || null,
       is_published: is_published || false,
-      expires_at,
+      expires_at: expires_at || null,
       created_by: userId
     };
 
@@ -115,7 +115,7 @@ router.post('/', async (req, res) => {
 
     if (error) {
       console.error('Error creating announcement:', error);
-      return res.status(500).json({ error: 'Erreur lors de la création de l\'annonce', detail: error.message, code: error.code });
+      return res.status(500).json({ error: 'Erreur lors de la création de l\'annonce' });
     }
 
     // Logger l'activité
@@ -166,7 +166,7 @@ router.put('/:id', async (req, res) => {
     if (content_fr !== undefined) updateData.content_fr = content_fr;
     if (content_en !== undefined) updateData.content_en = content_en;
     if (image_url !== undefined) updateData.image_url = image_url;
-    if (expires_at !== undefined) updateData.expires_at = expires_at;
+    if (expires_at !== undefined) updateData.expires_at = expires_at || null;
 
     if (is_published !== undefined) {
       updateData.is_published = is_published;
