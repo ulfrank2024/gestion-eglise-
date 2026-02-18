@@ -90,10 +90,13 @@ router.put('/profile', async (req, res) => {
       updated_at: new Date().toISOString()
     };
 
+    // Normalise MM-DD → 2000-MM-DD pour la colonne DATE Postgres
+    const normalizeDOB = (dob) => { if (!dob) return null; return dob.length <= 5 ? `2000-${dob}` : dob; };
+
     if (full_name !== undefined) updateData.full_name = full_name;
     if (phone !== undefined) updateData.phone = phone;
     if (address !== undefined) updateData.address = address;
-    if (date_of_birth !== undefined) updateData.date_of_birth = date_of_birth;
+    if (date_of_birth !== undefined) updateData.date_of_birth = normalizeDOB(date_of_birth);
     if (profile_photo_url !== undefined) updateData.profile_photo_url = profile_photo_url;
 
     const { data: member, error } = await supabaseAdmin

@@ -471,6 +471,13 @@ router.get('/churches_v2/:churchId/activity-logs', protect, isAdminChurch, async
   }
 });
 
+// Normalise MM-DD → 2000-MM-DD pour la colonne DATE Postgres
+const normalizeDOB = (dob) => {
+  if (!dob) return null;
+  if (dob.length <= 5) return `2000-${dob}`; // MM-DD → 2000-MM-DD
+  return dob; // déjà YYYY-MM-DD
+};
+
 // PUT /api/church-admin/profile - Mettre à jour le profil admin
 router.put('/profile', protect, isAdminChurch, async (req, res) => {
   const { full_name, profile_photo_url, phone, address, city, date_of_birth } = req.body;
@@ -482,7 +489,7 @@ router.put('/profile', protect, isAdminChurch, async (req, res) => {
     if (phone !== undefined) updateData.phone = phone;
     if (address !== undefined) updateData.address = address;
     if (city !== undefined) updateData.city = city;
-    if (date_of_birth !== undefined) updateData.date_of_birth = date_of_birth;
+    if (date_of_birth !== undefined) updateData.date_of_birth = normalizeDOB(date_of_birth);
 
     const { data, error } = await supabaseAdmin
       .from('church_users_v2')

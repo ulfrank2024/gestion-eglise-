@@ -18,6 +18,18 @@ const registrationUpload = multer({
 });
 
 /**
+ * Normalise une date de naissance au format MM-DD en YYYY-MM-DD (année 2000)
+ * Postgres DATE requiert YYYY-MM-DD, mais l'UI envoie seulement MM-DD (sans année)
+ */
+function normalizeDOB(dob) {
+  if (!dob) return null;
+  // Si format MM-DD (5 caractères ou moins), préfixer avec 2000-
+  if (dob.length <= 5) return `2000-${dob}`;
+  // Sinon déjà au format YYYY-MM-DD
+  return dob;
+}
+
+/**
  * Résout un churchId qui peut être soit un UUID soit un subdomain
  * @param {string} churchIdOrSubdomain - UUID ou subdomain de l'église
  * @returns {Promise<string|null>} - L'UUID de l'église ou null si non trouvé
@@ -501,7 +513,7 @@ router.post('/churches/register', registrationUpload.fields([
                     phone: adminPhone || null,
                     address: adminAddress || null,
                     city: adminCity || null,
-                    date_of_birth: adminDateOfBirth || null
+                    date_of_birth: normalizeDOB(adminDateOfBirth)
                 })
                 .eq('user_id', userId);
 
@@ -524,7 +536,7 @@ router.post('/churches/register', registrationUpload.fields([
                     phone: adminPhone || null,
                     address: adminAddress || null,
                     city: adminCity || null,
-                    date_of_birth: adminDateOfBirth || null
+                    date_of_birth: normalizeDOB(adminDateOfBirth)
                 });
 
             if (roleError) {
@@ -832,7 +844,7 @@ router.post('/:churchId/members/register', async (req, res) => {
                 phone,
                 address,
                 city: city || null,
-                date_of_birth,
+                date_of_birth: normalizeDOB(date_of_birth),
                 profile_photo_url: profile_photo_url || null,
                 joined_at: new Date().toISOString()
             })
