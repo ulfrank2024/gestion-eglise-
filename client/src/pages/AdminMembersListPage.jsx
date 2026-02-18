@@ -45,6 +45,12 @@ function AdminMembersListPage() {
   const [memberToDelete, setMemberToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
+  // États pour la modal de confirmation de blocage
+  const [showBlockModal, setShowBlockModal] = useState(false);
+  const [memberToBlock, setMemberToBlock] = useState(null);
+  const [blockAction, setBlockAction] = useState(true);
+  const [blocking, setBlocking] = useState(false);
+
   useEffect(() => {
     fetchData();
   }, [showArchived]);
@@ -103,18 +109,25 @@ function AdminMembersListPage() {
     }
   };
 
-  const handleBlock = async (memberId, shouldBlock) => {
-    const msg = shouldBlock
-      ? t('confirm_block_member')
-      : t('confirm_unblock_member');
-    if (!window.confirm(msg)) return;
+  const handleBlock = (memberId, shouldBlock) => {
+    setMemberToBlock(memberId);
+    setBlockAction(shouldBlock);
+    setShowBlockModal(true);
+  };
+
+  const confirmBlock = async () => {
+    setBlocking(true);
     try {
-      await api.admin.blockMember(memberId, shouldBlock);
-      setSuccess(shouldBlock ? t('member_blocked_success') : t('member_unblocked_success'));
+      await api.admin.blockMember(memberToBlock, blockAction);
+      setSuccess(blockAction ? t('member_blocked_success') : t('member_unblocked_success'));
       setTimeout(() => setSuccess(''), 4000);
+      setShowBlockModal(false);
+      setMemberToBlock(null);
       fetchData();
     } catch (err) {
       setError(err.message);
+    } finally {
+      setBlocking(false);
     }
   };
 
@@ -661,6 +674,22 @@ function AdminMembersListPage() {
         cancelText={t('cancel')}
         type="danger"
         loading={deleting}
+      />
+
+      {/* Modal de confirmation de blocage/déblocage */}
+      <ConfirmModal
+        isOpen={showBlockModal}
+        onClose={() => {
+          setShowBlockModal(false);
+          setMemberToBlock(null);
+        }}
+        onConfirm={confirmBlock}
+        title={blockAction ? t('block_member') : t('unblock_member')}
+        message={blockAction ? t('confirm_block_member') : t('confirm_unblock_member')}
+        confirmText={blockAction ? t('block_member') : t('unblock_member')}
+        cancelText={t('cancel')}
+        type={blockAction ? 'danger' : 'warning'}
+        loading={blocking}
       />
     </div>
   );

@@ -41,6 +41,10 @@ function AdminMemberDetailPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // États pour la modal de confirmation de blocage
+  const [showBlockModal, setShowBlockModal] = useState(false);
+  const [blocking, setBlocking] = useState(false);
+
   useEffect(() => {
     fetchMember();
   }, [memberId]);
@@ -87,15 +91,21 @@ function AdminMemberDetailPage() {
     }
   };
 
-  const handleBlock = async () => {
+  const handleBlock = () => {
+    setShowBlockModal(true);
+  };
+
+  const confirmBlock = async () => {
     const shouldBlock = !member.is_blocked;
-    const msg = shouldBlock ? t('confirm_block_member') : t('confirm_unblock_member');
-    if (!window.confirm(msg)) return;
+    setBlocking(true);
     try {
       await api.admin.blockMember(memberId, shouldBlock);
+      setShowBlockModal(false);
       await fetchMember();
     } catch (err) {
       setError(err.message);
+    } finally {
+      setBlocking(false);
     }
   };
 
@@ -654,6 +664,19 @@ function AdminMemberDetailPage() {
         cancelText={t('cancel')}
         type="danger"
         loading={deleting}
+      />
+
+      {/* Modal de confirmation de blocage/déblocage */}
+      <ConfirmModal
+        isOpen={showBlockModal}
+        onClose={() => setShowBlockModal(false)}
+        onConfirm={confirmBlock}
+        title={member?.is_blocked ? t('unblock_member') : t('block_member')}
+        message={member?.is_blocked ? t('confirm_unblock_member') : t('confirm_block_member')}
+        confirmText={member?.is_blocked ? t('unblock_member') : t('block_member')}
+        cancelText={t('cancel')}
+        type={member?.is_blocked ? 'warning' : 'danger'}
+        loading={blocking}
       />
     </div>
   );
