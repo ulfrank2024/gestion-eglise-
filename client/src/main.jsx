@@ -94,6 +94,7 @@ import PublicEventsListPage from './pages/PublicEventsListPage'; // Nouvelle pag
 import HomePage from './pages/HomePage'; // Page d'accueil PWA
 import CheckinSuccessPage from './pages/CheckinSuccessPage';
 import WelcomeCheckinPage from './pages/WelcomeCheckinPage'; // Importer la nouvelle page
+import CheckInFormPage from './pages/CheckInFormPage'; // Formulaire de check-in
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -195,6 +196,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="choir/planning" element={<MemberChoirPlanningPage />} />
             <Route path="choir/planning/:planningId" element={<MemberChoirPlanningPage />} />
           </Route>
+
+          {/* Check-in Form - Public (must be before /:churchId routes) */}
+          <Route path="/:churchId/checkin-form/:eventId" element={<CheckInFormPage />} />
 
           {/* Member Registration - Public (must be before /:churchId routes) */}
           <Route path="/:churchId/join" element={<MemberRegistrationPage />} />

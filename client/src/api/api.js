@@ -214,6 +214,10 @@ export const api = {
         const { data } = await apiClient.get(`/admin/events_v2/${id}/qrcode-checkin`);
         return data;
     },
+    getCheckinEntries: async (eventId) => {
+        const { data } = await apiClient.get(`/admin/events/${eventId}/checkin-entries`);
+        return data;
+    },
     listAttendees: async (eventId) => {
         const { data } = await apiClient.get(`/admin/events_v2/${eventId}/attendees`);
         return data;
@@ -721,6 +725,10 @@ export const api = {
       const { data } = await apiClient.post('/public/upload-photo', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
+      return data;
+    },
+    submitCheckin: async (churchId, eventId, formData) => {
+      const { data } = await apiClient.post(`/public/${churchId}/checkin/${eventId}`, formData);
       return data;
     },
   },

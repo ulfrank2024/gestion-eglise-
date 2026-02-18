@@ -314,7 +314,7 @@ router.post('/:churchId/events/:eventId/register', async (req, res) => {
   }
 });
 
-// GET /api/public/:churchId/checkin/:eventId - Endpoint public pour le scan de QR code
+// GET /api/public/:churchId/checkin/:eventId - Scan QR code → redirige vers le formulaire de check-in
 router.get('/:churchId/checkin/:eventId', async (req, res) => {
   const { churchId: churchIdOrSubdomain, eventId } = req.params;
   try {
@@ -324,10 +324,10 @@ router.get('/:churchId/checkin/:eventId', async (req, res) => {
       return res.status(404).send('Church not found.');
     }
 
-    // Utiliser supabaseAdmin pour lire et écrire afin de contourner RLS pour cette opération publique de check-in
+    // Vérifier que l'événement existe
     const { data: event, error: fetchError } = await supabaseAdmin
       .from('events_v2')
-      .select('checkin_count')
+      .select('id')
       .eq('id', eventId)
       .eq('church_id', churchId)
       .single();
@@ -341,9 +341,59 @@ router.get('/:churchId/checkin/:eventId', async (req, res) => {
         return res.status(404).send('Event not found for this church.');
     }
 
-    const newCheckinCount = (event.checkin_count || 0) + 1;
-    console.log(`Event ${eventId}: Incrementing checkin_count from ${event.checkin_count} to ${newCheckinCount}`);
+    // Rediriger vers le formulaire de check-in (pas d'incrémentation ici)
+    const frontendBaseUrl = process.env.FRONTEND_BASE_URL || 'http://localhost:3000';
+    return res.redirect(`${frontendBaseUrl}/${churchIdOrSubdomain}/checkin-form/${eventId}`);
 
+  } catch (error) {
+    console.error('Error during public check-in:', error.message);
+    res.status(500).send('An error occurred during check-in.');
+  }
+});
+
+// POST /api/public/:churchId/checkin/:eventId - Soumettre le formulaire de check-in
+router.post('/:churchId/checkin/:eventId', async (req, res) => {
+  const { churchId: churchIdOrSubdomain, eventId } = req.params;
+  const { full_name, email, phone_number, how_heard, invited_by } = req.body;
+
+  try {
+    const churchId = await resolveChurchId(churchIdOrSubdomain);
+    if (!churchId) {
+      return res.status(404).json({ error: 'Church not found.' });
+    }
+
+    // Vérifier que l'événement existe
+    const { data: event, error: fetchError } = await supabaseAdmin
+      .from('events_v2')
+      .select('id, checkin_count')
+      .eq('id', eventId)
+      .eq('church_id', churchId)
+      .single();
+
+    if (fetchError || !event) {
+      return res.status(404).json({ error: 'Event not found.' });
+    }
+
+    // Insérer l'entrée de check-in (données optionnelles)
+    const { error: insertError } = await supabaseAdmin
+      .from('checkin_entries_v2')
+      .insert({
+        event_id: eventId,
+        church_id: churchId,
+        full_name: full_name || null,
+        email: email || null,
+        phone_number: phone_number || null,
+        how_heard: how_heard || null,
+        invited_by: invited_by || null,
+      });
+
+    if (insertError) {
+      console.error('Error inserting checkin entry:', insertError.message);
+      // Ne pas bloquer si l'insertion échoue (table peut ne pas exister encore)
+    }
+
+    // Incrémenter le compteur de check-in
+    const newCheckinCount = (event.checkin_count || 0) + 1;
     const { error: updateError } = await supabaseAdmin
       .from('events_v2')
       .update({ checkin_count: newCheckinCount })
@@ -351,32 +401,27 @@ router.get('/:churchId/checkin/:eventId', async (req, res) => {
       .eq('church_id', churchId);
 
     if (updateError) {
-        console.error(`Check-in Error: Failed to update checkin_count for event ${eventId}. Details:`, updateError.message);
-        throw updateError;
+      console.error('Error updating checkin_count:', updateError.message);
     }
-    console.log(`Check-in successful for event ${eventId}. New count: ${newCheckinCount}`);
 
-    // Logger l'activité de check-in (route publique - pas de req.user)
+    // Logger l'activité
     await logActivity({
-      churchId: churchId,
+      churchId,
       userId: null,
-      userName: 'QR Code Scan',
-      userEmail: null,
+      userName: full_name || 'Visiteur',
+      userEmail: email || null,
       module: MODULES.EVENTS,
       action: ACTIONS.CHECKIN,
       entityType: 'event',
       entityId: eventId,
-      details: { checkin_count: newCheckinCount },
+      details: { checkin_count: newCheckinCount, full_name, email },
       req
     });
 
-    const frontendBaseUrl = process.env.FRONTEND_BASE_URL || 'http://localhost:3000';
-    // Utiliser le subdomain original pour la redirection (pas l'UUID)
-    res.redirect(`${frontendBaseUrl}/${churchIdOrSubdomain}/welcome/${eventId}`);
-
+    return res.json({ success: true });
   } catch (error) {
-    console.error('Error during public check-in:', error.message);
-    res.status(500).send('An error occurred during check-in.');
+    console.error('Error during checkin form submission:', error.message);
+    res.status(500).json({ error: 'An error occurred during check-in.' });
   }
 });
 

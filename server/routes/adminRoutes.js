@@ -718,4 +718,30 @@ router.delete('/form-fields/:fieldId', protect, isSuperAdminOrChurchAdmin, async
 // Note: La route GET /members est gérée par memberRoutes.js monté sur /api/admin/members
 // Ne PAS ajouter de route /members ici pour éviter les conflits de routage
 
+// GET /api/admin/events/:eventId/checkin-entries - Liste des entrées check-in pour un événement
+router.get('/events/:eventId/checkin-entries', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
+  const { eventId } = req.params;
+  try {
+    const { data: entries, error } = await supabaseAdmin
+      .from('checkin_entries_v2')
+      .select('*')
+      .eq('event_id', eventId)
+      .eq('church_id', req.user.church_id)
+      .order('checked_in_at', { ascending: false });
+
+    if (error) {
+      // La table peut ne pas encore exister
+      if (error.code === '42P01') {
+        return res.json({ entries: [], count: 0 });
+      }
+      throw error;
+    }
+
+    return res.json({ entries: entries || [], count: entries?.length || 0 });
+  } catch (err) {
+    console.error('Error fetching checkin entries:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

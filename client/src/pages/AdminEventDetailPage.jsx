@@ -10,7 +10,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import {
   MdArrowBack, MdEdit, MdDelete, MdCheckCircle, MdQrCode,
   MdPeople, MdEmail, MdEvent, MdBarChart, MdSave, MdClose,
-  MdCalendarToday, MdLink, MdVisibility, MdDownload
+  MdCalendarToday, MdLink, MdVisibility, MdDownload, MdHowToReg
 } from 'react-icons/md';
 
 function AdminEventDetailPage() {
@@ -47,6 +47,7 @@ function AdminEventDetailPage() {
   const [formFields, setFormFields] = useState([]);
   const [selectedAttendee, setSelectedAttendee] = useState(null);
   const [showAttendeeModal, setShowAttendeeModal] = useState(false);
+  const [checkinEntries, setCheckinEntries] = useState([]);
 
   const publicEventUrl = `${window.location.origin}/${event?.church_id}/event/${id}`;
 
@@ -129,6 +130,20 @@ function AdminEventDetailPage() {
       }
     };
     fetchFormFields();
+  }, [id]);
+
+  // Récupérer les entrées de check-in
+  useEffect(() => {
+    const fetchCheckinEntries = async () => {
+      if (!id) return;
+      try {
+        const data = await api.admin.getCheckinEntries(id);
+        setCheckinEntries(data.entries || []);
+      } catch (err) {
+        console.error('Error fetching checkin entries:', err);
+      }
+    };
+    fetchCheckinEntries();
   }, [id]);
 
   // Fonction pour obtenir le label dans la bonne langue
@@ -728,6 +743,52 @@ function AdminEventDetailPage() {
                 {emailSendError && <p className="text-red-400 text-sm">{emailSendError}</p>}
               </form>
             </div>
+          {/* Check-in Entries */}
+          {checkinEntries.length > 0 && (
+            <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-700 flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-white flex items-center">
+                  <MdHowToReg className="mr-2 text-teal-400" />
+                  {t('checkin_entries_title')}
+                </h3>
+                <span className="px-3 py-1 bg-teal-900/40 text-teal-400 rounded-full text-sm font-medium">
+                  {checkinEntries.length} {t('checkin_entries')}
+                </span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-700/50">
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase">{t('checkin_time')}</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase">{t('full_name')}</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase">{t('email')}</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase">{t('phone')}</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase">{t('how_heard')}</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase">{t('invited_by')}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-700">
+                    {checkinEntries.map(entry => (
+                      <tr key={entry.id} className="hover:bg-gray-700/30">
+                        <td className="px-4 py-3 text-gray-400 text-sm whitespace-nowrap">
+                          {entry.checked_in_at
+                            ? new Date(entry.checked_in_at).toLocaleString(i18n.language === 'fr' ? 'fr-FR' : 'en-US')
+                            : '-'}
+                        </td>
+                        <td className="px-4 py-3 text-white font-medium">{entry.full_name || '-'}</td>
+                        <td className="px-4 py-3 text-gray-300">{entry.email || '-'}</td>
+                        <td className="px-4 py-3 text-gray-300">{entry.phone_number || '-'}</td>
+                        <td className="px-4 py-3 text-gray-300">
+                          {entry.how_heard ? t(`how_heard_${entry.how_heard}`) || entry.how_heard : '-'}
+                        </td>
+                        <td className="px-4 py-3 text-gray-300">{entry.invited_by || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
           </div>
         </div>
       )}
