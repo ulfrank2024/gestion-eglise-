@@ -565,8 +565,11 @@ router.put('/:id/block', async (req, res) => {
         .insert({
           church_id,
           member_id: id,
-          title: notifTitle,
-          message: notifMessage,
+          title_fr: notifTitle,
+          title_en: notifTitle,
+          message_fr: notifMessage,
+          message_en: notifMessage,
+          type: blocked ? 'warning' : 'success',
           is_read: false
         });
     } catch (notifErr) {
