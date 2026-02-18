@@ -52,7 +52,8 @@ async function notifyAllMembers({ churchId, titleFr, titleEn, messageFr, message
       .from('members_v2')
       .select('id')
       .eq('church_id', churchId)
-      .eq('is_active', true);
+      .eq('is_active', true)
+      .eq('is_blocked', false);
 
     if (fetchError || !members || members.length === 0) return;
 

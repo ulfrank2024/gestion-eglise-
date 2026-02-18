@@ -16,6 +16,69 @@ router.use(protect);
 router.use(isSuperAdminOrChurchAdmin);
 
 /**
+ * Envoie les notifications in-app et les emails aux membres actifs
+ * Appelé lors de la création (si publiée) et lors de la publication d'une annonce
+ */
+async function sendAnnouncementNotifications({ churchId, announcement, lang = 'fr' }) {
+  try {
+    const title = lang === 'fr' ? announcement.title_fr : (announcement.title_en || announcement.title_fr);
+    const content = lang === 'fr' ? announcement.content_fr : (announcement.content_en || announcement.content_fr);
+
+    // Récupérer le nom de l'église
+    const { data: church } = await supabaseAdmin
+      .from('churches_v2')
+      .select('name')
+      .eq('id', churchId)
+      .single();
+
+    const frontendUrl = process.env.FRONTEND_BASE_URL || 'http://localhost:3000';
+
+    // 1. Notification in-app pour tous les membres actifs non bloqués
+    notifyAllMembers({
+      churchId,
+      titleFr: `📢 ${announcement.title_fr}`,
+      titleEn: `📢 ${announcement.title_en || announcement.title_fr}`,
+      messageFr: announcement.content_fr.substring(0, 120) + (announcement.content_fr.length > 120 ? '...' : ''),
+      messageEn: (announcement.content_en || announcement.content_fr).substring(0, 120) + ((announcement.content_en || announcement.content_fr).length > 120 ? '...' : ''),
+      type: 'announcement',
+      icon: NOTIFICATION_ICONS.announcement,
+      link: '/member/announcements',
+    });
+
+    // 2. Email à tous les membres actifs non bloqués
+    const { data: members } = await supabaseAdmin
+      .from('members_v2')
+      .select('full_name, email')
+      .eq('church_id', churchId)
+      .eq('is_active', true)
+      .eq('is_blocked', false)
+      .not('email', 'is', null);
+
+    if (members && members.length > 0) {
+      const emailPromises = members.map(m => {
+        const emailHtml = generateAnnouncementPublishedEmail({
+          memberName: m.full_name,
+          announcementTitle: title,
+          announcementContent: content,
+          churchName: church?.name || 'Notre Église',
+          dashboardUrl: `${frontendUrl}/member/announcements`,
+          language: lang
+        });
+        return sendEmail({
+          to: m.email,
+          subject: `${church?.name || 'MY EDEN X'} - Nouvelle annonce : ${title}`,
+          html: emailHtml
+        }).catch(err => console.error(`Email failed for ${m.email}:`, err.message));
+      });
+      await Promise.allSettled(emailPromises);
+      console.log(`Announcement emails sent to ${members.length} member(s).`);
+    }
+  } catch (err) {
+    console.error('sendAnnouncementNotifications error:', err.message);
+  }
+}
+
+/**
  * GET /api/admin/announcements
  * Liste toutes les annonces
  */
@@ -119,7 +182,7 @@ router.post('/', async (req, res) => {
     }
 
     // Logger l'activité
-    await logActivity({
+    logActivity({
       churchId: church_id,
       userId: userId,
       userName: req.user.full_name || req.user.email,
@@ -130,9 +193,18 @@ router.post('/', async (req, res) => {
       entityId: announcement.id,
       entityName: title_fr,
       req
-    });
+    }).catch(() => {});
 
     res.status(201).json(announcement);
+
+    // Notifications + emails en arrière-plan si publiée immédiatement
+    if (is_published) {
+      sendAnnouncementNotifications({
+        churchId: church_id,
+        announcement,
+        lang: req.body.language || 'fr'
+      });
+    }
   } catch (err) {
     console.error('Error in POST /announcements:', err);
     res.status(500).json({ error: 'Erreur serveur' });
@@ -256,64 +328,16 @@ router.put('/:id/publish', async (req, res) => {
       req
     });
 
-    // Notification in-app aux membres si annonce publiée
+    res.json(announcement);
+
+    // Notifications + emails en arrière-plan si publiée
     if (is_published) {
-      notifyAllMembers({
+      sendAnnouncementNotifications({
         churchId: church_id,
-        titleFr: 'Nouvelle annonce',
-        titleEn: 'New announcement',
-        messageFr: `"${announcement.title_fr}"`,
-        messageEn: `"${announcement.title_en || announcement.title_fr}"`,
-        type: 'announcement',
-        icon: NOTIFICATION_ICONS.announcement,
-        link: '/member/announcements',
+        announcement,
+        lang: req.body.language || 'fr'
       });
     }
-
-    // Si l'annonce est publiée, notifier tous les membres actifs par email
-    if (is_published) {
-      try {
-        const { data: members } = await supabaseAdmin
-          .from('members_v2')
-          .select('full_name, email')
-          .eq('church_id', church_id)
-          .eq('is_active', true);
-
-        const { data: church } = await supabaseAdmin
-          .from('churches_v2')
-          .select('name')
-          .eq('id', church_id)
-          .single();
-
-        const frontendUrl = process.env.FRONTEND_BASE_URL || 'https://gestion-eglise-delta.vercel.app';
-        const lang = req.body.language || 'fr';
-        const title = lang === 'fr' ? announcement.title_fr : (announcement.title_en || announcement.title_fr);
-        const content = lang === 'fr' ? announcement.content_fr : (announcement.content_en || announcement.content_fr);
-
-        const emailPromises = members?.filter(m => m.email).map(m => {
-          const emailHtml = generateAnnouncementPublishedEmail({
-            memberName: m.full_name,
-            announcementTitle: title,
-            announcementContent: content,
-            churchName: church?.name || 'Notre Église',
-            dashboardUrl: `${frontendUrl}/member/announcements`,
-            language: lang
-          });
-
-          return sendEmail({
-            to: m.email,
-            subject: `${church?.name || 'MY EDEN X'} - ${lang === 'fr' ? 'Nouvelle annonce' : 'New Announcement'}: ${title}`,
-            html: emailHtml
-          });
-        }) || [];
-
-        await Promise.allSettled(emailPromises);
-      } catch (emailErr) {
-        console.error('Error sending announcement emails:', emailErr);
-      }
-    }
-
-    res.json(announcement);
   } catch (err) {
     console.error('Error in PUT /announcements/:id/publish:', err);
     res.status(500).json({ error: 'Erreur serveur' });
