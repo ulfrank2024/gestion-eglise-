@@ -21,6 +21,7 @@ function MemberLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [isChoirMember, setIsChoirMember] = useState(false);
+  const [memberProfile, setMemberProfile] = useState(null);
 
   useEffect(() => {
     const fetchMemberInfo = async () => {
@@ -37,6 +38,7 @@ function MemberLayout() {
         // Récupérer les infos du dashboard membre
         const dashboardData = await api.member.getDashboard();
         setChurchInfo(dashboardData.church);
+        if (dashboardData.member) setMemberProfile(dashboardData.member);
         const initialCount = dashboardData.unread_notifications || 0;
         setUnreadNotifications(initialCount);
         setAppBadge(initialCount);
@@ -148,28 +150,48 @@ function MemberLayout() {
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <div className="flex flex-col h-full">
-          {/* Header with logo */}
-          <div className="p-4 border-b border-gray-700">
-            <div className="flex items-center gap-3">
-              <img
-                src={churchInfo?.logo_url || defaultLogo}
-                alt={churchInfo?.name || 'MY EDEN X'}
-                className="w-12 h-12 rounded-full object-cover border-2 border-indigo-500"
-              />
-              <div>
-                <h2 className="text-white font-semibold text-sm truncate">
-                  {churchInfo?.name || 'MY EDEN X'}
-                </h2>
-                <p className="text-gray-400 text-xs">{t('member')}</p>
-              </div>
-            </div>
+          {/* Header with logo + member photo */}
+          <div className="p-4 border-b border-gray-700 relative">
             {/* Close button mobile */}
             <button
               onClick={() => setSidebarOpen(false)}
-              className="lg:hidden absolute top-4 right-4 text-gray-400 hover:text-white"
+              className="lg:hidden absolute top-4 right-4 text-gray-400 hover:text-white z-10"
             >
               <MdClose size={24} />
             </button>
+            {/* Church info */}
+            <div className="flex items-center gap-3 mb-3">
+              <img
+                src={churchInfo?.logo_url || defaultLogo}
+                alt={churchInfo?.name || 'MY EDEN X'}
+                className="w-10 h-10 rounded-full object-cover border-2 border-indigo-500"
+              />
+              <h2 className="text-white font-semibold text-sm truncate">
+                {churchInfo?.name || 'MY EDEN X'}
+              </h2>
+            </div>
+            {/* Member photo + name */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-green-500 flex-shrink-0">
+                {memberProfile?.profile_photo_url ? (
+                  <img
+                    src={memberProfile.profile_photo_url}
+                    alt={memberProfile.full_name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-600 flex items-center justify-center text-white text-sm font-bold">
+                    {memberProfile?.full_name?.charAt(0)?.toUpperCase() || <MdPerson size={18} />}
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="text-white text-sm font-medium truncate">
+                  {memberProfile?.full_name || memberInfo?.full_name || ''}
+                </p>
+                <p className="text-gray-400 text-xs">{t('member')}</p>
+              </div>
+            </div>
           </div>
 
           {/* Navigation */}
@@ -270,7 +292,7 @@ function MemberLayout() {
 
         {/* Page content */}
         <main className="flex-1 p-4 lg:p-6 text-white">
-          <Outlet context={{ memberInfo, churchInfo }} />
+          <Outlet context={{ memberInfo, churchInfo, memberProfile, setMemberProfile }} />
         </main>
       </div>
     </div>

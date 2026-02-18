@@ -151,6 +151,12 @@ router.post('/upload-photo', upload.single('photo'), async (req, res) => {
       .from('event_images')
       .getPublicUrl(fileName);
 
+    // Auto-sauvegarder l'URL directement dans members_v2 (plus fiable qu'un appel séparé)
+    await supabaseAdmin
+      .from('members_v2')
+      .update({ profile_photo_url: publicUrl, updated_at: new Date().toISOString() })
+      .eq('id', member_id);
+
     res.json({ url: publicUrl });
   } catch (err) {
     console.error('Error in POST /member/upload-photo:', err);

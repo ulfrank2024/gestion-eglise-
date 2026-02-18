@@ -11,7 +11,7 @@ import {
 function MemberProfilePage() {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
-  const { memberInfo, churchInfo } = useOutletContext();
+  const { memberInfo, churchInfo, memberProfile, setMemberProfile } = useOutletContext();
 
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -65,14 +65,12 @@ function MemberProfilePage() {
 
       // Mettre à jour formData avec la nouvelle URL
       setFormData(prev => ({ ...prev, profile_photo_url: publicUrl }));
-
-      // Sauvegarder immédiatement si pas en mode édition
-      if (!editing) {
-        await api.member.updateProfile({ profile_photo_url: publicUrl });
-        setProfile(prev => ({ ...prev, profile_photo_url: publicUrl }));
-        setSuccess(t('profile_updated_success') || 'Photo mise à jour');
-        setTimeout(() => setSuccess(''), 3000);
-      }
+      // Mettre à jour le profil local (l'upload-photo auto-sauvegarde dans la DB)
+      setProfile(prev => ({ ...prev, profile_photo_url: publicUrl }));
+      // Mettre à jour la photo dans le sidebar du layout
+      if (setMemberProfile) setMemberProfile(prev => ({ ...prev, profile_photo_url: publicUrl }));
+      setSuccess(t('profile_updated_success') || 'Photo mise à jour');
+      setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       console.error('Photo upload error:', err);
       setError(t('error_uploading_image') || 'Erreur lors du téléchargement de la photo');

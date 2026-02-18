@@ -79,8 +79,19 @@ function MemberDashboardPage() {
       {/* Welcome Header */}
       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-6">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
-            <MdPerson className="text-3xl text-white" />
+          {/* Photo de profil */}
+          <div className="w-16 h-16 rounded-full overflow-hidden border-4 border-white/30 flex-shrink-0">
+            {dashboardData?.member?.profile_photo_url ? (
+              <img
+                src={dashboardData.member.profile_photo_url}
+                alt={dashboardData.member.full_name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-white/20 flex items-center justify-center text-2xl text-white font-bold">
+                {dashboardData?.member?.full_name?.charAt(0)?.toUpperCase() || <MdPerson className="text-3xl" />}
+              </div>
+            )}
           </div>
           <div>
             <h1 className="text-2xl font-bold text-white">
