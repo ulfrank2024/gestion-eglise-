@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
-import { MdChurch, MdPerson, MdEmail, MdPhone, MdLocationOn, MdLock, MdImage, MdSubdirectoryArrowRight, MdCameraAlt } from 'react-icons/md';
+import { MdChurch, MdPerson, MdEmail, MdPhone, MdLocationOn, MdLock, MdImage, MdSubdirectoryArrowRight, MdCameraAlt, MdCake, MdLocationCity } from 'react-icons/md';
 import logo from '../assets/logo_eden.png';
 import { InlineSpinner } from '../components/LoadingSpinner';
 
@@ -23,10 +23,16 @@ const ChurchRegistrationPage = () => {
     email: '',
     phone: '',
     adminName: '',
+    adminPhone: '',
+    adminAddress: '',
+    adminCity: '',
+    adminDateOfBirth: '',
     password: '',
+    confirmPassword: '',
     logoFile: null,
     adminPhotoFile: null,
   });
+  const [adminPhotoPreview, setAdminPhotoPreview] = useState(null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -55,10 +61,15 @@ const ChurchRegistrationPage = () => {
 
   const handleFileChange = (e) => {
     const { name } = e.target;
-    setFormState(prevState => ({
-      ...prevState,
-      [name]: e.target.files[0]
-    }));
+    const file = e.target.files[0];
+    setFormState(prevState => ({ ...prevState, [name]: file }));
+
+    // Preview pour la photo admin
+    if (name === 'adminPhotoFile' && file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setAdminPhotoPreview(reader.result);
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -66,6 +77,13 @@ const ChurchRegistrationPage = () => {
     setLoading(true);
     setError('');
     setSuccess('');
+
+    // Validation mot de passe
+    if (formState.password !== formState.confirmPassword) {
+      setError(t('password_mismatch') || 'Les mots de passe ne correspondent pas');
+      setLoading(false);
+      return;
+    }
 
     try {
       // Envoyer les fichiers via FormData au backend (bypass RLS)
@@ -78,6 +96,10 @@ const ChurchRegistrationPage = () => {
       formData.append('email', formState.email);
       formData.append('phone', formState.phone || '');
       formData.append('adminName', formState.adminName);
+      formData.append('adminPhone', formState.adminPhone || '');
+      formData.append('adminAddress', formState.adminAddress || '');
+      formData.append('adminCity', formState.adminCity || '');
+      formData.append('adminDateOfBirth', formState.adminDateOfBirth || '');
       formData.append('password', formState.password);
 
       if (formState.logoFile) {
@@ -303,11 +325,41 @@ const ChurchRegistrationPage = () => {
               <h3 className="text-xl font-bold text-white">{t('church_registration.admin_info')}</h3>
             </div>
 
+            {/* Photo de profil admin - centrée en haut */}
+            <div className="flex justify-center mb-6">
+              <div className="text-center">
+                <div className="relative inline-block">
+                  {adminPhotoPreview ? (
+                    <img
+                      src={adminPhotoPreview}
+                      alt="Admin photo"
+                      className="w-24 h-24 rounded-full object-cover border-4 border-purple-500/30"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 rounded-full bg-gray-700 flex items-center justify-center border-4 border-purple-500/30">
+                      <MdPerson className="text-4xl text-gray-400" />
+                    </div>
+                  )}
+                  <label className="absolute bottom-0 right-0 w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-purple-700 transition-colors">
+                    <MdCameraAlt className="text-white text-sm" />
+                    <input
+                      type="file"
+                      name="adminPhotoFile"
+                      onChange={handleFileChange}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+                <p className="text-gray-400 text-xs mt-2">{t('church_registration.admin_photo') || 'Photo de profil'}</p>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Admin Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  {t('church_registration.admin_name')}
+                  {t('church_registration.admin_name')} *
                 </label>
                 <div className="relative">
                   <MdPerson className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -318,15 +370,109 @@ const ChurchRegistrationPage = () => {
                     onChange={handleChange}
                     required
                     className="w-full pl-10 pr-4 py-3 bg-gray-700 text-white placeholder-gray-400 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    placeholder="Nom complet de l'administrateur"
+                    placeholder="Nom complet"
                   />
+                </div>
+              </div>
+
+              {/* Admin Phone */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  {t('phone') || 'Téléphone'}
+                </label>
+                <div className="relative">
+                  <MdPhone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="tel"
+                    name="adminPhone"
+                    value={formState.adminPhone}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-3 bg-gray-700 text-white placeholder-gray-400 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    placeholder="+1 514 000 0000"
+                  />
+                </div>
+              </div>
+
+              {/* Admin Address */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  {t('address') || 'Adresse'}
+                </label>
+                <div className="relative">
+                  <MdLocationOn className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    name="adminAddress"
+                    value={formState.adminAddress}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-3 bg-gray-700 text-white placeholder-gray-400 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    placeholder="123 Rue Exemple"
+                  />
+                </div>
+              </div>
+
+              {/* Admin City */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  {t('city') || 'Ville'}
+                </label>
+                <div className="relative">
+                  <MdLocationCity className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    name="adminCity"
+                    value={formState.adminCity}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-3 bg-gray-700 text-white placeholder-gray-400 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    placeholder="Montréal, QC"
+                  />
+                </div>
+              </div>
+
+              {/* Date of Birth */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  {t('date_of_birth') || 'Date de naissance (Mois-Jour)'}
+                </label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <MdCake className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <select
+                      value={(formState.adminDateOfBirth || '').split('-')[0] || ''}
+                      onChange={(e) => {
+                        const day = (formState.adminDateOfBirth || '').split('-')[1] || '';
+                        handleChange({ target: { name: 'adminDateOfBirth', value: e.target.value && day ? `${e.target.value}-${day}` : e.target.value || '' } });
+                      }}
+                      className="w-full pl-10 pr-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="">{t('month') || 'Mois'}</option>
+                      {Array.from({ length: 12 }, (_, i) => (
+                        <option key={i + 1} value={String(i + 1).padStart(2, '0')}>
+                          {new Date(2000, i).toLocaleDateString(i18n.language === 'fr' ? 'fr-FR' : 'en-US', { month: 'long' })}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <select
+                    value={(formState.adminDateOfBirth || '').split('-')[1] || ''}
+                    onChange={(e) => {
+                      const month = (formState.adminDateOfBirth || '').split('-')[0] || '';
+                      handleChange({ target: { name: 'adminDateOfBirth', value: month && e.target.value ? `${month}-${e.target.value}` : '' } });
+                    }}
+                    className="flex-1 px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="">{t('day') || 'Jour'}</option>
+                    {Array.from({ length: 31 }, (_, i) => (
+                      <option key={i + 1} value={String(i + 1).padStart(2, '0')}>{i + 1}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
               {/* Password */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  {t('church_registration.password')}
+                  {t('church_registration.password')} *
                 </label>
                 <div className="relative">
                   <MdLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -342,19 +488,30 @@ const ChurchRegistrationPage = () => {
                 </div>
               </div>
 
-              {/* Admin Profile Photo */}
-              <div>
+              {/* Confirm Password */}
+              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  <MdCameraAlt className="inline mr-2" />
-                  {t('church_registration.admin_photo') || 'Photo de profil'}
+                  {t('confirm_password') || 'Confirmer le mot de passe'} *
                 </label>
-                <input
-                  type="file"
-                  name="adminPhotoFile"
-                  onChange={handleFileChange}
-                  accept="image/*"
-                  className="w-full px-4 py-3 bg-gray-700 text-gray-300 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 file:cursor-pointer"
-                />
+                <div className="relative">
+                  <MdLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    value={formState.confirmPassword}
+                    onChange={handleChange}
+                    required
+                    className={`w-full pl-10 pr-4 py-3 bg-gray-700 text-white placeholder-gray-400 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                      formState.confirmPassword && formState.password !== formState.confirmPassword
+                        ? 'border-red-500'
+                        : 'border-gray-600'
+                    }`}
+                    placeholder="Confirmer le mot de passe"
+                  />
+                  {formState.confirmPassword && formState.password !== formState.confirmPassword && (
+                    <p className="text-red-400 text-xs mt-1">{t('password_mismatch') || 'Les mots de passe ne correspondent pas'}</p>
+                  )}
+                </div>
               </div>
             </div>
           </div>

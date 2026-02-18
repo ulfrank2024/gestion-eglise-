@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/api';
-import LoadingSpinner from '../components/LoadingSpinner';
+import LoadingSpinner, { InlineSpinner } from '../components/LoadingSpinner';
 import {
   MdAccountCircle, MdEmail, MdPhone, MdLocationOn,
   MdCake, MdEdit, MdSave, MdClose, MdCameraAlt, MdPerson
@@ -213,7 +213,7 @@ function AdminMyProfilePage() {
                 </div>
               )}
               <label className="absolute bottom-0 right-0 w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-indigo-700 transition-colors">
-                <MdCameraAlt className="text-white" />
+                {uploadingPhoto ? <InlineSpinner /> : <MdCameraAlt className="text-white" />}
                 <input
                   type="file"
                   accept="image/*"
@@ -229,7 +229,9 @@ function AdminMyProfilePage() {
               </h2>
               <p className="text-indigo-100">{profile.email}</p>
               {uploadingPhoto && (
-                <p className="text-indigo-200 text-sm mt-1">{t('uploading') || 'Upload en cours...'}</p>
+                <p className="text-indigo-200 text-sm mt-1 flex items-center gap-1">
+                  <InlineSpinner /> {t('uploading') || 'Upload en cours...'}
+                </p>
               )}
             </div>
           </div>

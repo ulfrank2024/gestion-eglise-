@@ -4,9 +4,23 @@
  */
 
 const express = require('express');
+const multer = require('multer');
 const router = express.Router();
 const { supabaseAdmin } = require('../db/supabase');
 const { protect, isMember } = require('../middleware/auth');
+
+// Configuration multer pour l'upload photo en mémoire
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'), false);
+    }
+  }
+});
 
 // Appliquer le middleware d'authentification à toutes les routes
 router.use(protect);
@@ -98,6 +112,45 @@ router.put('/profile', async (req, res) => {
     res.json(member);
   } catch (err) {
     console.error('Error in PUT /member/profile:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+/**
+ * POST /api/member/upload-photo
+ * Upload une photo de profil membre via le backend (bypass RLS Supabase Storage)
+ */
+router.post('/upload-photo', upload.single('photo'), async (req, res) => {
+  try {
+    const { member_id } = req.user;
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'Aucun fichier envoyé' });
+    }
+
+    const fileExt = req.file.originalname.split('.').pop();
+    const fileName = `member-photos/member-${member_id}-${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from('event_images')
+      .upload(fileName, req.file.buffer, {
+        contentType: req.file.mimetype,
+        cacheControl: '3600',
+        upsert: true
+      });
+
+    if (uploadError) {
+      console.error('Member photo upload error:', uploadError);
+      return res.status(500).json({ error: uploadError.message });
+    }
+
+    const { data: { publicUrl } } = supabaseAdmin.storage
+      .from('event_images')
+      .getPublicUrl(fileName);
+
+    res.json({ url: publicUrl });
+  } catch (err) {
+    console.error('Error in POST /member/upload-photo:', err);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });

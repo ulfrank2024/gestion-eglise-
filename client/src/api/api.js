@@ -739,6 +739,14 @@ export const api = {
       const { data } = await apiClient.get('/member/events/participated');
       return data;
     },
+    uploadProfilePhoto: async (file) => {
+      const formData = new FormData();
+      formData.append('photo', file);
+      const { data } = await apiClient.post('/member/upload-photo', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      return data;
+    },
     getRoles: async () => {
       const { data } = await apiClient.get('/member/roles');
       return data;

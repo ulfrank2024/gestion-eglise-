@@ -1,14 +1,14 @@
--- Script pour ajouter les colonnes de profil admin à church_users_v2
--- À exécuter dans Supabase SQL Editor
+-- Migration: Ajouter les colonnes de profil personnel à church_users_v2
+-- Exécuter dans Supabase SQL Editor
 
--- Ajouter les colonnes de profil si elles n'existent pas
-ALTER TABLE church_users_v2 ADD COLUMN IF NOT EXISTS phone VARCHAR(50);
-ALTER TABLE church_users_v2 ADD COLUMN IF NOT EXISTS address TEXT;
-ALTER TABLE church_users_v2 ADD COLUMN IF NOT EXISTS city VARCHAR(100);
-ALTER TABLE church_users_v2 ADD COLUMN IF NOT EXISTS date_of_birth DATE;
+ALTER TABLE church_users_v2
+  ADD COLUMN IF NOT EXISTS phone VARCHAR(50),
+  ADD COLUMN IF NOT EXISTS address TEXT,
+  ADD COLUMN IF NOT EXISTS city VARCHAR(255),
+  ADD COLUMN IF NOT EXISTS date_of_birth VARCHAR(10);
 
--- Vérifier que profile_photo_url existe aussi
-ALTER TABLE church_users_v2 ADD COLUMN IF NOT EXISTS profile_photo_url TEXT;
-
--- Message de confirmation
-SELECT 'Colonnes de profil admin ajoutées avec succès à church_users_v2' AS message;
+-- Vérification
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name = 'church_users_v2'
+ORDER BY ordinal_position;

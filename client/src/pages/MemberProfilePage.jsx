@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useOutletContext } from 'react-router-dom';
 import { api } from '../api/api';
-import LoadingSpinner from '../components/LoadingSpinner';
-import { supabase } from '../supabaseClient';
+import LoadingSpinner, { InlineSpinner } from '../components/LoadingSpinner';
 import {
   MdPerson, MdEmail, MdPhone, MdLocationOn, MdCake,
   MdEdit, MdSave, MdClose, MdCheck, MdCameraAlt
@@ -61,30 +60,17 @@ function MemberProfilePage() {
     setError('');
 
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `member-photos/member-${profile.id}-${Date.now()}.${fileExt}`;
+      // Upload via le backend (bypass RLS Supabase Storage)
+      const { url: publicUrl } = await api.member.uploadProfilePhoto(file);
 
-      const { error: uploadError } = await supabase.storage
-        .from('event_images')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('event_images')
-        .getPublicUrl(fileName);
-
-      // Update formData with new photo URL
+      // Mettre à jour formData avec la nouvelle URL
       setFormData(prev => ({ ...prev, profile_photo_url: publicUrl }));
 
-      // Save immediately if not in edit mode
+      // Sauvegarder immédiatement si pas en mode édition
       if (!editing) {
         await api.member.updateProfile({ profile_photo_url: publicUrl });
         setProfile(prev => ({ ...prev, profile_photo_url: publicUrl }));
-        setSuccess(t('profile_updated_success'));
+        setSuccess(t('profile_updated_success') || 'Photo mise à jour');
         setTimeout(() => setSuccess(''), 3000);
       }
     } catch (err) {
@@ -184,7 +170,7 @@ function MemberProfilePage() {
               )}
 
               {/* Upload overlay */}
-              <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+              <label className={`absolute inset-0 flex items-center justify-center bg-black/50 rounded-full cursor-pointer transition-opacity ${uploadingPhoto ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                 <input
                   type="file"
                   accept="image/*"
@@ -193,7 +179,7 @@ function MemberProfilePage() {
                   className="hidden"
                 />
                 {uploadingPhoto ? (
-                  <div className="text-white text-xs">{t('loading')}...</div>
+                  <InlineSpinner className="text-white" />
                 ) : (
                   <MdCameraAlt className="text-white text-2xl" />
                 )}

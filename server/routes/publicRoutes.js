@@ -342,7 +342,7 @@ router.post('/churches/register', registrationUpload.fields([
     console.log('Request body keys:', Object.keys(req.body));
     console.log('Files received:', req.files ? Object.keys(req.files) : 'none');
 
-    const { token, churchName, subdomain, location, city, email, phone, adminName, password } = req.body;
+    const { token, churchName, subdomain, location, city, email, phone, adminName, adminPhone, adminAddress, adminCity, adminDateOfBirth, password } = req.body;
 
     if (!token || !churchName || !subdomain || !email || !password) {
         console.log('Missing required fields:', { token: !!token, churchName: !!churchName, subdomain: !!subdomain, email: !!email, password: !!password });
@@ -497,7 +497,11 @@ router.post('/churches/register', registrationUpload.fields([
                     full_name: adminName,
                     is_main_admin: true,
                     permissions: ['all'],
-                    profile_photo_url: adminPhotoUrl || null
+                    profile_photo_url: adminPhotoUrl || null,
+                    phone: adminPhone || null,
+                    address: adminAddress || null,
+                    city: adminCity || null,
+                    date_of_birth: adminDateOfBirth || null
                 })
                 .eq('user_id', userId);
 
@@ -516,7 +520,11 @@ router.post('/churches/register', registrationUpload.fields([
                     full_name: adminName,
                     is_main_admin: true,
                     permissions: ['all'],
-                    profile_photo_url: adminPhotoUrl || null
+                    profile_photo_url: adminPhotoUrl || null,
+                    phone: adminPhone || null,
+                    address: adminAddress || null,
+                    city: adminCity || null,
+                    date_of_birth: adminDateOfBirth || null
                 });
 
             if (roleError) {
