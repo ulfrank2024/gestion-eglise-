@@ -46,6 +46,7 @@ function AdminLayout() {
   const [notifications, setNotifications] = useState([]);
   const [notifLoading, setNotifLoading] = useState(false);
   const notifRef = useRef(null);
+  const notifPanelRef = useRef(null);
 
   // État pour le module actif (events ou members)
   const [activeModule, setActiveModule] = useState(() => {
@@ -196,7 +197,9 @@ function AdminLayout() {
   // Fermer le panel si clic en dehors
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (notifRef.current && !notifRef.current.contains(e.target)) {
+      const isInsideBell = notifRef.current && notifRef.current.contains(e.target);
+      const isInsidePanel = notifPanelRef.current && notifPanelRef.current.contains(e.target);
+      if (!isInsideBell && !isInsidePanel) {
         setNotifOpen(false);
       }
     };
@@ -396,7 +399,7 @@ function AdminLayout() {
                   onClose={() => setNotifOpen(false)}
                   t={t}
                   navigate={navigate}
-                  position="right-0"
+                  panelRef={notifPanelRef}
                 />
               )}
             </div>
@@ -966,6 +969,7 @@ function AdminLayout() {
                 onClose={() => setNotifOpen(false)}
                 t={t}
                 navigate={navigate}
+                panelRef={notifPanelRef}
               />
             )}
           </div>
@@ -992,7 +996,7 @@ function AdminLayout() {
 }
 
 // Composant panneau de notifications
-function NotificationPanel({ notifications, loading, onMarkRead, onMarkAllRead, onClose, t, navigate, position = 'right-0' }) {
+function NotificationPanel({ notifications, loading, onMarkRead, onMarkAllRead, onClose, t, navigate, panelRef }) {
   const lang = localStorage.getItem('i18nextLng') || 'fr';
 
   const getTitle = (n) => lang === 'fr' ? n.title_fr : (n.title_en || n.title_fr);
@@ -1015,7 +1019,7 @@ function NotificationPanel({ notifications, loading, onMarkRead, onMarkAllRead, 
   };
 
   return (
-    <div className={`absolute top-full mt-2 ${position} w-80 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden`}>
+    <div ref={panelRef} className="fixed top-16 right-4 w-80 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl z-[100] overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600">
         <h3 className="text-white font-semibold text-sm flex items-center gap-2">

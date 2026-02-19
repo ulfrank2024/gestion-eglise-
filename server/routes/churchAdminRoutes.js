@@ -499,6 +499,25 @@ router.put('/profile', protect, isAdminChurch, async (req, res) => {
       .select();
 
     if (error) throw error;
+
+    // Aussi mettre à jour members_v2 si l'utilisateur est un membre (sous-admin = aussi membre)
+    const memberUpdateData = {};
+    if (full_name !== undefined) memberUpdateData.full_name = full_name;
+    if (profile_photo_url !== undefined) memberUpdateData.profile_photo_url = profile_photo_url;
+    if (phone !== undefined) memberUpdateData.phone = phone;
+    if (address !== undefined) memberUpdateData.address = address;
+    if (city !== undefined) memberUpdateData.city = city;
+    if (date_of_birth !== undefined) memberUpdateData.date_of_birth = normalizeDOB(date_of_birth);
+
+    if (Object.keys(memberUpdateData).length > 0) {
+      // Silencieux si l'utilisateur n'est pas un membre
+      await supabaseAdmin
+        .from('members_v2')
+        .update(memberUpdateData)
+        .eq('user_id', req.user.id)
+        .eq('church_id', req.user.church_id);
+    }
+
     res.status(200).json(data[0]);
   } catch (error) {
     console.error('Error updating admin profile:', error);
@@ -517,8 +536,31 @@ router.get('/profile', protect, isAdminChurch, async (req, res) => {
       .single();
 
     if (error) throw error;
+
+    // Aussi chercher dans members_v2 pour les champs supplémentaires (sous-admins qui sont aussi membres)
+    const { data: memberData } = await supabaseAdmin
+      .from('members_v2')
+      .select('full_name, phone, address, city, date_of_birth, profile_photo_url')
+      .eq('user_id', req.user.id)
+      .eq('church_id', req.user.church_id)
+      .single();
+
+    // Fusion : church_users_v2 en priorité, members_v2 comme fallback
+    // Si full_name ressemble à un email (null ou contient @), utiliser members_v2
+    const churchFullName = data.full_name;
+    const mergedFullName =
+      (churchFullName && !churchFullName.includes('@'))
+        ? churchFullName
+        : (memberData?.full_name || churchFullName || null);
+
     res.status(200).json({
       ...data,
+      full_name: mergedFullName,
+      phone: data.phone || memberData?.phone || null,
+      address: data.address || memberData?.address || null,
+      city: data.city || memberData?.city || null,
+      date_of_birth: data.date_of_birth || memberData?.date_of_birth || null,
+      profile_photo_url: data.profile_photo_url || memberData?.profile_photo_url || null,
       email: req.user.email
     });
   } catch (error) {
