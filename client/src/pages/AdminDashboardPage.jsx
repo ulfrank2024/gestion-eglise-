@@ -40,6 +40,22 @@ function AdminDashboardPage() {
         }
         setChurchId(currentChurchId);
 
+        // Vérifier les permissions : rediriger si pas accès aux événements
+        const perms = userInfo.permissions || ['all'];
+        if (!perms.includes('all') && !perms.includes('events')) {
+          // Trouver le premier module autorisé et y rediriger
+          const moduleRoutes = { choir: '/admin/choir', members: '/admin/members', meetings: '/admin/meetings' };
+          for (const mod of ['choir', 'members', 'meetings']) {
+            if (perms.includes(mod)) {
+              navigate(moduleRoutes[mod], { replace: true });
+              return;
+            }
+          }
+          // Aucun module → rester sur la page vide
+          setLoading(false);
+          return;
+        }
+
         const events = await api.admin.listEvents();
         // S'assurer que events est un tableau
         const eventsArray = Array.isArray(events) ? events : [];
