@@ -54,6 +54,7 @@ export default function MemberChoirRepertoirePage() {
       setEditingId(null);
     } catch (err) {
       console.error('Error updating repertoire:', err);
+      setError(err.response?.data?.error || t('error_occurred'));
     }
   };
 
@@ -65,6 +66,7 @@ export default function MemberChoirRepertoirePage() {
       setRepertoire(repertoire.filter(item => item.id !== id));
     } catch (err) {
       console.error('Error deleting from repertoire:', err);
+      setError(err.response?.data?.error || t('error_occurred'));
     }
   };
 

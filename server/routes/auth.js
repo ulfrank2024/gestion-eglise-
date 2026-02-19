@@ -87,6 +87,29 @@ router.get('/me', protect, async (req, res) => {
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
 
+    let profilePhotoUrl = req.user.profile_photo_url || null;
+    let fullName = req.user.full_name || null;
+
+    // Si la photo ou le nom est manquant/ressemble à un email, vérifier members_v2
+    const nameLooksLikeEmail = !fullName || fullName.includes('@');
+    if ((!profilePhotoUrl || nameLooksLikeEmail) && req.user.church_id) {
+      const { data: memberProfile } = await supabaseAdmin
+        .from('members_v2')
+        .select('profile_photo_url, full_name')
+        .eq('user_id', req.user.id)
+        .eq('church_id', req.user.church_id)
+        .single();
+
+      if (memberProfile) {
+        if (!profilePhotoUrl && memberProfile.profile_photo_url) {
+          profilePhotoUrl = memberProfile.profile_photo_url;
+        }
+        if (nameLooksLikeEmail && memberProfile.full_name) {
+          fullName = memberProfile.full_name;
+        }
+      }
+    }
+
     const userData = {
       id: req.user.id,
       email: req.user.email,
@@ -94,12 +117,9 @@ router.get('/me', protect, async (req, res) => {
       church_role: req.user.church_role,
       permissions: req.user.permissions || ['all'],
       is_main_admin: req.user.is_main_admin || false,
-      full_name: req.user.full_name || req.user.email,
-      profile_photo_url: req.user.profile_photo_url || null,
+      full_name: fullName || req.user.email,
+      profile_photo_url: profilePhotoUrl,
     };
-
-    console.log('=== /api/auth/me response ===');
-    console.log('User data:', JSON.stringify(userData, null, 2));
 
     res.status(200).json(userData);
   } catch (error) {

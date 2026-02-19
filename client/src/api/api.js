@@ -28,36 +28,38 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Intercepteur de réponses pour gérer les erreurs, notamment 401 (Unauthorized)
+// Intercepteur de réponses pour gérer les erreurs
 apiClient.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   (error) => {
-    console.log('=== API Interceptor: Error caught ===', {
-      url: error.config?.url,
-      status: error.response?.status,
-      data: error.response?.data
-    });
+    // Erreur réseau (pas de connexion, serveur injoignable)
+    if (!error.response) {
+      // On enrichit l'erreur avec un message friendly mais on laisse la page gérer
+      error.isNetworkError = true;
+      return Promise.reject(error);
+    }
 
-    if (error.response && error.response.status === 401) {
-      console.log('=== API Interceptor: 401 Unauthorized, redirecting to login ===');
+    const status = error.response.status;
+
+    // 401 → déconnexion et redirection vers login
+    if (status === 401) {
       localStorage.removeItem('supabase.auth.token');
-      if (window.location.pathname.startsWith('/super-admin')) {
+      const path = window.location.pathname;
+      if (path.startsWith('/super-admin')) {
         window.location.href = '/super-admin/login';
+      } else if (path.startsWith('/member')) {
+        window.location.href = '/member/login';
       } else {
         window.location.href = '/admin/login';
       }
     }
 
-    // 403 account_blocked sur les routes membres → déconnecter et rediriger
+    // 403 account_blocked côté membre → déconnexion
     if (
-      error.response &&
-      error.response.status === 403 &&
+      status === 403 &&
       error.response.data?.error === 'account_blocked' &&
       error.config?.url?.includes('/member/')
     ) {
-      console.log('=== API Interceptor: member account blocked, redirecting to login ===');
       localStorage.removeItem('supabase.auth.token');
       window.location.href = '/member/login?blocked=1';
     }

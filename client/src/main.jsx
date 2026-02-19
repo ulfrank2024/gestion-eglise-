@@ -7,6 +7,7 @@ import i18n from './i18n';
 import './index.css'; // Importation du fichier CSS principal
 import { ToastProvider } from './components/Toast'; // Système de notifications toast
 import UpdatePrompt from './components/UpdatePrompt'; // Notification de mise à jour PWA
+import ErrorBoundary from './components/ErrorBoundary'; // Capture les erreurs React inattendues
 
 // Layouts
 import AdminLayout from './layouts/AdminLayout';
@@ -98,6 +99,7 @@ import CheckInFormPage from './pages/CheckInFormPage'; // Formulaire de check-in
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
+    <ErrorBoundary>
     <I18nextProvider i18n={i18n}>
       <ToastProvider>
         <UpdatePrompt />
@@ -224,5 +226,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         </BrowserRouter>
       </ToastProvider>
     </I18nextProvider>
+    </ErrorBoundary>
   </React.StrictMode>
 );
