@@ -190,8 +190,12 @@ function MemberLayout() {
                 {churchInfo?.name || 'MY EDEN X'}
               </h2>
             </div>
-            {/* Member photo + name */}
-            <div className="flex items-center gap-3">
+            {/* Member photo + name — clic → page profil */}
+            <button
+              onClick={() => { navigate('/member/profile'); setSidebarOpen(false); }}
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity focus:outline-none text-left w-full"
+              title={t('my_profile') || 'Mon Profil'}
+            >
               <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-green-500 flex-shrink-0">
                 {memberProfile?.profile_photo_url ? (
                   <img
@@ -209,9 +213,9 @@ function MemberLayout() {
                 <p className="text-white text-sm font-medium truncate">
                   {memberProfile?.full_name || memberInfo?.full_name || ''}
                 </p>
-                <p className="text-gray-400 text-xs">{t('member')}</p>
+                <p className="text-gray-400 text-xs">{t('my_profile') || 'Mon Profil'}</p>
               </div>
-            </div>
+            </button>
           </div>
 
           {/* Navigation */}
@@ -308,6 +312,26 @@ function MemberLayout() {
               </span>
             )}
           </NavLink>
+          {/* Photo profil mobile → page profil */}
+          <button
+            onClick={() => navigate('/member/profile')}
+            className="cursor-pointer hover:opacity-80 transition-opacity focus:outline-none flex-shrink-0"
+            title={t('my_profile') || 'Mon Profil'}
+          >
+            <div className="w-8 h-8 rounded-full overflow-hidden border border-green-500">
+              {memberProfile?.profile_photo_url ? (
+                <img
+                  src={memberProfile.profile_photo_url}
+                  alt={memberProfile?.full_name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-600 flex items-center justify-center text-white text-xs font-bold">
+                  {memberProfile?.full_name?.charAt(0)?.toUpperCase() || <MdPerson size={14} />}
+                </div>
+              )}
+            </div>
+          </button>
         </header>
 
         {/* Page content */}

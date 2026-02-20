@@ -359,17 +359,23 @@ function AdminLayout() {
                 alt={churchDetails?.name || 'MY EDEN X'}
                 className="w-12 h-12 lg:w-14 lg:h-14 rounded-full object-cover border-2 border-indigo-500"
               />
-              {adminPhotoUrl ? (
-                <img
-                  src={adminPhotoUrl}
-                  alt={adminName}
-                  className="w-12 h-12 lg:w-14 lg:h-14 rounded-full object-cover border-2 border-green-500"
-                />
-              ) : (
-                <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-gray-700 border-2 border-green-500 flex items-center justify-center text-gray-400 font-bold">
-                  {adminName?.charAt(0)?.toUpperCase() || 'A'}
-                </div>
-              )}
+              <button
+                onClick={() => navigate('/admin/my-profile')}
+                className="cursor-pointer hover:opacity-80 transition-opacity focus:outline-none"
+                title={t('my_profile') || 'Mon Profil'}
+              >
+                {adminPhotoUrl ? (
+                  <img
+                    src={adminPhotoUrl}
+                    alt={adminName}
+                    className="w-12 h-12 lg:w-14 lg:h-14 rounded-full object-cover border-2 border-green-500"
+                  />
+                ) : (
+                  <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-gray-700 border-2 border-green-500 flex items-center justify-center text-gray-400 font-bold">
+                    {adminName?.charAt(0)?.toUpperCase() || 'A'}
+                  </div>
+                )}
+              </button>
             </div>
             <h3 className="text-white text-sm font-bold truncate px-2">
               {churchDetails?.name || 'MY EDEN X'}
@@ -973,17 +979,23 @@ function AdminLayout() {
               />
             )}
           </div>
-          {adminPhotoUrl ? (
-            <img
-              src={adminPhotoUrl}
-              alt={adminName}
-              className="w-8 h-8 rounded-full object-cover border border-green-500"
-            />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-gray-700 border border-green-500 flex items-center justify-center text-gray-400 text-xs font-bold">
-              {adminName?.charAt(0)?.toUpperCase() || 'A'}
-            </div>
-          )}
+          <button
+            onClick={() => navigate('/admin/my-profile')}
+            className="cursor-pointer hover:opacity-80 transition-opacity focus:outline-none flex-shrink-0"
+            title={t('my_profile') || 'Mon Profil'}
+          >
+            {adminPhotoUrl ? (
+              <img
+                src={adminPhotoUrl}
+                alt={adminName}
+                className="w-8 h-8 rounded-full object-cover border border-green-500"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-gray-700 border border-green-500 flex items-center justify-center text-gray-400 text-xs font-bold">
+                {adminName?.charAt(0)?.toUpperCase() || 'A'}
+              </div>
+            )}
+          </button>
         </header>
 
         {/* Page content */}
