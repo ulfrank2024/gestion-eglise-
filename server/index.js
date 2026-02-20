@@ -104,6 +104,9 @@ app.get('/', (req, res) => {
 });
 
 // Démarrer le serveur
+const { initReminderCronJobs } = require('./services/reminderService');
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  initReminderCronJobs();
 });

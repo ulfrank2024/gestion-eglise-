@@ -1646,8 +1646,215 @@ module.exports = {
   generateChoirSongAssignmentEmail,
   generateAnnouncementPublishedEmail,
   generateMemberBlockedEmail,
-  generateMemberUnblockedEmail
+  generateMemberUnblockedEmail,
+  generateEventReminderEmail,
+  generateMeetingReminderEmail,
 };
+
+/**
+ * Template email de rappel 24h avant un événement
+ * Header orange/ambre pour le distinguer visuellement
+ */
+function generateEventReminderEmail({ event, attendeeName, churchName, eventUrl, language = 'fr' }) {
+  const isFrench = language === 'fr';
+  const eventName = isFrench ? (event.name_fr || event.name_en) : (event.name_en || event.name_fr);
+
+  const eventDate = event.event_start_date
+    ? new Date(event.event_start_date).toLocaleDateString(isFrench ? 'fr-CA' : 'en-CA', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      })
+    : '';
+
+  const texts = {
+    fr: {
+      title: 'Rappel d\'événement',
+      badge: '⏰ RAPPEL — DEMAIN',
+      greeting: `Bonjour ${attendeeName},`,
+      intro: `Ceci est un rappel amical : vous êtes inscrit(e) à l'événement de demain !`,
+      eventLabel: 'Événement :',
+      dateLabel: 'Date & heure :',
+      locationLabel: 'Lieu :',
+      cta: 'Voir l\'événement',
+      verse: '"En mettant à profit le temps présent, car les jours sont mauvais." — Éphésiens 5:16',
+      footer: 'Plateforme de gestion d\'église',
+    },
+    en: {
+      title: 'Event Reminder',
+      badge: '⏰ REMINDER — TOMORROW',
+      greeting: `Hello ${attendeeName},`,
+      intro: `This is a friendly reminder: you are registered for tomorrow's event!`,
+      eventLabel: 'Event:',
+      dateLabel: 'Date & time:',
+      locationLabel: 'Location:',
+      cta: 'View event',
+      verse: '"Making the best use of the time, because the days are evil." — Ephesians 5:16',
+      footer: 'Church Management Platform',
+    },
+  };
+
+  const tx = texts[isFrench ? 'fr' : 'en'];
+
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>${tx.title} - MY EDEN X</title></head>
+<body style="margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background-color:#1f2937;">
+  <div style="max-width:600px;margin:0 auto;padding:20px;">
+    <!-- Header orange/ambre -->
+    <div style="background:linear-gradient(135deg,#d97706 0%,#b45309 100%);border-radius:16px 16px 0 0;padding:40px 30px;text-align:center;">
+      <p style="display:inline-block;background:rgba(255,255,255,0.2);color:white;font-weight:bold;font-size:13px;padding:6px 16px;border-radius:20px;margin:0 0 16px;letter-spacing:1px;">${tx.badge}</p>
+      <h1 style="color:white;margin:0;font-size:26px;font-weight:bold;">${eventName}</h1>
+      <p style="color:rgba(255,255,255,0.85);margin:10px 0 0;font-size:15px;">${churchName}</p>
+    </div>
+
+    <!-- Body -->
+    <div style="background-color:#374151;padding:40px 30px;border-radius:0 0 16px 16px;">
+      <h2 style="color:#f3f4f6;margin:0 0 16px;font-size:20px;">${tx.greeting}</h2>
+      <p style="color:#d1d5db;line-height:1.6;margin:0 0 24px;font-size:16px;">${tx.intro}</p>
+
+      <!-- Détails événement -->
+      <div style="background-color:#1f2937;border-radius:12px;padding:24px;margin:0 0 24px;">
+        <table style="width:100%;border-collapse:collapse;">
+          <tr>
+            <td style="color:#9ca3af;font-size:13px;padding:6px 0;width:110px;vertical-align:top;">${tx.eventLabel}</td>
+            <td style="color:#f3f4f6;font-size:15px;font-weight:bold;padding:6px 0;">${eventName}</td>
+          </tr>
+          ${eventDate ? `<tr>
+            <td style="color:#9ca3af;font-size:13px;padding:6px 0;vertical-align:top;">${tx.dateLabel}</td>
+            <td style="color:#fbbf24;font-size:15px;font-weight:bold;padding:6px 0;">${eventDate}</td>
+          </tr>` : ''}
+          ${event.location ? `<tr>
+            <td style="color:#9ca3af;font-size:13px;padding:6px 0;vertical-align:top;">${tx.locationLabel}</td>
+            <td style="color:#d1d5db;font-size:15px;padding:6px 0;">${event.location}</td>
+          </tr>` : ''}
+        </table>
+      </div>
+
+      <!-- CTA -->
+      <div style="text-align:center;margin:28px 0;">
+        <a href="${eventUrl}" style="display:inline-block;background:linear-gradient(135deg,#d97706 0%,#b45309 100%);color:white;text-decoration:none;padding:16px 40px;border-radius:8px;font-weight:bold;font-size:16px;">${tx.cta}</a>
+      </div>
+
+      <!-- Verset -->
+      <div style="text-align:center;margin-top:28px;padding-top:20px;border-top:1px solid #4b5563;">
+        <p style="color:#9ca3af;font-style:italic;font-size:13px;margin:0;">${tx.verse}</p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align:center;padding:20px;">
+      <p style="color:#6b7280;font-size:12px;margin:0;">© ${new Date().getFullYear()} MY EDEN X — ${tx.footer}</p>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
+/**
+ * Template email de rappel 24h avant une réunion
+ * Header bleu/indigo pour le distinguer visuellement
+ */
+function generateMeetingReminderEmail({ meeting, participantName, churchName, meetingUrl, language = 'fr' }) {
+  const isFrench = language === 'fr';
+  const meetingTitle = isFrench ? (meeting.title_fr || meeting.title_en) : (meeting.title_en || meeting.title_fr);
+  const agenda = isFrench ? meeting.agenda_fr : (meeting.agenda_en || meeting.agenda_fr);
+
+  const meetingDate = meeting.meeting_date
+    ? new Date(meeting.meeting_date).toLocaleDateString(isFrench ? 'fr-CA' : 'en-CA', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      })
+    : '';
+
+  const texts = {
+    fr: {
+      title: 'Rappel de réunion',
+      badge: '📋 RAPPEL DE RÉUNION — DEMAIN',
+      greeting: `Bonjour ${participantName},`,
+      intro: `Vous êtes invité(e) à la réunion de demain. Voici un rappel des informations importantes.`,
+      titleLabel: 'Réunion :',
+      dateLabel: 'Date & heure :',
+      locationLabel: 'Lieu :',
+      agendaLabel: 'Ordre du jour :',
+      cta: 'Voir mes réunions',
+      verse: '"Car là où deux ou trois sont assemblés en mon nom, je suis au milieu d\'eux." — Matthieu 18:20',
+      footer: 'Plateforme de gestion d\'église',
+    },
+    en: {
+      title: 'Meeting Reminder',
+      badge: '📋 MEETING REMINDER — TOMORROW',
+      greeting: `Hello ${participantName},`,
+      intro: `You are invited to tomorrow's meeting. Here is a reminder of the important details.`,
+      titleLabel: 'Meeting:',
+      dateLabel: 'Date & time:',
+      locationLabel: 'Location:',
+      agendaLabel: 'Agenda:',
+      cta: 'View my meetings',
+      verse: '"For where two or three are gathered in my name, there am I among them." — Matthew 18:20',
+      footer: 'Church Management Platform',
+    },
+  };
+
+  const tx = texts[isFrench ? 'fr' : 'en'];
+
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>${tx.title} - MY EDEN X</title></head>
+<body style="margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background-color:#1f2937;">
+  <div style="max-width:600px;margin:0 auto;padding:20px;">
+    <!-- Header bleu/indigo -->
+    <div style="background:linear-gradient(135deg,#4f46e5 0%,#1d4ed8 100%);border-radius:16px 16px 0 0;padding:40px 30px;text-align:center;">
+      <p style="display:inline-block;background:rgba(255,255,255,0.2);color:white;font-weight:bold;font-size:13px;padding:6px 16px;border-radius:20px;margin:0 0 16px;letter-spacing:1px;">${tx.badge}</p>
+      <h1 style="color:white;margin:0;font-size:26px;font-weight:bold;">${meetingTitle}</h1>
+      <p style="color:rgba(255,255,255,0.85);margin:10px 0 0;font-size:15px;">${churchName}</p>
+    </div>
+
+    <!-- Body -->
+    <div style="background-color:#374151;padding:40px 30px;border-radius:0 0 16px 16px;">
+      <h2 style="color:#f3f4f6;margin:0 0 16px;font-size:20px;">${tx.greeting}</h2>
+      <p style="color:#d1d5db;line-height:1.6;margin:0 0 24px;font-size:16px;">${tx.intro}</p>
+
+      <!-- Détails réunion -->
+      <div style="background-color:#1f2937;border-radius:12px;padding:24px;margin:0 0 24px;">
+        <table style="width:100%;border-collapse:collapse;">
+          <tr>
+            <td style="color:#9ca3af;font-size:13px;padding:6px 0;width:120px;vertical-align:top;">${tx.titleLabel}</td>
+            <td style="color:#f3f4f6;font-size:15px;font-weight:bold;padding:6px 0;">${meetingTitle}</td>
+          </tr>
+          ${meetingDate ? `<tr>
+            <td style="color:#9ca3af;font-size:13px;padding:6px 0;vertical-align:top;">${tx.dateLabel}</td>
+            <td style="color:#a5b4fc;font-size:15px;font-weight:bold;padding:6px 0;">${meetingDate}</td>
+          </tr>` : ''}
+          ${meeting.location ? `<tr>
+            <td style="color:#9ca3af;font-size:13px;padding:6px 0;vertical-align:top;">${tx.locationLabel}</td>
+            <td style="color:#d1d5db;font-size:15px;padding:6px 0;">${meeting.location}</td>
+          </tr>` : ''}
+        </table>
+      </div>
+
+      <!-- Ordre du jour -->
+      ${agenda ? `<div style="background-color:#1f2937;border-radius:12px;padding:20px;margin:0 0 24px;border-left:4px solid #4f46e5;">
+        <h4 style="color:#a5b4fc;margin:0 0 10px;font-size:14px;">${tx.agendaLabel}</h4>
+        <p style="color:#d1d5db;font-size:14px;line-height:1.7;margin:0;white-space:pre-line;">${agenda}</p>
+      </div>` : ''}
+
+      <!-- CTA -->
+      <div style="text-align:center;margin:28px 0;">
+        <a href="${meetingUrl}" style="display:inline-block;background:linear-gradient(135deg,#4f46e5 0%,#1d4ed8 100%);color:white;text-decoration:none;padding:16px 40px;border-radius:8px;font-weight:bold;font-size:16px;">${tx.cta}</a>
+      </div>
+
+      <!-- Verset -->
+      <div style="text-align:center;margin-top:28px;padding-top:20px;border-top:1px solid #4b5563;">
+        <p style="color:#9ca3af;font-style:italic;font-size:13px;margin:0;">${tx.verse}</p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align:center;padding:20px;">
+      <p style="color:#6b7280;font-size:12px;margin:0;">© ${new Date().getFullYear()} MY EDEN X — ${tx.footer}</p>
+    </div>
+  </div>
+</body>
+</html>`;
+}
 
 function generateMemberBlockedEmail({ memberName, churchName, supportEmail, language = 'fr' }) {
   const isFrench = language === 'fr';
