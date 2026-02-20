@@ -762,7 +762,7 @@ router.post('/test-reminders', protect, isSuperAdminOrChurchAdmin, async (req, r
     // --- TEST ÉVÉNEMENTS : une seule requête avec tous les champs ---
     const { data: eventsAll, error: eventsErr } = await supabaseAdmin
       .from('events_v2')
-      .select('id, name_fr, name_en, event_start_date, location, church_id, is_archived, reminder_sent_at')
+      .select('id, name_fr, name_en, event_start_date, church_id, is_archived, reminder_sent_at')
       .gte('event_start_date', from)
       .lte('event_start_date', to);
 

@@ -18,7 +18,7 @@ async function sendEventReminders() {
     // Récupérer les événements dans la fenêtre 23h-25h, non archivés, rappel pas encore envoyé
     const { data: eventsRaw, error: eventsError } = await supabaseAdmin
       .from('events_v2')
-      .select('id, name_fr, name_en, event_start_date, location, church_id, subdomain, is_archived')
+      .select('id, name_fr, name_en, event_start_date, church_id, subdomain, is_archived')
       .gte('event_start_date', from)
       .lte('event_start_date', to)
       .is('reminder_sent_at', null);
