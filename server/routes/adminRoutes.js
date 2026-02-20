@@ -744,4 +744,19 @@ router.get('/events/:eventId/checkin-entries', protect, isSuperAdminOrChurchAdmi
   }
 });
 
+// ⚠️ ROUTE DE TEST TEMPORAIRE — à supprimer après validation
+// POST /api/admin/test-reminders — déclenche les rappels sans attendre le cron
+router.post('/test-reminders', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
+  try {
+    const { sendEventReminders, sendMeetingReminders } = require('../services/reminderService');
+    console.log('[TEST] Déclenchement manuel des rappels...');
+    await sendEventReminders();
+    await sendMeetingReminders();
+    res.json({ success: true, message: 'Rappels déclenchés — vérifiez les emails et les logs.' });
+  } catch (err) {
+    console.error('[TEST] Erreur:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
