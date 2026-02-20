@@ -760,15 +760,16 @@ router.post('/test-reminders', protect, isSuperAdminOrChurchAdmin, async (req, r
     let results = { events: 0, meetings: 0, emails_sent: 0 };
 
     // --- TEST ÉVÉNEMENTS ---
-    const { data: events } = await supabaseAdmin
+    const { data: eventsRaw } = await supabaseAdmin
       .from('events_v2')
-      .select('id, name_fr, name_en, event_start_date, location, church_id')
+      .select('id, name_fr, name_en, event_start_date, location, church_id, is_archived')
       .gte('event_start_date', from)
       .lte('event_start_date', to)
-      .or('is_archived.is.null,is_archived.eq.false')  // NULL et false sont les deux valides
       .is('reminder_sent_at', null);
+    // Filtre JS : null/false = rappel OK, true = archivé = ignoré
+    const events = (eventsRaw || []).filter(e => e.is_archived !== true);
 
-    for (const event of (events || [])) {
+    for (const event of events) {
       const { data: church } = await supabaseAdmin.from('churches_v2').select('name, subdomain').eq('id', event.church_id).single();
       const churchName = church?.name || 'MY EDEN X';
       const eventUrl = `${frontendUrl}/${church?.subdomain || event.church_id}/event/${event.id}`;

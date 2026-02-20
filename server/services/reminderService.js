@@ -16,12 +16,11 @@ async function sendEventReminders() {
     const to   = new Date(now.getTime() + 25 * 60 * 60 * 1000).toISOString();
 
     // Récupérer les événements dans la fenêtre 23h-25h, non archivés, rappel pas encore envoyé
-    const { data: events, error: eventsError } = await supabaseAdmin
+    const { data: eventsRaw, error: eventsError } = await supabaseAdmin
       .from('events_v2')
-      .select('id, name_fr, name_en, event_start_date, location, church_id, subdomain')
+      .select('id, name_fr, name_en, event_start_date, location, church_id, subdomain, is_archived')
       .gte('event_start_date', from)
       .lte('event_start_date', to)
-      .or('is_archived.is.null,is_archived.eq.false')  // NULL et false sont les deux valides
       .is('reminder_sent_at', null);
 
     if (eventsError) {
@@ -29,7 +28,10 @@ async function sendEventReminders() {
       return;
     }
 
-    if (!events || events.length === 0) {
+    // Filtre JS : exclure les explicitement archivés (is_archived = true). null/false = OK
+    const events = (eventsRaw || []).filter(e => e.is_archived !== true);
+
+    if (events.length === 0) {
       console.log('[CRON] Aucun événement à rappeler.');
       return;
     }
