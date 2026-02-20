@@ -1031,7 +1031,7 @@ function NotificationPanel({ notifications, loading, onMarkRead, onMarkAllRead, 
   };
 
   return (
-    <div ref={panelRef} className="fixed top-16 right-4 w-80 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl z-[100] overflow-hidden">
+    <div ref={panelRef} className="fixed bottom-4 right-4 w-80 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl z-[100] overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600">
         <h3 className="text-white font-semibold text-sm flex items-center gap-2">
@@ -1047,8 +1047,8 @@ function NotificationPanel({ notifications, loading, onMarkRead, onMarkAllRead, 
         </button>
       </div>
 
-      {/* Liste */}
-      <div className="max-h-80 overflow-y-auto">
+      {/* Liste — hauteur limitée, scroll vers le haut car panel en bas de l'écran */}
+      <div className="max-h-72 overflow-y-auto">
         {loading ? (
           <div className="flex items-center justify-center py-8">
             <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
