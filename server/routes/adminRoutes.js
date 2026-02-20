@@ -765,7 +765,7 @@ router.post('/test-reminders', protect, isSuperAdminOrChurchAdmin, async (req, r
       .select('id, name_fr, name_en, event_start_date, location, church_id')
       .gte('event_start_date', from)
       .lte('event_start_date', to)
-      .eq('is_archived', false)
+      .neq('is_archived', true)   // capture false ET null
       .is('reminder_sent_at', null);
 
     for (const event of (events || [])) {
