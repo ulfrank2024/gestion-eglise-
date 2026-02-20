@@ -757,19 +757,31 @@ router.post('/test-reminders', protect, isSuperAdminOrChurchAdmin, async (req, r
     const from = now.toISOString();
     const to = new Date(now.getTime() + 72 * 60 * 60 * 1000).toISOString(); // fenêtre 72h pour le test
 
-    let results = { events: 0, meetings: 0, emails_sent: 0 };
+    let results = { events: 0, meetings: 0, emails_sent: 0, debug: {} };
 
     // --- TEST ÉVÉNEMENTS ---
-    const { data: eventsRaw } = await supabaseAdmin
+    const { data: eventsRaw, error: eventsErr } = await supabaseAdmin
       .from('events_v2')
-      .select('id, name_fr, name_en, event_start_date, location, church_id, is_archived')
+      .select('id, name_fr, event_start_date, is_archived, reminder_sent_at')
       .gte('event_start_date', from)
-      .lte('event_start_date', to)
-      .is('reminder_sent_at', null);
-    // Filtre JS : null/false = rappel OK, true = archivé = ignoré
-    const events = (eventsRaw || []).filter(e => e.is_archived !== true);
+      .lte('event_start_date', to);
 
-    for (const event of events) {
+    results.debug.events_window = { from, to };
+    results.debug.events_raw_count = eventsRaw?.length || 0;
+    results.debug.events_raw = eventsRaw?.map(e => ({ name: e.name_fr, date: e.event_start_date, is_archived: e.is_archived, reminder_sent_at: e.reminder_sent_at }));
+    results.debug.events_query_error = eventsErr?.message || null;
+
+    const events = (eventsRaw || []).filter(e => e.is_archived !== true && e.reminder_sent_at === null);
+    results.debug.events_after_filter = events.length;
+
+    // Re-fetch avec tous les champs pour l'envoi
+    const eventIds = events.map(e => e.id);
+    const { data: eventsFullRaw } = eventIds.length > 0
+      ? await supabaseAdmin.from('events_v2').select('id, name_fr, name_en, event_start_date, location, church_id').in('id', eventIds)
+      : { data: [] };
+    const eventsFull = eventsFullRaw || [];
+
+    for (const event of eventsFull) {
       const { data: church } = await supabaseAdmin.from('churches_v2').select('name, subdomain').eq('id', event.church_id).single();
       const churchName = church?.name || 'MY EDEN X';
       const eventUrl = `${frontendUrl}/${church?.subdomain || event.church_id}/event/${event.id}`;
@@ -791,26 +803,40 @@ router.post('/test-reminders', protect, isSuperAdminOrChurchAdmin, async (req, r
     }
 
     // --- TEST RÉUNIONS ---
-    const { data: meetings } = await supabaseAdmin
+    const { data: meetingsRaw, error: meetingsErr } = await supabaseAdmin
       .from('meetings_v2')
-      .select('id, title_fr, title_en, meeting_date, location, agenda_fr, church_id')
+      .select('id, title_fr, meeting_date, reminder_sent_at')
       .gte('meeting_date', from)
-      .lte('meeting_date', to)
-      .is('reminder_sent_at', null);
+      .lte('meeting_date', to);
 
-    for (const meeting of (meetings || [])) {
+    results.debug.meetings_raw_count = meetingsRaw?.length || 0;
+    results.debug.meetings_raw = meetingsRaw?.map(m => ({ title: m.title_fr, date: m.meeting_date, reminder_sent_at: m.reminder_sent_at }));
+    results.debug.meetings_query_error = meetingsErr?.message || null;
+
+    const meetings = (meetingsRaw || []).filter(m => m.reminder_sent_at === null);
+    results.debug.meetings_after_filter = meetings.length;
+
+    const meetingIds = meetings.map(m => m.id);
+    const { data: meetingsFullRaw } = meetingIds.length > 0
+      ? await supabaseAdmin.from('meetings_v2').select('id, title_fr, title_en, meeting_date, location, agenda_fr, church_id').in('id', meetingIds)
+      : { data: [] };
+    const meetingsFull = meetingsFullRaw || [];
+
+    for (const meeting of meetingsFull) {
       const { data: church } = await supabaseAdmin.from('churches_v2').select('name').eq('id', meeting.church_id).single();
       const churchName = church?.name || 'MY EDEN X';
       const meetingUrl = `${frontendUrl}/member/meetings`;
 
-      const { data: participants } = await supabaseAdmin.from('meeting_participants_v2').select('member_id').eq('meeting_id', meeting.id).neq('status', 'absent');
-      const memberIds = (participants || []).map(p => p.member_id);
+      const { data: participants } = await supabaseAdmin.from('meeting_participants_v2').select('member_id, status').eq('meeting_id', meeting.id);
+      results.debug[`meeting_${meeting.id}_participants`] = participants;
+      const memberIds = (participants || []).filter(p => p.status !== 'absent').map(p => p.member_id);
 
       let membersWithEmail = [];
       if (memberIds.length > 0) {
         const { data: members } = await supabaseAdmin.from('members_v2').select('id, full_name, email, is_active').in('id', memberIds);
-        // Filtre JS : is_active = true ET null sont OK, false = bloqué = ignoré
+        results.debug[`meeting_${meeting.id}_members_raw`] = members;
         membersWithEmail = (members || []).filter(m => m.is_active !== false && m.email);
+        results.debug[`meeting_${meeting.id}_members_with_email`] = membersWithEmail.length;
       }
 
       for (const member of membersWithEmail) {
