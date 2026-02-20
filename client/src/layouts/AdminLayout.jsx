@@ -382,33 +382,6 @@ function AdminLayout() {
             </h3>
             <p className="text-green-400 text-xs font-medium truncate px-2">{adminName}</p>
             <p className="text-gray-500 text-[10px]">{t('church_management_platform')}</p>
-            {/* Cloche de notifications desktop (sidebar) */}
-            <div className="relative mt-2 hidden lg:flex justify-center" ref={notifRef}>
-              <button
-                onClick={handleOpenNotifications}
-                className="relative flex items-center gap-2 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded-lg text-gray-300 hover:text-white text-xs transition-colors"
-              >
-                {notifCount > 0 ? <MdNotifications size={16} /> : <MdNotificationsNone size={16} />}
-                <span>{t('notifications') || 'Notifications'}</span>
-                {notifCount > 0 && (
-                  <span className="bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                    {notifCount > 9 ? '9+' : notifCount}
-                  </span>
-                )}
-              </button>
-              {notifOpen && (
-                <NotificationPanel
-                  notifications={notifications}
-                  loading={notifLoading}
-                  onMarkRead={handleMarkRead}
-                  onMarkAllRead={handleMarkAllRead}
-                  onClose={() => setNotifOpen(false)}
-                  t={t}
-                  navigate={navigate}
-                  panelRef={notifPanelRef}
-                />
-              )}
-            </div>
           </div>
 
           {/* Sélecteur de Module */}
@@ -953,32 +926,6 @@ function AdminLayout() {
           <span className="text-white font-medium truncate flex-1">
             {churchDetails?.name || 'MY EDEN X'}
           </span>
-          {/* Cloche de notifications mobile */}
-          <div className="relative" ref={notifRef}>
-            <button
-              onClick={handleOpenNotifications}
-              className="relative text-gray-300 hover:text-white p-1"
-            >
-              {notifCount > 0 ? <MdNotifications size={22} /> : <MdNotificationsNone size={22} />}
-              {notifCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                  {notifCount > 9 ? '9+' : notifCount}
-                </span>
-              )}
-            </button>
-            {notifOpen && (
-              <NotificationPanel
-                notifications={notifications}
-                loading={notifLoading}
-                onMarkRead={handleMarkRead}
-                onMarkAllRead={handleMarkAllRead}
-                onClose={() => setNotifOpen(false)}
-                t={t}
-                navigate={navigate}
-                panelRef={notifPanelRef}
-              />
-            )}
-          </div>
           <button
             onClick={() => navigate('/admin/my-profile')}
             className="cursor-pointer hover:opacity-80 transition-opacity focus:outline-none flex-shrink-0"
@@ -1002,6 +949,34 @@ function AdminLayout() {
         <main className="flex-1 p-4 lg:p-6 text-white">
           <Outlet />
         </main>
+      </div>
+
+      {/* Bouton flottant notifications — fixe bas-droite */}
+      <div ref={notifRef} className="fixed bottom-4 right-4 z-50">
+        <button
+          onClick={handleOpenNotifications}
+          className="relative w-12 h-12 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-lg flex items-center justify-center transition-colors"
+          title={t('notifications') || 'Notifications'}
+        >
+          {notifCount > 0 ? <MdNotifications size={22} /> : <MdNotificationsNone size={22} />}
+          {notifCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+              {notifCount > 9 ? '9+' : notifCount}
+            </span>
+          )}
+        </button>
+        {notifOpen && (
+          <NotificationPanel
+            notifications={notifications}
+            loading={notifLoading}
+            onMarkRead={handleMarkRead}
+            onMarkAllRead={handleMarkAllRead}
+            onClose={() => setNotifOpen(false)}
+            t={t}
+            navigate={navigate}
+            panelRef={notifPanelRef}
+          />
+        )}
       </div>
     </div>
   );

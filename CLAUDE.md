@@ -3595,3 +3595,57 @@ api.member.getChoirCompilations()
 - ✅ Compteur mis à jour en temps réel (polling 1 min)
 - ✅ Design dark theme cohérent
 - ✅ Build vérifié avec succès
+
+---
+
+### 2026-02-20 - Cron jobs de rappels automatiques 24h (Événements et Réunions)
+
+**Contexte:**
+- Les membres et participants ont besoin d'un rappel 24h avant chaque événement ou réunion
+- Envoi automatique (email + notification in-app) sans action manuelle de l'admin
+
+**Architecture implémentée:**
+```
+index.js → initReminderCronJobs()
+             ├── sendEventReminders()  → attendees_v2 → email + notif admin
+             └── sendMeetingReminders() → meeting_participants_v2 → email + notif membres
+```
+
+**Fichiers créés/modifiés:**
+
+1. **`/server/db/add_reminder_columns.sql`** (CRÉER)
+   - `reminder_sent_at TIMESTAMPTZ` sur `events_v2` et `meetings_v2`
+   - Index pour optimiser les requêtes du cron
+   - ⚠️ À exécuter dans Supabase SQL Editor
+
+2. **`/server/services/reminderService.js`** (CRÉER)
+   - `sendEventReminders()` — fenêtre NOW+23h à NOW+25h, `is_archived=false`, `reminder_sent_at IS NULL`
+   - `sendMeetingReminders()` — même fenêtre, participants non-absents
+   - Anti-doublon: `reminder_sent_at` mis à jour après envoi
+   - `initReminderCronJobs()` — cron `0 9 * * *` (America/Toronto)
+
+3. **`/server/services/mailer.js`** (MODIFIER)
+   - `generateEventReminderEmail` — header **orange/ambre**, badge "RAPPEL — DEMAIN", verset Éph 5:16
+   - `generateMeetingReminderEmail` — header **bleu/indigo**, badge "RAPPEL DE RÉUNION — DEMAIN", verset Mat 18:20
+
+4. **`/server/index.js`** (MODIFIER)
+   - `initReminderCronJobs()` appelé dans `app.listen()`
+
+5. **`node-cron`** installé comme dépendance
+
+**Action manuelle requise (une seule fois):**
+```sql
+-- Dans Supabase SQL Editor:
+-- /server/db/add_reminder_columns.sql
+```
+
+**Note Render:**
+Le free tier dort après 15min. Pour que le cron à 9h s'exécute:
+- Utiliser cron-job.org (gratuit) pour un GET toutes les heures sur l'URL du backend
+
+**Résultat:**
+- ✅ Rappels automatiques chaque matin à 9h00 (America/Toronto)
+- ✅ Email orange (événements) et bleu (réunions) visuellement distincts
+- ✅ Notification in-app aux admins (événements) et membres (réunions)
+- ✅ Idempotent (anti-doublon via reminder_sent_at)
+- ✅ Commit: `6a632d5`
