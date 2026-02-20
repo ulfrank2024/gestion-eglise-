@@ -808,8 +808,9 @@ router.post('/test-reminders', protect, isSuperAdminOrChurchAdmin, async (req, r
 
       let membersWithEmail = [];
       if (memberIds.length > 0) {
-        const { data: members } = await supabaseAdmin.from('members_v2').select('id, full_name, email').in('id', memberIds).eq('is_active', true);
-        membersWithEmail = members || [];
+        const { data: members } = await supabaseAdmin.from('members_v2').select('id, full_name, email, is_active').in('id', memberIds);
+        // Filtre JS : is_active = true ET null sont OK, false = bloqué = ignoré
+        membersWithEmail = (members || []).filter(m => m.is_active !== false && m.email);
       }
 
       for (const member of membersWithEmail) {

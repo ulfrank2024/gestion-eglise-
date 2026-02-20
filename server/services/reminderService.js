@@ -173,11 +173,11 @@ async function sendMeetingReminders() {
         if (memberIds.length > 0) {
           const { data: members } = await supabaseAdmin
             .from('members_v2')
-            .select('id, full_name, email')
-            .in('id', memberIds)
-            .eq('is_active', true);
+            .select('id, full_name, email, is_active')
+            .in('id', memberIds);
 
-          membersWithEmail = members || [];
+          // Filtre JS : inclure is_active = true ET null (null = pas encore défini = actif par défaut)
+          membersWithEmail = (members || []).filter(m => m.is_active !== false && m.email);
         }
 
         if (membersWithEmail.length > 0) {
