@@ -1,3 +1,25 @@
 @import "tailwindcss";
 
 /* Vous pouvez ajouter vos styles CSS globaux ici */
+
+/* Animation cloche qui sonne */
+@keyframes bell-ring {
+  0%   { transform: rotate(0deg); }
+  10%  { transform: rotate(18deg); }
+  20%  { transform: rotate(-16deg); }
+  30%  { transform: rotate(14deg); }
+  40%  { transform: rotate(-12deg); }
+  50%  { transform: rotate(10deg); }
+  60%  { transform: rotate(-8deg); }
+  70%  { transform: rotate(6deg); }
+  80%  { transform: rotate(-4deg); }
+  90%  { transform: rotate(2deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.bell-ring {
+  transform-origin: top center;
+  animation: bell-ring 1s ease-in-out infinite;
+  animation-delay: 0s;
+  display: inline-block;
+}

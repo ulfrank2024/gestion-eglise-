@@ -958,7 +958,9 @@ function AdminLayout() {
           className="relative w-12 h-12 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-lg flex items-center justify-center transition-colors"
           title={t('notifications') || 'Notifications'}
         >
-          {notifCount > 0 ? <MdNotifications size={22} /> : <MdNotificationsNone size={22} />}
+          <span className={notifCount > 0 ? 'bell-ring' : ''}>
+            {notifCount > 0 ? <MdNotifications size={22} /> : <MdNotificationsNone size={22} />}
+          </span>
           {notifCount > 0 && (
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
               {notifCount > 9 ? '9+' : notifCount}
