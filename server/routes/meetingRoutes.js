@@ -216,6 +216,7 @@ router.post('/', ...meetingsAuth, async (req, res) => {
       type: 'meeting',
       icon: NOTIFICATION_ICONS.meeting,
       link: `/admin/meetings/${meeting.id}`,
+      module: 'meetings',
     });
 
     // Notification in-app aux membres participants

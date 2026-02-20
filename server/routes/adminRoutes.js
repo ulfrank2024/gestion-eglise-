@@ -61,6 +61,7 @@ router.post('/events_v2', protect, isSuperAdminOrChurchAdmin, async (req, res) =
       type: 'event',
       icon: NOTIFICATION_ICONS.event,
       link: `/admin/events/${createdEvent.id}`,
+      module: 'events',
     });
 
     // Notification in-app aux membres (si demandé)
@@ -265,6 +266,7 @@ router.put('/events_v2/:id', protect, isSuperAdminOrChurchAdmin, async (req, res
       type: 'event',
       icon: NOTIFICATION_ICONS.event,
       link: `/admin/events/${id}`,
+      module: 'events',
     });
 
     res.status(200).json(data[0]);
@@ -784,7 +786,7 @@ router.post('/test-reminders', protect, isSuperAdminOrChurchAdmin, async (req, r
         results.emails_sent++;
       }
 
-      await notifyAllAdmins({ churchId: event.church_id, excludeUserId: null, titleFr: `[TEST] Rappel envoyé — ${event.name_fr}`, titleEn: `[TEST] Reminder sent — ${event.name_en || event.name_fr}`, messageFr: `Rappel test envoyé à ${attendees?.length || 0} inscrit(s).`, messageEn: `Test reminder sent to ${attendees?.length || 0} attendee(s).`, type: 'event', icon: 'event' });
+      await notifyAllAdmins({ churchId: event.church_id, excludeUserId: null, titleFr: `[TEST] Rappel envoyé — ${event.name_fr}`, titleEn: `[TEST] Reminder sent — ${event.name_en || event.name_fr}`, messageFr: `Rappel test envoyé à ${attendees?.length || 0} inscrit(s).`, messageEn: `Test reminder sent to ${attendees?.length || 0} attendee(s).`, type: 'event', icon: 'event', module: 'events' });
       await supabaseAdmin.from('events_v2').update({ reminder_sent_at: new Date().toISOString() }).eq('id', event.id);
       results.events++;
     }

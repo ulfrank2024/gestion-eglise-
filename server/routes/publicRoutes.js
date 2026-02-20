@@ -249,6 +249,7 @@ router.post('/:churchId/events/:eventId/register', async (req, res) => {
       type: 'event',
       icon: NOTIFICATION_ICONS.event,
       link: `/admin/events/${eventId}`,
+      module: 'events',
     });
 
     // Utiliser supabaseAdmin pour récupérer les détails de l'événement et de l'église (pour l'email)
@@ -1024,6 +1025,7 @@ router.post('/:churchId/members/register', async (req, res) => {
           type: 'member',
           icon: NOTIFICATION_ICONS.member,
           link: '/admin/members',
+          module: 'members',
         });
 
         // Envoyer un email de bienvenue avec le template professionnel

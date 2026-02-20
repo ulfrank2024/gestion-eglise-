@@ -112,12 +112,16 @@ async function notifyAdmins({ churchId, userIds, titleFr, titleEn, messageFr, me
 
 /**
  * Envoyer une notification à tous les admins d'une église (sauf l'auteur)
+ * @param {string} module - Si fourni, filtre les admins selon leurs permissions:
+ *   - L'admin principal ('all') reçoit toujours toutes les notifications
+ *   - Un sous-admin ne reçoit que les notifs du module qu'il gère
+ *   - Ex: module='choir' → seuls les admins avec permissions ['all'] ou ['choir'] reçoivent
  */
-async function notifyAllAdmins({ churchId, excludeUserId, titleFr, titleEn, messageFr, messageEn, type = 'info', icon = 'info', link = null }) {
+async function notifyAllAdmins({ churchId, excludeUserId, titleFr, titleEn, messageFr, messageEn, type = 'info', icon = 'info', link = null, module = null }) {
   try {
     let query = supabaseAdmin
       .from('church_users_v2')
-      .select('user_id')
+      .select('user_id, permissions')
       .eq('church_id', churchId)
       .eq('role', 'church_admin');
 
@@ -129,7 +133,19 @@ async function notifyAllAdmins({ churchId, excludeUserId, titleFr, titleEn, mess
 
     if (fetchError || !admins || admins.length === 0) return;
 
-    const userIds = admins.map(a => a.user_id);
+    // Filtrer par permission de module si spécifié
+    let filteredAdmins = admins;
+    if (module) {
+      filteredAdmins = admins.filter(a => {
+        const perms = Array.isArray(a.permissions) ? a.permissions : ['all'];
+        // L'admin avec 'all' reçoit tout ; le sous-admin ne reçoit que son module
+        return perms.includes('all') || perms.includes(module);
+      });
+    }
+
+    if (filteredAdmins.length === 0) return;
+
+    const userIds = filteredAdmins.map(a => a.user_id);
     await notifyAdmins({ churchId, userIds, titleFr, titleEn, messageFr, messageEn, type, icon, link });
   } catch (err) {
     console.error('notifyAllAdmins error:', err.message);

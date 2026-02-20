@@ -92,6 +92,7 @@ async function sendEventReminders() {
           type: 'event',
           icon: 'event',
           link: `/admin/events/${event.id}`,
+          module: 'events',
         });
 
         // Marquer l'événement comme rappelé (anti-doublon)
@@ -222,6 +223,7 @@ async function sendMeetingReminders() {
             type: 'meeting',
             icon: 'meeting',
             link: `/admin/meetings`,
+            module: 'meetings',
           });
         }
 
