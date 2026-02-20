@@ -197,7 +197,7 @@ async function sendMeetingReminders() {
           );
           await Promise.allSettled(emailPromises);
 
-          // Notification in-app aux membres participants
+          // Notification in-app aux membres participants (notif personnelle membre)
           const notifMemberIds = membersWithEmail.map(m => m.id);
           await notifyMembers({
             churchId: meeting.church_id,
@@ -209,6 +209,19 @@ async function sendMeetingReminders() {
             type: 'meeting',
             icon: 'meeting',
             link: meetingUrl,
+          });
+
+          // Notification in-app aux admins (notif admin séparée)
+          await notifyAllAdmins({
+            churchId: meeting.church_id,
+            excludeUserId: null,
+            titleFr: `Rappel automatique envoyé — ${meeting.title_fr}`,
+            titleEn: `Automatic reminder sent — ${meeting.title_en || meeting.title_fr}`,
+            messageFr: `Le rappel 24h a été envoyé à ${membersWithEmail.length} participant(s) pour la réunion de demain.`,
+            messageEn: `The 24h reminder was sent to ${membersWithEmail.length} participant(s) for tomorrow's meeting.`,
+            type: 'meeting',
+            icon: 'meeting',
+            link: `/admin/meetings`,
           });
         }
 

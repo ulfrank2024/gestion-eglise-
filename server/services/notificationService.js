@@ -45,19 +45,33 @@ async function notifyMembers({ churchId, memberIds, titleFr, titleEn, messageFr,
 
 /**
  * Envoyer une notification à tous les membres actifs d'une église
+ * Exclut les membres qui sont aussi des admins (ils reçoivent les notifs admin séparément)
  */
 async function notifyAllMembers({ churchId, titleFr, titleEn, messageFr, messageEn, type = 'info', icon = 'info', link = null }) {
   try {
     const { data: members, error: fetchError } = await supabaseAdmin
       .from('members_v2')
-      .select('id')
+      .select('id, user_id')
       .eq('church_id', churchId)
-      .eq('is_active', true)
-      .eq('is_blocked', false);
+      .neq('is_archived', true);
 
     if (fetchError || !members || members.length === 0) return;
 
-    const memberIds = members.map(m => m.id);
+    // Récupérer les user_id des admins pour les exclure (évite les doublons)
+    const { data: admins } = await supabaseAdmin
+      .from('church_users_v2')
+      .select('user_id')
+      .eq('church_id', churchId)
+      .in('role', ['church_admin', 'super_admin']);
+
+    const adminUserIds = new Set((admins || []).map(a => a.user_id).filter(Boolean));
+
+    // Garder seulement les membres qui ne sont PAS admins, et actifs
+    const memberIds = members
+      .filter(m => m.is_active !== false && (!m.user_id || !adminUserIds.has(m.user_id)))
+      .map(m => m.id);
+
+    if (memberIds.length === 0) return;
     await notifyMembers({ churchId, memberIds, titleFr, titleEn, messageFr, messageEn, type, icon, link });
   } catch (err) {
     console.error('notifyAllMembers error:', err.message);

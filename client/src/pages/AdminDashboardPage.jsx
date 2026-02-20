@@ -40,14 +40,26 @@ function AdminDashboardPage() {
         }
         setChurchId(currentChurchId);
 
+        // Rediriger selon le module actif en localStorage (priorité sur la page events)
+        const storedModule = localStorage.getItem('adminActiveModule') || 'events';
+        const moduleRoutes = {
+          members: '/admin/members-dashboard',
+          choir: '/admin/choir',
+          meetings: '/admin/meetings-dashboard',
+        };
+        if (storedModule !== 'events' && moduleRoutes[storedModule]) {
+          navigate(moduleRoutes[storedModule], { replace: true });
+          return;
+        }
+
         // Vérifier les permissions : rediriger si pas accès aux événements
         const perms = userInfo.permissions || ['all'];
         if (!perms.includes('all') && !perms.includes('events')) {
           // Trouver le premier module autorisé et y rediriger
-          const moduleRoutes = { choir: '/admin/choir', members: '/admin/members', meetings: '/admin/meetings' };
+          const permModuleRoutes = { choir: '/admin/choir', members: '/admin/members-dashboard', meetings: '/admin/meetings-dashboard' };
           for (const mod of ['choir', 'members', 'meetings']) {
             if (perms.includes(mod)) {
-              navigate(moduleRoutes[mod], { replace: true });
+              navigate(permModuleRoutes[mod], { replace: true });
               return;
             }
           }
