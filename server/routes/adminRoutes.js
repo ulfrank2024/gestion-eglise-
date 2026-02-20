@@ -745,14 +745,91 @@ router.get('/events/:eventId/checkin-entries', protect, isSuperAdminOrChurchAdmi
 });
 
 // ⚠️ ROUTE DE TEST TEMPORAIRE — à supprimer après validation
-// POST /api/admin/test-reminders — déclenche les rappels sans attendre le cron
+// POST /api/admin/test-reminders — déclenche les rappels en mode test (fenêtre élargie 0h-72h)
 router.post('/test-reminders', protect, isSuperAdminOrChurchAdmin, async (req, res) => {
   try {
-    const { sendEventReminders, sendMeetingReminders } = require('../services/reminderService');
-    console.log('[TEST] Déclenchement manuel des rappels...');
-    await sendEventReminders();
-    await sendMeetingReminders();
-    res.json({ success: true, message: 'Rappels déclenchés — vérifiez les emails et les logs.' });
+    const { supabaseAdmin } = require('../db/supabase');
+    const { sendEmail, generateEventReminderEmail, generateMeetingReminderEmail } = require('../services/mailer');
+    const { notifyAllAdmins, notifyMembers } = require('../services/notificationService');
+    const frontendUrl = process.env.FRONTEND_BASE_URL || 'https://my-eden-x.onrender.com';
+
+    const now = new Date();
+    const from = now.toISOString();
+    const to = new Date(now.getTime() + 72 * 60 * 60 * 1000).toISOString(); // fenêtre 72h pour le test
+
+    let results = { events: 0, meetings: 0, emails_sent: 0 };
+
+    // --- TEST ÉVÉNEMENTS ---
+    const { data: events } = await supabaseAdmin
+      .from('events_v2')
+      .select('id, name_fr, name_en, event_start_date, location, church_id')
+      .gte('event_start_date', from)
+      .lte('event_start_date', to)
+      .eq('is_archived', false)
+      .is('reminder_sent_at', null);
+
+    for (const event of (events || [])) {
+      const { data: church } = await supabaseAdmin.from('churches_v2').select('name, subdomain').eq('id', event.church_id).single();
+      const churchName = church?.name || 'MY EDEN X';
+      const eventUrl = `${frontendUrl}/${church?.subdomain || event.church_id}/event/${event.id}`;
+
+      const { data: attendees } = await supabaseAdmin.from('attendees_v2').select('full_name, email').eq('event_id', event.id).eq('church_id', event.church_id);
+
+      for (const attendee of (attendees || [])) {
+        await sendEmail({
+          to: attendee.email,
+          subject: `⏰ [TEST] Rappel : ${event.name_fr} — bientôt !`,
+          html: generateEventReminderEmail({ event, attendeeName: attendee.full_name, churchName, eventUrl, language: 'fr' }),
+        }).catch(e => console.error('[TEST] email event:', e.message));
+        results.emails_sent++;
+      }
+
+      await notifyAllAdmins({ churchId: event.church_id, excludeUserId: null, titleFr: `[TEST] Rappel envoyé — ${event.name_fr}`, titleEn: `[TEST] Reminder sent — ${event.name_en || event.name_fr}`, messageFr: `Rappel test envoyé à ${attendees?.length || 0} inscrit(s).`, messageEn: `Test reminder sent to ${attendees?.length || 0} attendee(s).`, type: 'event', icon: 'event' });
+      await supabaseAdmin.from('events_v2').update({ reminder_sent_at: new Date().toISOString() }).eq('id', event.id);
+      results.events++;
+    }
+
+    // --- TEST RÉUNIONS ---
+    const { data: meetings } = await supabaseAdmin
+      .from('meetings_v2')
+      .select('id, title_fr, title_en, meeting_date, location, agenda_fr, church_id')
+      .gte('meeting_date', from)
+      .lte('meeting_date', to)
+      .is('reminder_sent_at', null);
+
+    for (const meeting of (meetings || [])) {
+      const { data: church } = await supabaseAdmin.from('churches_v2').select('name').eq('id', meeting.church_id).single();
+      const churchName = church?.name || 'MY EDEN X';
+      const meetingUrl = `${frontendUrl}/member/meetings`;
+
+      const { data: participants } = await supabaseAdmin.from('meeting_participants_v2').select('member_id').eq('meeting_id', meeting.id).neq('status', 'absent');
+      const memberIds = (participants || []).map(p => p.member_id);
+
+      let membersWithEmail = [];
+      if (memberIds.length > 0) {
+        const { data: members } = await supabaseAdmin.from('members_v2').select('id, full_name, email').in('id', memberIds).eq('is_active', true);
+        membersWithEmail = members || [];
+      }
+
+      for (const member of membersWithEmail) {
+        await sendEmail({
+          to: member.email,
+          subject: `📋 [TEST] Rappel : ${meeting.title_fr} — bientôt !`,
+          html: generateMeetingReminderEmail({ meeting, participantName: member.full_name, churchName, meetingUrl, language: 'fr' }),
+        }).catch(e => console.error('[TEST] email meeting:', e.message));
+        results.emails_sent++;
+      }
+
+      if (membersWithEmail.length > 0) {
+        await notifyMembers({ churchId: meeting.church_id, memberIds: membersWithEmail.map(m => m.id), titleFr: `[TEST] Rappel : ${meeting.title_fr}`, titleEn: `[TEST] Reminder: ${meeting.title_en || meeting.title_fr}`, messageFr: `Votre réunion a lieu bientôt.`, messageEn: `Your meeting is coming up soon.`, type: 'meeting', icon: 'meeting', link: meetingUrl });
+      }
+
+      await supabaseAdmin.from('meetings_v2').update({ reminder_sent_at: new Date().toISOString() }).eq('id', meeting.id);
+      results.meetings++;
+    }
+
+    console.log('[TEST] Résultats:', results);
+    res.json({ success: true, message: `Test terminé — ${results.events} événement(s), ${results.meetings} réunion(s), ${results.emails_sent} email(s) envoyé(s).`, results });
   } catch (err) {
     console.error('[TEST] Erreur:', err.message);
     res.status(500).json({ error: err.message });
