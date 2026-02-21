@@ -508,6 +508,14 @@ export const api = {
       const { data } = await apiClient.get('/admin/choir/members/statistics');
       return data;
     },
+    getChoirEligiblePool: async () => {
+      const { data } = await apiClient.get('/admin/choir/eligible-pool');
+      return data;
+    },
+    getMyChoirStatus: async () => {
+      const { data } = await apiClient.get('/admin/choir/my-status');
+      return data;
+    },
 
     // Song Categories
     getSongCategories: async () => {

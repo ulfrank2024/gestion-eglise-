@@ -164,7 +164,7 @@ router.delete('/managers/:id', isSuperAdminOrChurchAdmin, async (req, res) => {
 
 /**
  * GET /api/admin/choir/members
- * Liste des choristes
+ * Liste des choristes (membres ET admins)
  */
 router.get('/members', isChoirManagerOrAdmin, async (req, res) => {
   try {
@@ -188,7 +188,16 @@ router.get('/members', isChoirManagerOrAdmin, async (req, res) => {
 
     if (error) throw error;
 
-    res.json(choristes);
+    // Normaliser: les choristes admin ont admin_name/admin_email au lieu de member.*
+    const normalized = (choristes || []).map(c => ({
+      ...c,
+      display_name: c.member?.full_name || c.admin_name || '—',
+      display_email: c.member?.email || c.admin_email || '',
+      display_photo: c.member?.profile_photo_url || null,
+      is_admin_type: !c.member_id && !!c.church_user_id,
+    }));
+
+    res.json(normalized);
   } catch (err) {
     console.error('Error fetching choir members:', err);
     res.status(500).json({ error: 'Erreur serveur' });
@@ -253,22 +262,242 @@ router.get('/members/statistics', isChoirManagerOrAdmin, async (req, res) => {
 });
 
 /**
+ * GET /api/admin/choir/eligible-pool
+ * Retourne les membres ET admins pouvant être ajoutés comme choristes
+ */
+router.get('/eligible-pool', isChoirManagerOrAdmin, async (req, res) => {
+  try {
+    const { church_id } = req.user;
+
+    // Membres actifs de l'église
+    const { data: members } = await supabaseAdmin
+      .from('members_v2')
+      .select('id, full_name, email, profile_photo_url')
+      .eq('church_id', church_id)
+      .eq('is_active', true)
+      .eq('is_archived', false)
+      .order('full_name');
+
+    // Admins/sous-admins de l'église (depuis church_users_v2)
+    const { data: churchUsers } = await supabaseAdmin
+      .from('church_users_v2')
+      .select('user_id, full_name, profile_photo_url')
+      .eq('church_id', church_id)
+      .eq('role', 'church_admin');
+
+    // Enrichir les admins avec leur email
+    const admins = await Promise.all((churchUsers || []).map(async (u) => {
+      let email = '';
+      try {
+        const { data: authData } = await supabaseAdmin.auth.admin.getUserById(u.user_id);
+        email = authData?.user?.email || '';
+      } catch (e) {}
+      return {
+        id: u.user_id,
+        full_name: u.full_name || email,
+        email,
+        profile_photo_url: u.profile_photo_url,
+        is_admin: true,
+      };
+    }));
+
+    res.json({ members: members || [], admins });
+  } catch (err) {
+    console.error('Error fetching eligible pool:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+/**
+ * GET /api/admin/choir/my-status
+ * Statut chorale de l'admin/sous-admin connecté
+ */
+router.get('/my-status', protect, async (req, res) => {
+  try {
+    const { church_id, id: userId } = req.user;
+
+    // Chercher par church_user_id (admin type)
+    let { data: choirMember } = await supabaseAdmin
+      .from('choir_members_v2')
+      .select('*')
+      .eq('church_id', church_id)
+      .eq('church_user_id', userId)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    // Si pas trouvé via church_user_id, essayer via member_id
+    if (!choirMember && req.user.member_id) {
+      const { data: byMember } = await supabaseAdmin
+        .from('choir_members_v2')
+        .select('*')
+        .eq('church_id', church_id)
+        .eq('member_id', req.user.member_id)
+        .eq('is_active', true)
+        .maybeSingle();
+      choirMember = byMember;
+    }
+
+    if (!choirMember) {
+      return res.json({ is_choir_member: false });
+    }
+
+    // Prochains plannings
+    const { data: plannings } = await supabaseAdmin
+      .from('choir_planning_v2')
+      .select('*')
+      .eq('church_id', church_id)
+      .gte('event_date', new Date().toISOString().split('T')[0])
+      .order('event_date', { ascending: true })
+      .limit(5);
+
+    // Compteur répertoire
+    const { count: repertoireCount } = await supabaseAdmin
+      .from('choriste_repertoire_v2')
+      .select('*', { count: 'exact', head: true })
+      .eq('choir_member_id', choirMember.id);
+
+    // Chants récents du répertoire (si lead)
+    let recentSongs = [];
+    if (choirMember.is_lead) {
+      const { data: songs } = await supabaseAdmin
+        .from('choriste_repertoire_v2')
+        .select('*, choir_songs_v2(title, author)')
+        .eq('choir_member_id', choirMember.id)
+        .order('added_at', { ascending: false })
+        .limit(5);
+      recentSongs = songs || [];
+    }
+
+    res.json({
+      is_choir_member: true,
+      choir_member: choirMember,
+      upcoming_plannings: plannings || [],
+      recent_songs: recentSongs,
+      stats: {
+        repertoire_count: repertoireCount || 0,
+        upcoming_plannings: plannings?.length || 0,
+        lead_count: choirMember.is_lead ? 1 : 0,
+      },
+    });
+  } catch (err) {
+    console.error('Error fetching my choir status:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+/**
  * POST /api/admin/choir/members
- * Ajouter un choriste
+ * Ajouter un choriste (membre OU admin)
  */
 router.post('/members', isChoirManagerOrAdmin, async (req, res) => {
   try {
     const { church_id, id: userId } = req.user;
-    const { member_id, voice_type, is_lead, notes } = req.body;
+    const { member_id, church_user_id, voice_type, is_lead, notes } = req.body;
 
-    if (!member_id) {
-      return res.status(400).json({ error: 'ID du membre requis' });
+    if (!member_id && !church_user_id) {
+      return res.status(400).json({ error: 'ID du membre ou de l\'admin requis' });
     }
 
-    // Vérifier que le membre appartient à l'église
+    const { data: church } = await supabaseAdmin
+      .from('churches_v2')
+      .select('name')
+      .eq('id', church_id)
+      .single();
+
+    const frontendUrl = process.env.FRONTEND_BASE_URL || 'https://gestion-eglise-delta.vercel.app';
+
+    // ── Cas 1: Admin/sous-admin comme choriste ──
+    if (church_user_id) {
+      const { data: churchUser } = await supabaseAdmin
+        .from('church_users_v2')
+        .select('full_name, profile_photo_url')
+        .eq('user_id', church_user_id)
+        .eq('church_id', church_id)
+        .single();
+
+      if (!churchUser) {
+        return res.status(404).json({ error: 'Admin non trouvé dans cette église' });
+      }
+
+      let adminEmail = '';
+      try {
+        const { data: authData } = await supabaseAdmin.auth.admin.getUserById(church_user_id);
+        adminEmail = authData?.user?.email || '';
+      } catch (e) {}
+
+      // Vérifier si déjà choriste
+      const { data: existing } = await supabaseAdmin
+        .from('choir_members_v2')
+        .select('id')
+        .eq('church_id', church_id)
+        .eq('church_user_id', church_user_id)
+        .maybeSingle();
+
+      let choriste;
+      if (existing) {
+        const { data: updated, error } = await supabaseAdmin
+          .from('choir_members_v2')
+          .update({ voice_type: voice_type || 'autre', is_lead: is_lead || false, notes, is_active: true })
+          .eq('id', existing.id)
+          .select('*')
+          .single();
+        if (error) throw error;
+        choriste = updated;
+      } else {
+        const { data: inserted, error } = await supabaseAdmin
+          .from('choir_members_v2')
+          .insert({
+            church_id,
+            church_user_id,
+            admin_name: churchUser.full_name || adminEmail,
+            admin_email: adminEmail,
+            member_id: null,
+            voice_type: voice_type || 'autre',
+            is_lead: is_lead || false,
+            notes,
+            added_by: userId,
+            is_active: true,
+          })
+          .select('*')
+          .single();
+        if (error) throw error;
+        choriste = inserted;
+      }
+
+      // Email à l'admin ajouté
+      try {
+        if (adminEmail) {
+          const emailHtml = generateChoirMemberAddedEmail({
+            memberName: churchUser.full_name || adminEmail,
+            voiceType: voice_type || 'autre',
+            isLead: is_lead || false,
+            churchName: church?.name || 'Notre Église',
+            dashboardUrl: `${frontendUrl}/admin/my-choir`,
+            language: req.body.language || 'fr',
+          });
+          await sendEmail({
+            to: adminEmail,
+            subject: `${church?.name || 'MY EDEN X'} - Bienvenue dans la chorale !`,
+            html: emailHtml,
+          });
+        }
+      } catch (emailErr) {
+        console.error('Error sending choir admin email:', emailErr);
+      }
+
+      return res.status(201).json({
+        ...choriste,
+        display_name: choriste.admin_name || adminEmail,
+        display_email: adminEmail,
+        display_photo: null,
+        is_admin_type: true,
+      });
+    }
+
+    // ── Cas 2: Membre classique comme choriste ──
     const { data: member } = await supabaseAdmin
       .from('members_v2')
-      .select('id')
+      .select('id, full_name, email, profile_photo_url')
       .eq('id', member_id)
       .eq('church_id', church_id)
       .single();
@@ -277,73 +506,86 @@ router.post('/members', isChoirManagerOrAdmin, async (req, res) => {
       return res.status(404).json({ error: 'Membre non trouvé dans cette église' });
     }
 
-    const { data: choriste, error } = await supabaseAdmin
+    // Vérifier si déjà choriste
+    const { data: existingMember } = await supabaseAdmin
       .from('choir_members_v2')
-      .upsert({
-        church_id,
-        member_id,
-        voice_type: voice_type || 'autre',
-        is_lead: is_lead || false,
-        notes,
-        added_by: userId,
-        is_active: true
-      }, { onConflict: 'church_id,member_id' })
-      .select(`
-        *,
-        member:members_v2 (
-          id,
-          full_name,
-          email,
-          profile_photo_url
-        )
-      `)
-      .single();
+      .select('id')
+      .eq('church_id', church_id)
+      .eq('member_id', member_id)
+      .maybeSingle();
 
-    if (error) throw error;
+    let choriste;
+    if (existingMember) {
+      const { data: updated, error } = await supabaseAdmin
+        .from('choir_members_v2')
+        .update({ voice_type: voice_type || 'autre', is_lead: is_lead || false, notes, is_active: true })
+        .eq('id', existingMember.id)
+        .select('*, member:members_v2(id, full_name, email, profile_photo_url)')
+        .single();
+      if (error) throw error;
+      choriste = updated;
+    } else {
+      const { data: inserted, error } = await supabaseAdmin
+        .from('choir_members_v2')
+        .insert({
+          church_id,
+          member_id,
+          church_user_id: null,
+          voice_type: voice_type || 'autre',
+          is_lead: is_lead || false,
+          notes,
+          added_by: userId,
+          is_active: true,
+        })
+        .select('*, member:members_v2(id, full_name, email, profile_photo_url)')
+        .single();
+      if (error) throw error;
+      choriste = inserted;
+    }
 
-    // Envoyer un email au nouveau choriste
+    // Email au membre
     try {
       if (choriste?.member?.email) {
-        const { data: church } = await supabaseAdmin
-          .from('churches_v2')
-          .select('name')
-          .eq('id', church_id)
-          .single();
-
-        const frontendUrl = process.env.FRONTEND_BASE_URL || 'https://gestion-eglise-delta.vercel.app';
         const emailHtml = generateChoirMemberAddedEmail({
           memberName: choriste.member.full_name,
           voiceType: voice_type || 'autre',
           isLead: is_lead || false,
           churchName: church?.name || 'Notre Église',
           dashboardUrl: `${frontendUrl}/member/choir`,
-          language: req.body.language || 'fr'
+          language: req.body.language || 'fr',
         });
-
         await sendEmail({
           to: choriste.member.email,
           subject: `${church?.name || 'MY EDEN X'} - Bienvenue dans la chorale !`,
-          html: emailHtml
+          html: emailHtml,
         });
       }
     } catch (emailErr) {
       console.error('Error sending choir member email:', emailErr);
     }
 
-    // Notification in-app au membre ajouté
-    notifyMembers({
-      churchId: church_id,
-      memberIds: [member_id],
-      titleFr: 'Bienvenue dans la chorale !',
-      titleEn: 'Welcome to the choir!',
-      messageFr: 'Vous avez été ajouté(e) à la chorale de l\'église',
-      messageEn: 'You have been added to the church choir',
-      type: 'choir',
-      icon: NOTIFICATION_ICONS.choir,
-      link: '/member/choir',
-    });
+    // Notification in-app au membre
+    if (member_id) {
+      notifyMembers({
+        churchId: church_id,
+        memberIds: [member_id],
+        titleFr: 'Bienvenue dans la chorale !',
+        titleEn: 'Welcome to the choir!',
+        messageFr: 'Vous avez été ajouté(e) à la chorale de l\'église',
+        messageEn: 'You have been added to the church choir',
+        type: 'choir',
+        icon: NOTIFICATION_ICONS.choir,
+        link: '/member/choir',
+      });
+    }
 
-    res.status(201).json(choriste);
+    res.status(201).json({
+      ...choriste,
+      display_name: choriste.member?.full_name,
+      display_email: choriste.member?.email,
+      display_photo: choriste.member?.profile_photo_url,
+      is_admin_type: false,
+    });
   } catch (err) {
     console.error('Error adding choir member:', err);
     res.status(500).json({ error: 'Erreur serveur' });

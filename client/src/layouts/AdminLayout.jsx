@@ -814,6 +814,18 @@ function AdminLayout() {
                     {t('my_meetings') || 'Mes Réunions'}
                   </NavLink>
                   <NavLink
+                    to="/admin/my-choir"
+                    onClick={closeSidebarOnMobile}
+                    className={({ isActive }) =>
+                      `flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                        isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                      }`
+                    }
+                  >
+                    <MdMusicNote size={18} />
+                    {t('my_choir') || 'Mes Chants'}
+                  </NavLink>
+                  <NavLink
                     to="/admin/my-notifications"
                     onClick={closeSidebarOnMobile}
                     className={({ isActive }) =>
