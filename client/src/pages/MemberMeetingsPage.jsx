@@ -5,7 +5,8 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import {
   MdGroups, MdAccessTime, MdLocationOn, MdNotes,
   MdCheckCircle, MdSchedule, MdCancel, MdPlayArrow, MdFlashOn,
-  MdExpandMore, MdExpandLess, MdPerson, MdInfo, MdAssignment
+  MdExpandMore, MdExpandLess, MdPerson, MdInfo, MdAssignment,
+  MdCalendarToday
 } from 'react-icons/md';
 
 function MemberMeetingsPage() {
@@ -16,6 +17,8 @@ function MemberMeetingsPage() {
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState('');
   const [filter, setFilter]       = useState('upcoming');
+  const [dateFrom, setDateFrom]   = useState('');
+  const [dateTo, setDateTo]       = useState('');
   const [expandedId, setExpandedId] = useState(null);
 
   useEffect(() => { fetchMeetings(); }, []);
@@ -84,6 +87,11 @@ function MemberMeetingsPage() {
     const isPast     = !isUpcoming;
     if (filter === 'upcoming' && !isUpcoming) return false;
     if (filter === 'past'     && !isPast)     return false;
+    if (dateFrom && d && d < new Date(dateFrom)) return false;
+    if (dateTo) {
+      const to = new Date(dateTo); to.setHours(23, 59, 59);
+      if (d && d > to) return false;
+    }
     return true;
   });
 
@@ -101,22 +109,48 @@ function MemberMeetingsPage() {
       </div>
 
       {/* ── Filtres ── */}
-      <div className="flex gap-2">
-        {[
-          { key: 'upcoming', label: t('meetings.filter_upcoming') },
-          { key: 'past',     label: t('meetings.filter_past') },
-          { key: 'all',      label: t('meetings.filter_all') },
-        ].map(f => (
-          <button
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              filter === f.key ? 'bg-indigo-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
+      <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+        {/* Boutons statut */}
+        <div className="flex gap-2">
+          {[
+            { key: 'upcoming', label: t('meetings.filter_upcoming') },
+            { key: 'past',     label: t('meetings.filter_past') },
+            { key: 'all',      label: t('meetings.filter_all') },
+          ].map(f => (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                filter === f.key ? 'bg-indigo-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Filtre par date */}
+        <div className="flex items-center gap-2 flex-wrap text-sm">
+          <MdCalendarToday className="text-gray-400" size={15} />
+          <span className="text-gray-500">{t('meetings.date_from')}</span>
+          <input
+            type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+            className="px-2 py-1 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+          <span className="text-gray-500">{t('meetings.date_to')}</span>
+          <input
+            type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+            className="px-2 py-1 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+          {(dateFrom || dateTo) && (
+            <button
+              onClick={() => { setDateFrom(''); setDateTo(''); }}
+              className="text-xs text-gray-400 hover:text-white px-2 py-1 bg-gray-700 rounded-lg"
+            >
+              {t('meetings.clear_dates')}
+            </button>
+          )}
+        </div>
       </div>
 
       {error && (
