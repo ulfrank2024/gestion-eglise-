@@ -123,6 +123,49 @@ router.get('/', ...meetingsAuth, async (req, res) => {
   }
 });
 
+// GET /api/admin/meetings/my-meetings - Réunions où l'admin connecté est participant
+router.get('/my-meetings', protect, async (req, res) => {
+  try {
+    // Récupérer l'email de l'admin connecté
+    const { data: authData } = await supabaseAdmin.auth.admin.getUserById(req.user.id);
+    const adminEmail = authData?.user?.email;
+
+    // Réunions créées par cet admin OU où il est participant (via participant_email)
+    const { data: meetings, error } = await supabaseAdmin
+      .from('meetings_v2')
+      .select(`
+        id, title_fr, title_en, meeting_date, location, status,
+        agenda_fr, agenda_en, notes_fr, notes_en,
+        meeting_participants_v2 (
+          id, member_id, role, attendance_status,
+          participant_name, participant_email,
+          members_v2 ( id, full_name, email )
+        )
+      `)
+      .eq('church_id', req.user.church_id)
+      .order('meeting_date', { ascending: false });
+
+    if (error) throw error;
+
+    // Filtrer : réunions créées par l'admin OU où son email apparaît comme participant
+    const myMeetings = (meetings || []).filter(m => {
+      if (!adminEmail) return true; // Si pas d'email, retourner toutes
+      const isParticipant = (m.meeting_participants_v2 || []).some(
+        p => p.participant_email === adminEmail
+      );
+      return isParticipant;
+    });
+
+    res.json(myMeetings.map(m => ({
+      ...m,
+      participants_count: m.meeting_participants_v2?.length || 0,
+    })));
+  } catch (error) {
+    console.error('Error fetching my meetings:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // GET /api/admin/meetings/:id - Détails d'une réunion
 router.get('/:id', ...meetingsAuth, async (req, res) => {
   try {

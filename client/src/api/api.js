@@ -442,6 +442,12 @@ export const api = {
       await apiClient.delete(`/admin/notifications/${notificationId}`);
     },
 
+    // --- Mes Réunions (Mon Espace) ---
+    getMyMeetings: async () => {
+      const { data } = await apiClient.get('/admin/meetings/my-meetings');
+      return data;
+    },
+
     // --- Notifications personnelles admin (cloche) ---
     getMyNotifications: async () => {
       const { data } = await apiClient.get('/admin/my-notifications');

@@ -30,6 +30,7 @@ import AdminActivityLogsPage from './pages/AdminActivityLogsPage'; // Page des j
 import AdminMyProfilePage from './pages/AdminMyProfilePage'; // Page Mon Profil
 import AdminMyEventsPage from './pages/AdminMyEventsPage'; // Page Mes Événements
 import AdminMyNotificationsPage from './pages/AdminMyNotificationsPage'; // Page Mes Notifications
+import AdminMyMeetingsPage from './pages/AdminMyMeetingsPage'; // Page Mes Réunions
 
 // Admin Pages - Module Membres
 import AdminMembersDashboardPage from './pages/AdminMembersDashboardPage';
@@ -133,6 +134,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             {/* Mon Espace */}
             <Route path="my-profile" element={<AdminMyProfilePage />} /> {/* Mon Profil */}
             <Route path="my-events" element={<AdminMyEventsPage />} /> {/* Mes Événements */}
+            <Route path="my-meetings" element={<AdminMyMeetingsPage />} /> {/* Mes Réunions */}
             <Route path="my-notifications" element={<AdminMyNotificationsPage />} /> {/* Mes Notifications */}
             {/* Module Membres */}
             <Route path="members-dashboard" element={<AdminMembersDashboardPage />} />
