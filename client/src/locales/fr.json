@@ -1021,7 +1021,18 @@
       "quick_report_title_placeholder": "Ex: Rencontre pastorale, Visite de membre...",
       "quick_report_notes_placeholder": "Décrivez ce qui s'est passé : sujets abordés, décisions prises, points importants...",
       "quick_report_present": "Personnes présentes",
-      "save_quick_report": "Enregistrer le compte-rendu"
+      "save_quick_report": "Enregistrer le compte-rendu",
+      "my_meetings": "Mes Réunions",
+      "my_meetings_subtitle": "Réunions auxquelles vous participez ou que vous avez créées",
+      "filter_upcoming": "À venir",
+      "filter_past": "Passés",
+      "date_from": "Du",
+      "date_to": "Au",
+      "clear_dates": "Effacer les dates",
+      "meetings_count": "réunion(s)",
+      "no_meetings_found": "Aucune réunion trouvée",
+      "see_details": "Voir le compte-rendu",
+      "no_report": "Aucun compte-rendu rédigé pour cette réunion"
     },
 
     "update_available": "Nouvelle version disponible",

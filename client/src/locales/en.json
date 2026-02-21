@@ -1075,7 +1075,18 @@
       "quick_report_title_placeholder": "Ex: Pastoral visit, Member meeting...",
       "quick_report_notes_placeholder": "Describe what happened: topics discussed, decisions made, important points...",
       "quick_report_present": "People present",
-      "save_quick_report": "Save report"
+      "save_quick_report": "Save report",
+      "my_meetings": "My Meetings",
+      "my_meetings_subtitle": "Meetings you participate in or have created",
+      "filter_upcoming": "Upcoming",
+      "filter_past": "Past",
+      "date_from": "From",
+      "date_to": "To",
+      "clear_dates": "Clear dates",
+      "meetings_count": "meeting(s)",
+      "no_meetings_found": "No meetings found",
+      "see_details": "View report",
+      "no_report": "No report written for this meeting"
     },
 
     "update_available": "New version available",
