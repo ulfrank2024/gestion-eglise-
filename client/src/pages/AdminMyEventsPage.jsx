@@ -5,7 +5,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import RegistrationModal from '../components/RegistrationModal';
 import {
   MdEventAvailable, MdEvent, MdCalendarToday,
-  MdPeople, MdCheckCircle, MdAccessTime, MdArrowBack,
+  MdCheckCircle, MdArrowBack,
   MdInfo, MdHowToReg
 } from 'react-icons/md';
 
@@ -241,24 +241,6 @@ function AdminMyEventsPage() {
               </div>
             </div>
 
-            {/* Statistiques */}
-            <div className="bg-gray-800 rounded-xl border border-gray-700 p-5">
-              <h3 className="text-white font-semibold flex items-center gap-2 mb-3">
-                <MdPeople className="text-green-400" />
-                {t('participation') || 'Participation'}
-              </h3>
-              <div className="grid grid-cols-2 gap-4 text-center">
-                <div>
-                  <p className="text-2xl font-bold text-indigo-400">{selectedEvent.attendeeCount || 0}</p>
-                  <p className="text-gray-400 text-xs">{t('registered') || 'Inscrits'}</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-green-400">{selectedEvent.checkinCount || 0}</p>
-                  <p className="text-gray-400 text-xs">{t('checked_in') || 'Présents'}</p>
-                </div>
-              </div>
-            </div>
-
             {/* Bouton inscription */}
             {upcoming && (
               <button
@@ -411,12 +393,6 @@ function AdminMyEventsPage() {
                       <MdCalendarToday className="text-gray-500 flex-shrink-0" />
                       <span className="truncate">{formatDateShort(event.event_start_date)}</span>
                     </div>
-                    {event.attendeeCount !== undefined && (
-                      <div className="flex items-center gap-2 text-sm text-gray-300">
-                        <MdPeople className="text-gray-500 flex-shrink-0" />
-                        <span>{event.attendeeCount || 0} {t('registered') || 'inscrits'}</span>
-                      </div>
-                    )}
                   </div>
 
                   {/* Lien détails */}
@@ -432,32 +408,6 @@ function AdminMyEventsPage() {
         </div>
       )}
 
-      {/* Résumé */}
-      <div className="bg-gray-800 rounded-xl border border-gray-700 p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">{t('summary') || 'Résumé'}</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="text-center">
-            <p className="text-3xl font-bold text-indigo-400">{events.filter(e => !e.is_archived).length}</p>
-            <p className="text-gray-400 text-sm">{t('total_events') || 'Total'}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-3xl font-bold text-green-400">{events.filter(e => !e.is_archived && isUpcoming(e)).length}</p>
-            <p className="text-gray-400 text-sm">{t('upcoming') || 'À venir'}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-3xl font-bold text-amber-400">
-              {events.reduce((sum, e) => sum + (e.attendeeCount || 0), 0)}
-            </p>
-            <p className="text-gray-400 text-sm">{t('total_registrations') || 'Inscrits'}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-3xl font-bold text-purple-400">
-              {events.reduce((sum, e) => sum + (e.checkinCount || 0), 0)}
-            </p>
-            <p className="text-gray-400 text-sm">{t('total_checkins') || 'Présents'}</p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
