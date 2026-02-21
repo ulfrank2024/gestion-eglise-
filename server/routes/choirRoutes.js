@@ -188,12 +188,26 @@ router.get('/members', isChoirManagerOrAdmin, async (req, res) => {
 
     if (error) throw error;
 
+    // Récupérer les photos des choristes de type admin (batch lookup)
+    const adminChoristes = (choristes || []).filter(c => !c.member_id && c.church_user_id);
+    let adminPhotoMap = {};
+    if (adminChoristes.length > 0) {
+      const adminIds = adminChoristes.map(c => c.church_user_id);
+      const { data: adminUsers } = await supabaseAdmin
+        .from('church_users_v2')
+        .select('user_id, profile_photo_url')
+        .in('user_id', adminIds);
+      (adminUsers || []).forEach(u => {
+        adminPhotoMap[u.user_id] = u.profile_photo_url;
+      });
+    }
+
     // Normaliser: les choristes admin ont admin_name/admin_email au lieu de member.*
     const normalized = (choristes || []).map(c => ({
       ...c,
       display_name: c.member?.full_name || c.admin_name || '—',
       display_email: c.member?.email || c.admin_email || '',
-      display_photo: c.member?.profile_photo_url || null,
+      display_photo: c.member?.profile_photo_url || adminPhotoMap[c.church_user_id] || null,
       is_admin_type: !c.member_id && !!c.church_user_id,
     }));
 
@@ -489,7 +503,7 @@ router.post('/members', isChoirManagerOrAdmin, async (req, res) => {
         ...choriste,
         display_name: choriste.admin_name || adminEmail,
         display_email: adminEmail,
-        display_photo: null,
+        display_photo: churchUser.profile_photo_url || null,
         is_admin_type: true,
       });
     }

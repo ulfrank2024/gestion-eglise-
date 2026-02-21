@@ -495,9 +495,9 @@ const AdminChoirMembersPage = () => {
 
             <div className="p-4 space-y-4">
               <div className="flex items-center gap-3 p-3 bg-gray-700/50 rounded-lg">
-                {(selectedMember.display_photo || selectedMember.member?.profile_photo_url) ? (
+                {(selectedMember.display_photo || selectedMember.member?.profile_photo_url || selectedMember.profile_photo_url) ? (
                   <img
-                    src={selectedMember.display_photo || selectedMember.member?.profile_photo_url}
+                    src={selectedMember.display_photo || selectedMember.member?.profile_photo_url || selectedMember.profile_photo_url}
                     alt={selectedMember.display_name || selectedMember.member?.full_name}
                     className="w-10 h-10 rounded-full object-cover"
                   />
