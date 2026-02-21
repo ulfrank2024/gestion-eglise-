@@ -123,43 +123,67 @@ router.get('/', ...meetingsAuth, async (req, res) => {
   }
 });
 
-// GET /api/admin/meetings/my-meetings - Réunions où l'admin connecté est participant
+// GET /api/admin/meetings/my-meetings - Toutes les réunions de l'église + statut perso de l'admin
 router.get('/my-meetings', protect, async (req, res) => {
   try {
-    // Récupérer l'email de l'admin connecté
-    const { data: authData } = await supabaseAdmin.auth.admin.getUserById(req.user.id);
-    const adminEmail = authData?.user?.email;
+    // Récupérer l'email de l'admin connecté (pour trouver son entrée dans les participants)
+    let adminEmail = null;
+    try {
+      const { data: authData } = await supabaseAdmin.auth.admin.getUserById(req.user.id);
+      adminEmail = authData?.user?.email || null;
+    } catch (e) { /* on continue sans email */ }
 
-    // Réunions créées par cet admin OU où il est participant (via participant_email)
+    // 1. Toutes les réunions de l'église (avec notes)
     const { data: meetings, error } = await supabaseAdmin
       .from('meetings_v2')
-      .select(`
-        id, title_fr, title_en, meeting_date, location, status,
-        agenda_fr, agenda_en, notes_fr, notes_en,
-        meeting_participants_v2 (
-          id, member_id, role, attendance_status,
-          participant_name, participant_email,
-          members_v2 ( id, full_name, email )
-        )
-      `)
+      .select('id, title_fr, title_en, meeting_date, location, status, agenda_fr, agenda_en, notes_fr, notes_en')
       .eq('church_id', req.user.church_id)
       .order('meeting_date', { ascending: false });
 
     if (error) throw error;
+    if (!meetings || meetings.length === 0) return res.json([]);
 
-    // Filtrer : réunions créées par l'admin OU où son email apparaît comme participant
-    const myMeetings = (meetings || []).filter(m => {
-      if (!adminEmail) return true; // Si pas d'email, retourner toutes
-      const isParticipant = (m.meeting_participants_v2 || []).some(
-        p => p.participant_email === adminEmail
-      );
-      return isParticipant;
+    // 2. Participants séparément (requête robuste même si colonnes optionnelles absentes)
+    let participantsRaw = [];
+    try {
+      const { data: pData } = await supabaseAdmin
+        .from('meeting_participants_v2')
+        .select('meeting_id, id, member_id, role, attendance_status, participant_name, participant_email, members_v2(id, full_name, email)')
+        .in('meeting_id', meetings.map(m => m.id));
+      participantsRaw = pData || [];
+    } catch (e) {
+      // Colonnes participant_name/participant_email peut-être absentes → fallback sans elles
+      try {
+        const { data: pData } = await supabaseAdmin
+          .from('meeting_participants_v2')
+          .select('meeting_id, id, member_id, role, attendance_status, members_v2(id, full_name, email)')
+          .in('meeting_id', meetings.map(m => m.id));
+        participantsRaw = pData || [];
+      } catch (e2) { /* sans participants */ }
+    }
+
+    // 3. Enrichir chaque réunion avec ses participants + statut perso de l'admin
+    const enriched = meetings.map(m => {
+      const mParticipants = participantsRaw.filter(p => p.meeting_id === m.id);
+
+      // Chercher la participation de l'admin : via participant_email OU via email du membre
+      const myParticipant = adminEmail
+        ? mParticipants.find(p =>
+            p.participant_email === adminEmail ||
+            (p.members_v2 && p.members_v2.email === adminEmail)
+          )
+        : null;
+
+      return {
+        ...m,
+        meeting_participants_v2: mParticipants,
+        participants_count: mParticipants.length,
+        my_role: myParticipant?.role || null,
+        my_attendance: myParticipant?.attendance_status || null,
+      };
     });
 
-    res.json(myMeetings.map(m => ({
-      ...m,
-      participants_count: m.meeting_participants_v2?.length || 0,
-    })));
+    res.json(enriched);
   } catch (error) {
     console.error('Error fetching my meetings:', error);
     res.status(500).json({ error: error.message });
