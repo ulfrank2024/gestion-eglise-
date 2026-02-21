@@ -588,7 +588,21 @@ router.post('/members', isChoirManagerOrAdmin, async (req, res) => {
     });
   } catch (err) {
     console.error('Error adding choir member:', err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    const errMsg = err?.message || '';
+    // Détecter si la migration SQL n'a pas été exécutée
+    if (
+      errMsg.includes('church_user_id') ||
+      errMsg.includes('admin_name') ||
+      errMsg.includes('admin_email') ||
+      errMsg.includes('column') ||
+      errMsg.includes('null value in column "member_id"') ||
+      errMsg.includes('does not exist')
+    ) {
+      return res.status(400).json({
+        error: 'Migration SQL requise. Veuillez exécuter le fichier server/db/add_choir_admin_support.sql dans Supabase SQL Editor.',
+      });
+    }
+    res.status(500).json({ error: 'Erreur serveur: ' + errMsg });
   }
 });
 
