@@ -130,8 +130,15 @@ router.post('/', ...meetingsAuth, async (req, res) => {
       location,
       agenda_fr,
       agenda_en,
-      participant_ids // Array d'IDs de membres
+      notes_fr,
+      notes_en,
+      participant_ids, // Array d'IDs de membres
+      status: requestedStatus,            // 'planned' | 'closed' (compte-rendu rapide)
+      initial_attendance_status           // 'invited' | 'present' (compte-rendu rapide)
     } = req.body;
+
+    const meetingStatus = requestedStatus || 'planned';
+    const attendanceStatus = initial_attendance_status || 'invited';
 
     // Créer la réunion
     const { data: meeting, error: meetingError } = await supabaseAdmin
@@ -145,7 +152,9 @@ router.post('/', ...meetingsAuth, async (req, res) => {
         location,
         agenda_fr,
         agenda_en: agenda_en || agenda_fr,
-        status: 'planned',
+        notes_fr,
+        notes_en: notes_en || notes_fr,
+        status: meetingStatus,
         created_by: req.user.id
       })
       .select()
@@ -159,7 +168,7 @@ router.post('/', ...meetingsAuth, async (req, res) => {
         meeting_id: meeting.id,
         member_id: memberId,
         role: 'participant',
-        attendance_status: 'invited'
+        attendance_status: attendanceStatus
       }));
 
       const { error: participantsError } = await supabaseAdmin
@@ -209,25 +218,34 @@ router.post('/', ...meetingsAuth, async (req, res) => {
     notifyAllAdmins({
       churchId: req.user.church_id,
       excludeUserId: req.user.id,
-      titleFr: 'Nouvelle réunion planifiée',
-      titleEn: 'New meeting planned',
-      messageFr: `La réunion "${title_fr}" a été créée`,
-      messageEn: `Meeting "${title_en || title_fr}" has been created`,
+      titleFr: meetingStatus === 'closed' ? 'Compte-rendu de rencontre ajouté' : 'Nouvelle réunion planifiée',
+      titleEn: meetingStatus === 'closed' ? 'Meeting report added' : 'New meeting planned',
+      messageFr: meetingStatus === 'closed'
+        ? `Un compte-rendu de rencontre "${title_fr}" a été enregistré`
+        : `La réunion "${title_fr}" a été créée`,
+      messageEn: meetingStatus === 'closed'
+        ? `A meeting report "${title_en || title_fr}" has been recorded`
+        : `Meeting "${title_en || title_fr}" has been created`,
       type: 'meeting',
       icon: NOTIFICATION_ICONS.meeting,
       link: `/admin/meetings/${meeting.id}`,
       module: 'meetings',
     });
 
-    // Notification in-app aux membres participants
+    // Pour une réunion planifiée, notifier les membres participants (invitation)
+    // Pour un compte-rendu rapide, notifier les membres que le rapport est disponible
     if (participant_ids && participant_ids.length > 0) {
       notifyMembers({
         churchId: req.user.church_id,
         memberIds: participant_ids,
-        titleFr: 'Invitation à une réunion',
-        titleEn: 'Meeting invitation',
-        messageFr: `Vous êtes invité(e) à la réunion "${title_fr}"`,
-        messageEn: `You are invited to the meeting "${title_en || title_fr}"`,
+        titleFr: meetingStatus === 'closed' ? `Compte-rendu disponible : ${title_fr}` : 'Invitation à une réunion',
+        titleEn: meetingStatus === 'closed' ? `Report available: ${title_en || title_fr}` : 'Meeting invitation',
+        messageFr: meetingStatus === 'closed'
+          ? `Le compte-rendu de la rencontre "${title_fr}" est disponible`
+          : `Vous êtes invité(e) à la réunion "${title_fr}"`,
+        messageEn: meetingStatus === 'closed'
+          ? `The report for "${title_en || title_fr}" is available`
+          : `You are invited to the meeting "${title_en || title_fr}"`,
         type: 'meeting',
         icon: NOTIFICATION_ICONS.meeting,
         link: '/member/meetings',

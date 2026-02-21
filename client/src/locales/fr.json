@@ -1012,7 +1012,14 @@
       "status_absent": "Absent",
       "status_excused": "Excusé",
       "start_meeting": "Démarrer la réunion",
-      "reopen_meeting": "Rouvrir la réunion"
+      "reopen_meeting": "Rouvrir la réunion",
+      "status_closed": "Compte-rendu",
+      "quick_report": "Compte-rendu rapide",
+      "quick_report_subtitle": "Rencontre non planifiée — enregistrez ce qui s'est passé",
+      "quick_report_title_placeholder": "Ex: Rencontre pastorale, Visite de membre...",
+      "quick_report_notes_placeholder": "Décrivez ce qui s'est passé : sujets abordés, décisions prises, points importants...",
+      "quick_report_present": "Personnes présentes",
+      "save_quick_report": "Enregistrer le compte-rendu"
     },
 
     "update_available": "Nouvelle version disponible",

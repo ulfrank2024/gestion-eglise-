@@ -1066,7 +1066,14 @@
       "status_absent": "Absent",
       "status_excused": "Excused",
       "start_meeting": "Start Meeting",
-      "reopen_meeting": "Reopen Meeting"
+      "reopen_meeting": "Reopen Meeting",
+      "status_closed": "Report",
+      "quick_report": "Quick Report",
+      "quick_report_subtitle": "Unplanned encounter — record what happened",
+      "quick_report_title_placeholder": "Ex: Pastoral visit, Member meeting...",
+      "quick_report_notes_placeholder": "Describe what happened: topics discussed, decisions made, important points...",
+      "quick_report_present": "People present",
+      "save_quick_report": "Save report"
     },
 
     "update_available": "New version available",

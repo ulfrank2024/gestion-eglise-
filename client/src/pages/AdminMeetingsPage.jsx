@@ -6,10 +6,11 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import ConfirmModal from '../components/ConfirmModal';
 import {
   MdAdd, MdSearch, MdFilterList, MdEvent, MdPeople,
-  MdLocationOn, MdAccessTime, MdEdit, MdDelete, MdEmail,
+  MdLocationOn, MdAccessTime, MdEdit, MdDelete,
   MdCheckCircle, MdSchedule, MdCancel, MdPlayArrow, MdPerson,
-  MdClose, MdArrowBack
+  MdClose, MdArrowBack, MdFlashOn, MdNotes
 } from 'react-icons/md';
+import { InlineSpinner } from '../components/LoadingSpinner';
 
 function AdminMeetingsPage() {
   const { t, i18n } = useTranslation();
@@ -35,6 +36,21 @@ function AdminMeetingsPage() {
     agenda_en: ''
   });
   const [creating, setCreating] = useState(false);
+
+  // États pour le formulaire de compte-rendu rapide
+  const todayDate = new Date().toISOString().split('T')[0];
+  const nowTime = new Date().toTimeString().slice(0, 5);
+  const [showQuickReportModal, setShowQuickReportModal] = useState(false);
+  const [quickFormData, setQuickFormData] = useState({
+    title_fr: '',
+    meeting_date: todayDate,
+    meeting_time: nowTime,
+    location: '',
+    notes_fr: ''
+  });
+  const [creatingQuick, setCreatingQuick] = useState(false);
+  const [quickSelectedMembers, setQuickSelectedMembers] = useState([]);
+  const [quickMemberSearch, setQuickMemberSearch] = useState('');
 
   // États pour la sélection des participants
   const [availableMembers, setAvailableMembers] = useState([]);
@@ -83,6 +99,49 @@ function AdminMeetingsPage() {
   const handleOpenCreateModal = () => {
     setShowCreateModal(true);
     fetchMembers();
+  };
+
+  const handleOpenQuickReportModal = () => {
+    setShowQuickReportModal(true);
+    setQuickFormData({
+      title_fr: '',
+      meeting_date: new Date().toISOString().split('T')[0],
+      meeting_time: new Date().toTimeString().slice(0, 5),
+      location: '',
+      notes_fr: ''
+    });
+    setQuickSelectedMembers([]);
+    setQuickMemberSearch('');
+    fetchMembers();
+  };
+
+  const handleCreateQuickReport = async (e) => {
+    e.preventDefault();
+    setCreatingQuick(true);
+    try {
+      const meeting_date = quickFormData.meeting_time
+        ? `${quickFormData.meeting_date}T${quickFormData.meeting_time}`
+        : quickFormData.meeting_date;
+
+      await api.admin.createMeeting({
+        title_fr: quickFormData.title_fr,
+        title_en: quickFormData.title_fr,
+        meeting_date,
+        location: quickFormData.location,
+        notes_fr: quickFormData.notes_fr,
+        participant_ids: quickSelectedMembers,
+        status: 'closed',
+        initial_attendance_status: 'present'
+      });
+
+      setShowQuickReportModal(false);
+      fetchMeetings();
+    } catch (err) {
+      console.error('Error creating quick report:', err);
+      setError(err.message);
+    } finally {
+      setCreatingQuick(false);
+    }
   };
 
   const handleCreateMeeting = async (e) => {
@@ -152,7 +211,8 @@ function AdminMeetingsPage() {
       planned: { color: 'bg-blue-500', icon: MdSchedule, label: t('meetings.status_planned') },
       in_progress: { color: 'bg-yellow-500', icon: MdPlayArrow, label: t('meetings.status_in_progress') },
       completed: { color: 'bg-green-500', icon: MdCheckCircle, label: t('meetings.status_completed') },
-      cancelled: { color: 'bg-red-500', icon: MdCancel, label: t('meetings.status_cancelled') }
+      cancelled: { color: 'bg-red-500', icon: MdCancel, label: t('meetings.status_cancelled') },
+      closed: { color: 'bg-teal-600', icon: MdNotes, label: t('meetings.status_closed') || 'Compte-rendu' }
     };
 
     const config = statusConfig[status] || statusConfig.planned;
@@ -199,13 +259,22 @@ function AdminMeetingsPage() {
             <p className="text-gray-400 mt-1">{filteredMeetings.length} {t('meetings.total') || 'réunion(s)'}</p>
           </div>
         </div>
-        <button
-          onClick={handleOpenCreateModal}
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-lg hover:from-amber-700 hover:to-orange-700 transition-all"
-        >
-          <MdAdd size={20} />
-          {t('meetings.create')}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleOpenQuickReportModal}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-teal-600 to-green-600 text-white rounded-lg hover:from-teal-700 hover:to-green-700 transition-all"
+          >
+            <MdFlashOn size={20} />
+            {t('meetings.quick_report') || 'Compte-rendu rapide'}
+          </button>
+          <button
+            onClick={handleOpenCreateModal}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-lg hover:from-amber-700 hover:to-orange-700 transition-all"
+          >
+            <MdAdd size={20} />
+            {t('meetings.create')}
+          </button>
+        </div>
       </div>
 
       {/* Filtres et recherche */}
@@ -534,6 +603,198 @@ function AdminMeetingsPage() {
                   className="flex-1 px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-lg hover:from-amber-700 hover:to-orange-700 transition-all disabled:opacity-50"
                 >
                   {creating ? t('creating') : t('meetings.create')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Compte-rendu rapide */}
+      {showQuickReportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-gray-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-700">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-teal-600 to-green-600 p-4 rounded-t-2xl flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <MdFlashOn size={24} />
+                  {t('meetings.quick_report') || 'Compte-rendu rapide'}
+                </h2>
+                <p className="text-teal-100 text-sm mt-0.5">
+                  {t('meetings.quick_report_subtitle') || 'Rencontre non planifiée — enregistrez directement ce qui s\'est passé'}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowQuickReportModal(false)}
+                className="p-1 text-white/80 hover:text-white rounded-lg"
+              >
+                <MdClose size={24} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateQuickReport} className="p-6 space-y-5">
+
+              {/* Titre */}
+              <div>
+                <label className="block text-sm text-gray-300 mb-2 flex items-center gap-2">
+                  <MdNotes size={16} className="text-teal-400" />
+                  {t('meetings.title_fr') || 'Titre de la rencontre'} *
+                </label>
+                <input
+                  type="text"
+                  value={quickFormData.title_fr}
+                  onChange={(e) => setQuickFormData({ ...quickFormData, title_fr: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  placeholder={t('meetings.quick_report_title_placeholder') || 'Ex: Rencontre pastorale, Visite de membre...'}
+                  required
+                />
+              </div>
+
+              {/* Date et Heure */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-300 mb-2 flex items-center gap-2">
+                    <MdAccessTime size={16} className="text-teal-400" />
+                    {t('meetings.date') || 'Date'} *
+                  </label>
+                  <input
+                    type="date"
+                    value={quickFormData.meeting_date}
+                    onChange={(e) => setQuickFormData({ ...quickFormData, meeting_date: e.target.value })}
+                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-300 mb-2">
+                    {t('meetings.start_time') || 'Heure'}
+                  </label>
+                  <input
+                    type="time"
+                    value={quickFormData.meeting_time}
+                    onChange={(e) => setQuickFormData({ ...quickFormData, meeting_time: e.target.value })}
+                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+              </div>
+
+              {/* Lieu */}
+              <div>
+                <label className="block text-sm text-gray-300 mb-2 flex items-center gap-2">
+                  <MdLocationOn size={16} className="text-teal-400" />
+                  {t('meetings.location') || 'Lieu'} ({t('optional') || 'optionnel'})
+                </label>
+                <input
+                  type="text"
+                  value={quickFormData.location}
+                  onChange={(e) => setQuickFormData({ ...quickFormData, location: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  placeholder={t('meetings.location_placeholder') || 'Salle de réunion, bureau du pasteur...'}
+                />
+              </div>
+
+              {/* Compte-rendu */}
+              <div>
+                <label className="block text-sm text-gray-300 mb-2 flex items-center gap-2">
+                  <MdNotes size={16} className="text-teal-400" />
+                  {t('meetings.notes') || 'Compte-rendu'} *
+                </label>
+                <textarea
+                  value={quickFormData.notes_fr}
+                  onChange={(e) => setQuickFormData({ ...quickFormData, notes_fr: e.target.value })}
+                  rows={5}
+                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+                  placeholder={t('meetings.quick_report_notes_placeholder') || 'Décrivez ce qui s\'est passé lors de cette rencontre : sujets abordés, décisions prises, points importants...'}
+                  required
+                />
+              </div>
+
+              {/* Personnes présentes */}
+              <div>
+                <label className="block text-sm text-gray-300 mb-2 flex items-center gap-2">
+                  <MdPeople size={16} className="text-teal-400" />
+                  {t('meetings.quick_report_present') || 'Personnes présentes'} ({t('optional') || 'optionnel'})
+                </label>
+                <div className="relative mb-3">
+                  <MdSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                  <input
+                    type="text"
+                    placeholder={t('meetings.search_members') || 'Rechercher un membre...'}
+                    value={quickMemberSearch}
+                    onChange={(e) => setQuickMemberSearch(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+
+                {quickSelectedMembers.length > 0 && (
+                  <div className="mb-3 flex flex-wrap gap-2">
+                    {quickSelectedMembers.map(memberId => {
+                      const member = availableMembers.find(m => m.id === memberId);
+                      return member ? (
+                        <span key={memberId} className="inline-flex items-center gap-1 px-3 py-1 bg-teal-600/20 text-teal-300 rounded-full text-sm">
+                          {member.full_name}
+                          <button type="button" onClick={() => setQuickSelectedMembers(quickSelectedMembers.filter(id => id !== memberId))} className="hover:text-teal-100">
+                            <MdClose size={14} />
+                          </button>
+                        </span>
+                      ) : null;
+                    })}
+                  </div>
+                )}
+
+                <div className="max-h-40 overflow-y-auto bg-gray-900 rounded-lg border border-gray-600">
+                  {loadingMembers ? (
+                    <p className="text-gray-400 text-center p-3 text-sm">{t('loading')}...</p>
+                  ) : (
+                    <div className="divide-y divide-gray-700">
+                      {availableMembers
+                        .filter(m => m.full_name?.toLowerCase().includes(quickMemberSearch.toLowerCase()))
+                        .map((member) => (
+                          <label key={member.id} className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-800">
+                            <input
+                              type="checkbox"
+                              checked={quickSelectedMembers.includes(member.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) setQuickSelectedMembers([...quickSelectedMembers, member.id]);
+                                else setQuickSelectedMembers(quickSelectedMembers.filter(id => id !== member.id));
+                              }}
+                              className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500"
+                            />
+                            {member.profile_photo_url ? (
+                              <img src={member.profile_photo_url} alt={member.full_name} className="w-7 h-7 rounded-full object-cover" />
+                            ) : (
+                              <div className="w-7 h-7 rounded-full bg-gray-600 flex items-center justify-center">
+                                <MdPerson size={14} className="text-gray-300" />
+                              </div>
+                            )}
+                            <span className="text-white text-sm">{member.full_name}</span>
+                          </label>
+                        ))
+                      }
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  {quickSelectedMembers.length} {t('meetings.participants_selected') || 'participant(s) sélectionné(s)'}
+                </p>
+              </div>
+
+              {/* Boutons */}
+              <div className="flex gap-3 pt-4 border-t border-gray-700">
+                <button
+                  type="button"
+                  onClick={() => setShowQuickReportModal(false)}
+                  className="flex-1 px-4 py-3 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors"
+                >
+                  {t('cancel')}
+                </button>
+                <button
+                  type="submit"
+                  disabled={creatingQuick}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-teal-600 to-green-600 text-white rounded-lg hover:from-teal-700 hover:to-green-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {creatingQuick ? <><InlineSpinner /> {t('saving')}...</> : <><MdFlashOn size={18} /> {t('meetings.save_quick_report') || 'Enregistrer le compte-rendu'}</>}
                 </button>
               </div>
             </form>
