@@ -564,8 +564,8 @@ router.post('/churches/register', registrationUpload.fields([
                     name: churchName,
                     location,
                     city: city || null,
-                    email,
-                    phone,
+                    contact_email: email || null,
+                    contact_phone: phone || null,
                     logo_url: logoUrl || existingChurch.logo_url || null,
                     created_by_user_id: userId,
                 })
@@ -585,8 +585,8 @@ router.post('/churches/register', registrationUpload.fields([
                     subdomain,
                     location,
                     city: city || null,
-                    email,
-                    phone,
+                    contact_email: email || null,
+                    contact_phone: phone || null,
                     logo_url: logoUrl || null,
                     created_by_user_id: userId,
                 })

@@ -83,8 +83,10 @@ function AdminChurchSettingsPage() {
           logo_url: churchData.logo_url || '',
           location: churchData.location || '',
           city: churchData.city || '',
-          contact_email: churchData.contact_email || '',
-          contact_phone: churchData.contact_phone || '',
+          // contact_email / contact_phone = champs standardisés
+          // Fallback vers email/phone (ancien nommage lors de l'inscription)
+          contact_email: churchData.contact_email || churchData.email || '',
+          contact_phone: churchData.contact_phone || churchData.phone || '',
         });
 
       } catch (err) {

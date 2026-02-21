@@ -49,6 +49,16 @@ ADD COLUMN IF NOT EXISTS contact_phone VARCHAR(50);
 
 COMMENT ON COLUMN public.churches_v2.contact_phone IS 'Numéro de téléphone de contact principal de l''église.';
 
+-- Migrer les données existantes : copier email → contact_email, phone → contact_phone
+-- (pour les églises déjà inscrites avec l'ancien nommage)
+UPDATE public.churches_v2
+SET
+  contact_email = COALESCE(contact_email, email),
+  contact_phone = COALESCE(contact_phone, phone)
+WHERE
+  (contact_email IS NULL AND email IS NOT NULL)
+  OR (contact_phone IS NULL AND phone IS NOT NULL);
+
 COMMIT;
 
 -- Vérifier les colonnes ajoutées
