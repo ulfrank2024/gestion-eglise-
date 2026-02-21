@@ -84,12 +84,11 @@ function AdminMeetingsPage() {
   const fetchMembers = async () => {
     setLoadingMembers(true);
     try {
-      const response = await api.admin.getMembers();
-      // L'API retourne { members: [...], total, ... }
-      const members = response?.members || response || [];
-      setAvailableMembers(Array.isArray(members) ? members : []);
+      // Utiliser le pool unifié (membres + admins)
+      const pool = await api.admin.getMeetingParticipantPool();
+      setAvailableMembers(Array.isArray(pool) ? pool : []);
     } catch (err) {
-      console.error('Error fetching members:', err);
+      console.error('Error fetching participant pool:', err);
       setAvailableMembers([]);
     } finally {
       setLoadingMembers(false);
@@ -123,13 +122,16 @@ function AdminMeetingsPage() {
         ? `${quickFormData.meeting_date}T${quickFormData.meeting_time}`
         : quickFormData.meeting_date;
 
+      const { memberIds, nonMembers } = splitParticipants(quickSelectedMembers, availableMembers);
+
       await api.admin.createMeeting({
         title_fr: quickFormData.title_fr,
         title_en: quickFormData.title_fr,
         meeting_date,
         location: quickFormData.location,
         notes_fr: quickFormData.notes_fr,
-        participant_ids: quickSelectedMembers,
+        participant_ids: memberIds,
+        non_member_participants: nonMembers,
         status: 'closed',
         initial_attendance_status: 'present'
       });
@@ -144,15 +146,32 @@ function AdminMeetingsPage() {
     }
   };
 
+  // Sépare les IDs membres des participants admin (non membres)
+  const splitParticipants = (selectedIds, pool) => {
+    const memberIds = [];
+    const nonMembers = [];
+    selectedIds.forEach(id => {
+      const p = pool.find(m => m.id === id || m.user_id === id);
+      if (!p) return;
+      if (p.is_admin) {
+        nonMembers.push({ name: p.full_name, email: p.email });
+      } else {
+        memberIds.push(p.id);
+      }
+    });
+    return { memberIds, nonMembers };
+  };
+
   const handleCreateMeeting = async (e) => {
     e.preventDefault();
     setCreating(true);
 
     try {
-      // Combiner date et heure
       const meeting_date = formData.meeting_time
         ? `${formData.meeting_date}T${formData.meeting_time}`
         : formData.meeting_date;
+
+      const { memberIds, nonMembers } = splitParticipants(selectedMembers, availableMembers);
 
       await api.admin.createMeeting({
         title_fr: formData.title_fr,
@@ -161,7 +180,8 @@ function AdminMeetingsPage() {
         location: formData.location,
         agenda_fr: formData.agenda_fr,
         agenda_en: formData.agenda_en || formData.agenda_fr,
-        participant_ids: selectedMembers
+        participant_ids: memberIds,
+        non_member_participants: nonMembers
       });
 
       setShowCreateModal(false);
@@ -543,40 +563,39 @@ function AdminMeetingsPage() {
                     <p className="text-gray-400 text-center p-4">{t('meetings.no_members_found') || 'Aucun membre trouvé'}</p>
                   ) : (
                     <div className="divide-y divide-gray-700">
-                      {filteredMembers.map((member) => (
+                      {filteredMembers.map((member) => {
+                        const uid = member.is_admin ? member.user_id : member.id;
+                        return (
                         <label
-                          key={member.id}
+                          key={uid}
                           className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-800"
                         >
                           <input
                             type="checkbox"
-                            checked={selectedMembers.includes(member.id)}
+                            checked={selectedMembers.includes(uid)}
                             onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedMembers([...selectedMembers, member.id]);
-                              } else {
-                                setSelectedMembers(selectedMembers.filter(id => id !== member.id));
-                              }
+                              if (e.target.checked) setSelectedMembers([...selectedMembers, uid]);
+                              else setSelectedMembers(selectedMembers.filter(id => id !== uid));
                             }}
                             className="w-4 h-4 text-amber-600 rounded focus:ring-amber-500"
                           />
                           {member.profile_photo_url ? (
-                            <img
-                              src={member.profile_photo_url}
-                              alt={member.full_name}
-                              className="w-8 h-8 rounded-full object-cover"
-                            />
+                            <img src={member.profile_photo_url} alt={member.full_name} className="w-8 h-8 rounded-full object-cover" />
                           ) : (
                             <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-gray-300">
                               <MdPerson size={16} />
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
-                            <p className="text-white text-sm truncate">{member.full_name}</p>
+                            <p className="text-white text-sm truncate flex items-center gap-2">
+                              {member.full_name}
+                              {member.is_admin && <span className="text-[10px] px-1.5 py-0.5 bg-indigo-600/30 text-indigo-300 rounded-full">Admin</span>}
+                            </p>
                             <p className="text-gray-400 text-xs truncate">{member.email}</p>
                           </div>
                         </label>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -729,12 +748,13 @@ function AdminMeetingsPage() {
 
                 {quickSelectedMembers.length > 0 && (
                   <div className="mb-3 flex flex-wrap gap-2">
-                    {quickSelectedMembers.map(memberId => {
-                      const member = availableMembers.find(m => m.id === memberId);
+                    {quickSelectedMembers.map(uid => {
+                      const member = availableMembers.find(m => (m.is_admin ? m.user_id : m.id) === uid);
                       return member ? (
-                        <span key={memberId} className="inline-flex items-center gap-1 px-3 py-1 bg-teal-600/20 text-teal-300 rounded-full text-sm">
+                        <span key={uid} className="inline-flex items-center gap-1 px-3 py-1 bg-teal-600/20 text-teal-300 rounded-full text-sm">
                           {member.full_name}
-                          <button type="button" onClick={() => setQuickSelectedMembers(quickSelectedMembers.filter(id => id !== memberId))} className="hover:text-teal-100">
+                          {member.is_admin && <span className="text-[10px] bg-indigo-600/30 text-indigo-300 px-1 rounded-full">Admin</span>}
+                          <button type="button" onClick={() => setQuickSelectedMembers(quickSelectedMembers.filter(id => id !== uid))} className="hover:text-teal-100">
                             <MdClose size={14} />
                           </button>
                         </span>
@@ -750,14 +770,16 @@ function AdminMeetingsPage() {
                     <div className="divide-y divide-gray-700">
                       {availableMembers
                         .filter(m => m.full_name?.toLowerCase().includes(quickMemberSearch.toLowerCase()))
-                        .map((member) => (
-                          <label key={member.id} className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-800">
+                        .map((member) => {
+                          const uid = member.is_admin ? member.user_id : member.id;
+                          return (
+                          <label key={uid} className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-800">
                             <input
                               type="checkbox"
-                              checked={quickSelectedMembers.includes(member.id)}
+                              checked={quickSelectedMembers.includes(uid)}
                               onChange={(e) => {
-                                if (e.target.checked) setQuickSelectedMembers([...quickSelectedMembers, member.id]);
-                                else setQuickSelectedMembers(quickSelectedMembers.filter(id => id !== member.id));
+                                if (e.target.checked) setQuickSelectedMembers([...quickSelectedMembers, uid]);
+                                else setQuickSelectedMembers(quickSelectedMembers.filter(id => id !== uid));
                               }}
                               className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500"
                             />
@@ -768,9 +790,13 @@ function AdminMeetingsPage() {
                                 <MdPerson size={14} className="text-gray-300" />
                               </div>
                             )}
-                            <span className="text-white text-sm">{member.full_name}</span>
+                            <span className="text-white text-sm flex items-center gap-2">
+                              {member.full_name}
+                              {member.is_admin && <span className="text-[10px] px-1.5 py-0.5 bg-indigo-600/30 text-indigo-300 rounded-full">Admin</span>}
+                            </span>
                           </label>
-                        ))
+                          );
+                        })
                       }
                     </div>
                   )}

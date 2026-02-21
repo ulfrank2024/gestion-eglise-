@@ -13,6 +13,57 @@ const meetingsAuth = [protect, isSuperAdminOrChurchAdmin, hasModulePermission('m
 // ROUTES ADMIN - Gestion des réunions
 // ============================================
 
+// GET /api/admin/meetings/participant-pool - Membres + admins sélectionnables comme participants
+router.get('/participant-pool', ...meetingsAuth, async (req, res) => {
+  try {
+    // 1. Membres actifs
+    const { data: members } = await supabaseAdmin
+      .from('members_v2')
+      .select('id, full_name, email, profile_photo_url')
+      .eq('church_id', req.user.church_id)
+      .neq('is_archived', true)
+      .order('full_name');
+
+    // 2. Admins de l'église
+    const { data: churchUsers } = await supabaseAdmin
+      .from('church_users_v2')
+      .select('user_id, full_name, profile_photo_url')
+      .eq('church_id', req.user.church_id);
+
+    // 3. Récupérer l'email de chaque admin depuis Supabase Auth
+    const adminsWithEmail = await Promise.all((churchUsers || []).map(async (cu) => {
+      try {
+        const { data: authData } = await supabaseAdmin.auth.admin.getUserById(cu.user_id);
+        return {
+          id: null,
+          user_id: cu.user_id,
+          full_name: cu.full_name || authData?.user?.email || 'Admin',
+          email: authData?.user?.email || null,
+          profile_photo_url: cu.profile_photo_url,
+          is_admin: true,
+        };
+      } catch {
+        return null;
+      }
+    }));
+
+    // 4. Fusionner sans doublon (déduplique par email)
+    const memberEmails = new Set((members || []).map(m => m.email).filter(Boolean));
+    const filteredAdmins = adminsWithEmail
+      .filter(a => a && a.email && !memberEmails.has(a.email));
+
+    const pool = [
+      ...(members || []).map(m => ({ ...m, is_admin: false })),
+      ...filteredAdmins,
+    ];
+
+    res.json(pool);
+  } catch (error) {
+    console.error('Error fetching participant pool:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // GET /api/admin/meetings - Liste des réunions de l'église
 router.get('/', ...meetingsAuth, async (req, res) => {
   try {
@@ -132,9 +183,10 @@ router.post('/', ...meetingsAuth, async (req, res) => {
       agenda_en,
       notes_fr,
       notes_en,
-      participant_ids, // Array d'IDs de membres
-      status: requestedStatus,            // 'planned' | 'closed' (compte-rendu rapide)
-      initial_attendance_status           // 'invited' | 'present' (compte-rendu rapide)
+      participant_ids,           // Array d'IDs de membres (members_v2)
+      non_member_participants,   // Array de { name, email } pour admins non membres
+      status: requestedStatus,   // 'planned' | 'closed' (compte-rendu rapide)
+      initial_attendance_status  // 'invited' | 'present' (compte-rendu rapide)
     } = req.body;
 
     const meetingStatus = requestedStatus || 'planned';
@@ -162,7 +214,7 @@ router.post('/', ...meetingsAuth, async (req, res) => {
 
     if (meetingError) throw meetingError;
 
-    // Ajouter les participants si fournis
+    // Ajouter les participants membres (members_v2)
     if (participant_ids && participant_ids.length > 0) {
       const participants = participant_ids.map(memberId => ({
         meeting_id: meeting.id,
@@ -170,12 +222,26 @@ router.post('/', ...meetingsAuth, async (req, res) => {
         role: 'participant',
         attendance_status: attendanceStatus
       }));
-
       const { error: participantsError } = await supabaseAdmin
         .from('meeting_participants_v2')
         .insert(participants);
-
       if (participantsError) throw participantsError;
+    }
+
+    // Ajouter les participants non-membres (admins / invités extérieurs)
+    if (non_member_participants && non_member_participants.length > 0) {
+      const adminParticipants = non_member_participants.map(p => ({
+        meeting_id: meeting.id,
+        member_id: null,
+        participant_name: p.name,
+        participant_email: p.email,
+        role: 'participant',
+        attendance_status: attendanceStatus
+      }));
+      const { error: adminParticipantsError } = await supabaseAdmin
+        .from('meeting_participants_v2')
+        .insert(adminParticipants);
+      if (adminParticipantsError) throw adminParticipantsError;
     }
 
     // Récupérer la réunion avec les participants
@@ -250,6 +316,83 @@ router.post('/', ...meetingsAuth, async (req, res) => {
         icon: NOTIFICATION_ICONS.meeting,
         link: '/member/meetings',
       });
+    }
+
+    // Auto-envoi du rapport par email pour les comptes-rendus rapides (status=closed)
+    if (meetingStatus === 'closed') {
+      try {
+        const { data: church } = await supabaseAdmin
+          .from('churches_v2')
+          .select('name, logo_url')
+          .eq('id', req.user.church_id)
+          .single();
+
+        const reportTitle = title_fr;
+        const reportNotes = notes_fr || '';
+        const meetingDateFormatted = new Date(meeting_date).toLocaleDateString('fr-FR', {
+          weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+
+        const buildReportHtml = (recipientName) => `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #1f2937; color: #f3f4f6; padding: 20px; border-radius: 10px;">
+            <div style="text-align: center; margin-bottom: 20px;">
+              ${church?.logo_url ? `<img src="${church.logo_url}" alt="${church?.name}" style="width: 80px; height: 80px; border-radius: 50%; margin-bottom: 10px; object-fit: cover;">` : ''}
+              <h2 style="color: #818cf8; margin: 0;">${church?.name || 'MY EDEN X'}</h2>
+            </div>
+            <div style="background: linear-gradient(135deg, #0d9488, #16a34a); padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 22px;">⚡ Compte-rendu de rencontre</h1>
+            </div>
+            ${recipientName ? `<p style="color: #d1d5db;">Bonjour <strong style="color: #ffffff;">${recipientName}</strong>,</p>` : ''}
+            <p style="color: #d1d5db;">Le compte-rendu de la rencontre suivante a été enregistré :</p>
+            <div style="background-color: #374151; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+              <h2 style="color: #60a5fa; margin-top: 0;">${reportTitle}</h2>
+              <p style="color: #9ca3af; margin: 0;"><strong>Date :</strong> ${meetingDateFormatted}</p>
+              ${location ? `<p style="color: #9ca3af; margin: 5px 0 0;"><strong>Lieu :</strong> ${location}</p>` : ''}
+            </div>
+            ${reportNotes ? `
+            <div style="background-color: #374151; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+              <h3 style="color: #34d399; margin-top: 0;">📝 Compte-rendu</h3>
+              <div style="color: #d1d5db; white-space: pre-wrap; line-height: 1.6;">${reportNotes}</div>
+            </div>` : ''}
+            <p style="text-align: center; color: #6b7280; font-size: 12px; margin-top: 20px;">
+              Envoyé via MY EDEN X — Plateforme de gestion d'église
+            </p>
+          </div>`;
+
+        const emailList = [];
+
+        // Emails des participants membres
+        if (participant_ids && participant_ids.length > 0) {
+          const { data: memberData } = await supabaseAdmin
+            .from('members_v2')
+            .select('full_name, email')
+            .in('id', participant_ids)
+            .not('email', 'is', null);
+          (memberData || []).forEach(m => {
+            if (m.email) emailList.push({ name: m.full_name, email: m.email });
+          });
+        }
+
+        // Emails des participants non-membres (admins)
+        if (non_member_participants && non_member_participants.length > 0) {
+          non_member_participants.forEach(p => {
+            if (p.email) emailList.push({ name: p.name, email: p.email });
+          });
+        }
+
+        if (emailList.length > 0) {
+          await Promise.allSettled(emailList.map(recipient =>
+            sendEmail({
+              to: recipient.email,
+              subject: `⚡ Compte-rendu : ${reportTitle}`,
+              html: buildReportHtml(recipient.name)
+            })
+          ));
+        }
+      } catch (emailErr) {
+        console.error('[Quick Report] Erreur envoi email rapport:', emailErr.message);
+        // Ne pas bloquer la réponse si l'email échoue
+      }
     }
 
     res.status(201).json(fullMeeting);
@@ -564,7 +707,9 @@ router.post('/:id/send-report', ...meetingsAuth, async (req, res) => {
     const emailPromises = [];
 
     for (const participant of participants) {
-      if (participant.members_v2?.email) {
+      const recipientEmail = participant.members_v2?.email || participant.participant_email;
+      const recipientName = participant.members_v2?.full_name || participant.participant_name;
+      if (recipientEmail) {
         const emailContent = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #1f2937; color: #f3f4f6; padding: 20px; border-radius: 10px;">
             <div style="text-align: center; margin-bottom: 20px;">
@@ -613,11 +758,10 @@ router.post('/:id/send-report', ...meetingsAuth, async (req, res) => {
 
         emailPromises.push(
           sendEmail({
-            to: participant.members_v2.email,
+            to: recipientEmail,
             subject: `${language === 'fr' ? 'Rapport de réunion' : 'Meeting Report'}: ${title}`,
             html: emailContent
           }).then(() => {
-            // Marquer comme envoyé
             return supabaseAdmin
               .from('meeting_participants_v2')
               .update({ report_sent_at: new Date().toISOString() })

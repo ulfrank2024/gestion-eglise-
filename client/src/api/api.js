@@ -663,6 +663,10 @@ export const api = {
       const { data } = await apiClient.get(`/admin/meetings${params}`);
       return data;
     },
+    getMeetingParticipantPool: async () => {
+      const { data } = await apiClient.get('/admin/meetings/participant-pool');
+      return data;
+    },
     getMeeting: async (meetingId) => {
       const { data } = await apiClient.get(`/admin/meetings/${meetingId}`);
       return data;
