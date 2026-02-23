@@ -68,11 +68,16 @@ router.get('/churches_v2/:churchId', protect, isSuperAdmin, async (req, res) => 
 // PUT /api/super-admin/churches_v2/:churchId - Mettre à jour les informations d'une église
 router.put('/churches_v2/:churchId', protect, isSuperAdmin, async (req, res) => {
   const { churchId } = req.params;
-  const { name, subdomain, logo_url, location, email, phone } = req.body;
+  const { name, subdomain, logo_url, location, email, phone, contact_email, contact_phone, city } = req.body;
   try {
     const { data, error } = await supabaseAdmin // Utilisation de supabaseAdmin
       .from('churches_v2')
-      .update({ name, subdomain, logo_url, location, email, phone, updated_at: new Date() })
+      .update({
+        name, subdomain, logo_url, location, city,
+        contact_email: contact_email || email,
+        contact_phone: contact_phone || phone,
+        updated_at: new Date()
+      })
       .eq('id', churchId)
       .select();
     if (error) throw error;

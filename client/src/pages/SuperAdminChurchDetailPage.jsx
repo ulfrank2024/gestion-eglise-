@@ -172,14 +172,14 @@ const SuperAdminChurchDetailPage = () => {
             <MdEmail className="text-indigo-400 text-xl mr-3" />
             <div>
               <p className="text-xs text-gray-500 uppercase">{t('church_detail.email')}</p>
-              <p>{church.email || 'N/A'}</p>
+              <p>{church.contact_email || church.email || 'N/A'}</p>
             </div>
           </div>
           <div className="flex items-center text-gray-300">
             <MdPhone className="text-indigo-400 text-xl mr-3" />
             <div>
               <p className="text-xs text-gray-500 uppercase">{t('church_detail.phone')}</p>
-              <p>{church.phone || 'N/A'}</p>
+              <p>{church.contact_phone || church.phone || 'N/A'}</p>
             </div>
           </div>
           <div className="flex items-center text-gray-300">
