@@ -161,10 +161,10 @@ const SuperAdminChurchesPage = () => {
                   {church.location || 'N/A'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap border-b border-gray-700 text-gray-300">
-                  {church.email || 'N/A'}
+                  {church.contact_email || church.email || 'N/A'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap border-b border-gray-700 text-gray-300">
-                  {church.phone || 'N/A'}
+                  {church.contact_phone || church.phone || 'N/A'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap border-b border-gray-700 text-gray-300">
                   {new Date(church.created_at).toLocaleDateString()}
