@@ -37,6 +37,8 @@ const AdminChoirMembersPage = () => {
   // Form state
   const [eligiblePool, setEligiblePool] = useState({ members: [], admins: [] });
   const [personType, setPersonType] = useState('member'); // 'member' | 'admin'
+  const [memberSearch, setMemberSearch] = useState('');
+  const [adminSearch, setAdminSearch] = useState('');
   const [formData, setFormData] = useState({
     member_id: '',
     church_user_id: '',
@@ -102,6 +104,8 @@ const AdminChoirMembersPage = () => {
       await api.admin.addChoirMember(payload);
       setIsAddModalOpen(false);
       setPersonType('member');
+      setMemberSearch('');
+      setAdminSearch('');
       setFormData({ member_id: '', church_user_id: '', voice_type: 'autre', is_lead: false, notes: '' });
       fetchData();
     } catch (err) {
@@ -353,7 +357,7 @@ const AdminChoirMembersPage = () => {
             <div className="flex items-center justify-between p-4 border-b border-gray-700">
               <h3 className="text-lg font-semibold text-white">{t('choir.add_chorister')}</h3>
               <button
-                onClick={() => setIsAddModalOpen(false)}
+                onClick={() => { setIsAddModalOpen(false); setMemberSearch(''); setAdminSearch(''); }}
                 className="p-1 text-gray-400 hover:text-white"
               >
                 <MdClose className="text-xl" />
@@ -364,13 +368,13 @@ const AdminChoirMembersPage = () => {
               {/* Toggle Membre / Admin */}
               <div className="flex rounded-lg overflow-hidden border border-gray-600">
                 <button
-                  onClick={() => { setPersonType('member'); setFormData(f => ({ ...f, member_id: '', church_user_id: '' })); }}
+                  onClick={() => { setPersonType('member'); setFormData(f => ({ ...f, member_id: '', church_user_id: '' })); setAdminSearch(''); }}
                   className={`flex-1 py-2 text-sm font-medium transition-colors ${personType === 'member' ? 'bg-indigo-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
                 >
                   {t('choir.type_member') || 'Membre'}
                 </button>
                 <button
-                  onClick={() => { setPersonType('admin'); setFormData(f => ({ ...f, member_id: '', church_user_id: '' })); }}
+                  onClick={() => { setPersonType('admin'); setFormData(f => ({ ...f, member_id: '', church_user_id: '' })); setMemberSearch(''); }}
                   className={`flex-1 py-2 text-sm font-medium transition-colors ${personType === 'admin' ? 'bg-amber-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
                 >
                   {t('choir.type_admin') || 'Admin / Sous-admin'}
@@ -381,20 +385,55 @@ const AdminChoirMembersPage = () => {
               {personType === 'member' && (
                 <div>
                   <label className="block text-sm text-gray-300 mb-2">{t('choir.select_member')}</label>
-                  <select
-                    value={formData.member_id}
-                    onChange={(e) => setFormData({ ...formData, member_id: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  >
-                    <option value="">{t('choir.choose_member')}</option>
-                    {availableMembers.map(member => (
-                      <option key={member.id} value={member.id}>
-                        {member.full_name} ({member.email})
-                      </option>
-                    ))}
-                  </select>
-                  {availableMembers.length === 0 && (
-                    <p className="text-xs text-gray-500 mt-1">{t('choir.all_members_in_choir') || 'Tous les membres sont déjà dans la chorale'}</p>
+                  {availableMembers.length === 0 ? (
+                    <p className="text-xs text-gray-500 py-2">{t('choir.all_members_in_choir') || 'Tous les membres sont déjà dans la chorale'}</p>
+                  ) : (
+                    <>
+                      <div className="relative mb-2">
+                        <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg" />
+                        <input
+                          type="text"
+                          value={memberSearch}
+                          onChange={(e) => setMemberSearch(e.target.value)}
+                          placeholder="Rechercher..."
+                          className="w-full pl-9 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </div>
+                      <div className="max-h-44 overflow-y-auto space-y-1 pr-1">
+                        {availableMembers
+                          .filter(m =>
+                            m.full_name?.toLowerCase().includes(memberSearch.toLowerCase()) ||
+                            m.email?.toLowerCase().includes(memberSearch.toLowerCase())
+                          )
+                          .map(member => (
+                            <button
+                              key={member.id}
+                              type="button"
+                              onClick={() => setFormData({ ...formData, member_id: member.id })}
+                              className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors text-left ${
+                                formData.member_id === member.id
+                                  ? 'bg-indigo-600/30 border border-indigo-500'
+                                  : 'bg-gray-700/50 border border-transparent hover:bg-gray-700'
+                              }`}
+                            >
+                              {member.profile_photo_url ? (
+                                <img src={member.profile_photo_url} alt={member.full_name} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+                              ) : (
+                                <div className="w-9 h-9 rounded-full bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
+                                  <span className="text-indigo-400 text-sm font-semibold">{member.full_name?.[0]?.toUpperCase() || '?'}</span>
+                                </div>
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium text-white truncate">{member.full_name}</p>
+                                <p className="text-xs text-gray-400 truncate">{member.email}</p>
+                              </div>
+                              {formData.member_id === member.id && (
+                                <span className="text-indigo-400 flex-shrink-0 font-bold">✓</span>
+                              )}
+                            </button>
+                          ))}
+                      </div>
+                    </>
                   )}
                 </div>
               )}
@@ -403,20 +442,55 @@ const AdminChoirMembersPage = () => {
               {personType === 'admin' && (
                 <div>
                   <label className="block text-sm text-gray-300 mb-2">{t('choir.select_admin') || 'Sélectionner un admin / sous-admin'}</label>
-                  <select
-                    value={formData.church_user_id}
-                    onChange={(e) => setFormData({ ...formData, church_user_id: e.target.value })}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  >
-                    <option value="">{t('choir.choose_admin') || 'Choisir un admin...'}</option>
-                    {availableAdmins.map(admin => (
-                      <option key={admin.id} value={admin.id}>
-                        {admin.full_name} ({admin.email})
-                      </option>
-                    ))}
-                  </select>
-                  {availableAdmins.length === 0 && (
-                    <p className="text-xs text-gray-500 mt-1">{t('choir.all_admins_in_choir') || 'Tous les admins sont déjà dans la chorale'}</p>
+                  {availableAdmins.length === 0 ? (
+                    <p className="text-xs text-gray-500 py-2">{t('choir.all_admins_in_choir') || 'Tous les admins sont déjà dans la chorale'}</p>
+                  ) : (
+                    <>
+                      <div className="relative mb-2">
+                        <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg" />
+                        <input
+                          type="text"
+                          value={adminSearch}
+                          onChange={(e) => setAdminSearch(e.target.value)}
+                          placeholder="Rechercher..."
+                          className="w-full pl-9 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        />
+                      </div>
+                      <div className="max-h-44 overflow-y-auto space-y-1 pr-1">
+                        {availableAdmins
+                          .filter(a =>
+                            a.full_name?.toLowerCase().includes(adminSearch.toLowerCase()) ||
+                            a.email?.toLowerCase().includes(adminSearch.toLowerCase())
+                          )
+                          .map(admin => (
+                            <button
+                              key={admin.id}
+                              type="button"
+                              onClick={() => setFormData({ ...formData, church_user_id: admin.id })}
+                              className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors text-left ${
+                                formData.church_user_id === admin.id
+                                  ? 'bg-amber-600/30 border border-amber-500'
+                                  : 'bg-gray-700/50 border border-transparent hover:bg-gray-700'
+                              }`}
+                            >
+                              {admin.profile_photo_url ? (
+                                <img src={admin.profile_photo_url} alt={admin.full_name} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+                              ) : (
+                                <div className="w-9 h-9 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                                  <span className="text-amber-400 text-sm font-semibold">{admin.full_name?.[0]?.toUpperCase() || '?'}</span>
+                                </div>
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium text-white truncate">{admin.full_name}</p>
+                                <p className="text-xs text-gray-400 truncate">{admin.email}</p>
+                              </div>
+                              {formData.church_user_id === admin.id && (
+                                <span className="text-amber-400 flex-shrink-0 font-bold">✓</span>
+                              )}
+                            </button>
+                          ))}
+                      </div>
+                    </>
                   )}
                 </div>
               )}
