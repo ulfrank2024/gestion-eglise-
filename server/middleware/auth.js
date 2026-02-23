@@ -21,16 +21,22 @@ const protect = async (req, res, next) => {
     // Attache l'utilisateur à l'objet de requête
     req.user = data.user; 
 
-    // Récupérer le church_id, rôle, permissions et infos de l'utilisateur à partir de church_users_v2
-    // Utiliser supabaseAdmin pour contourner RLS lors de la récupération du rôle,
-    // car le middleware doit toujours être capable de déterminer le rôle.
-    // Note: On utilise select('*') pour être compatible même si les nouvelles colonnes n'existent pas encore
-    const { data: churchUserData, error: churchUserError } = await supabaseAdmin
+    // Support multi-église : lire le header X-Church-Id envoyé par le client
+    // Quand un utilisateur appartient à plusieurs églises, le frontend envoie l'église sélectionnée
+    const selectedChurchId = req.headers['x-church-id'];
+
+    let churchQuery = supabaseAdmin
       .from('church_users_v2')
       .select('*')
-      .eq('user_id', req.user.id)
-      .limit(1) // On prend le premier rôle trouvé pour cet utilisateur
-      .single();
+      .eq('user_id', req.user.id);
+
+    if (selectedChurchId) {
+      churchQuery = churchQuery.eq('church_id', selectedChurchId);
+    }
+
+    // Utiliser limit(1) pour éviter l'erreur si l'utilisateur appartient à plusieurs églises
+    const { data: churchUsersArray, error: churchUserError } = await churchQuery.limit(1);
+    const churchUserData = Array.isArray(churchUsersArray) ? churchUsersArray[0] : null;
 
     if (churchUserError && churchUserError.code !== 'PGRST116') { // PGRST116 = aucune ligne trouvée
       console.error('Error fetching church user data:', churchUserError);

@@ -1,5 +1,13 @@
 {
   "translation": {
+    "select_church": "Choisir une église",
+    "select_church_subtitle": "Vous appartenez à plusieurs églises. Choisissez l'espace auquel vous souhaitez vous connecter.",
+    "your_churches": "Vos Églises",
+    "back_to_login": "Retour à la connexion",
+    "church_role_church_admin": "Administrateur",
+    "church_role_member": "Membre",
+    "church_role_main_admin": "Administrateur Principal",
+    "select_this_church": "Accéder",
     "welcome_message": "Bienvenue aux événements de la Cité Eden",
     "admin_login": "Connexion Admin",
     "email": "Courriel",

@@ -1,5 +1,13 @@
 {
   "translation": {
+    "select_church": "Select a church",
+    "select_church_subtitle": "You belong to multiple churches. Choose the space you want to sign in to.",
+    "your_churches": "Your Churches",
+    "back_to_login": "Back to login",
+    "church_role_church_admin": "Administrator",
+    "church_role_member": "Member",
+    "church_role_main_admin": "Main Administrator",
+    "select_this_church": "Access",
     "welcome_message": "Welcome to Cité Eden Events",
     "admin_login": "Admin Login",
     "email": "Email",

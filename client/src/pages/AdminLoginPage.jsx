@@ -8,6 +8,7 @@ import AlertMessage from '../components/AlertMessage';
 import { getErrorMessage } from '../utils/errorHandler';
 import InstallPWA from '../components/InstallPWA';
 import { InlineSpinner } from '../components/LoadingSpinner';
+import { MdChurch, MdArrowBack, MdChevronRight } from 'react-icons/md';
 
 function AdminLoginPage() {
   const { t, i18n } = useTranslation();
@@ -16,9 +17,19 @@ function AdminLoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [step, setStep] = useState('login'); // 'login' | 'select_church'
+  const [churches, setChurches] = useState([]);
+  const [selectingChurch, setSelectingChurch] = useState(false);
 
   const handleLanguageChange = (lang) => {
     i18n.changeLanguage(lang);
+  };
+
+  const navigateByRole = (role) => {
+    if (role === 'super_admin') navigate('/super-admin/dashboard');
+    else if (role === 'church_admin') navigate('/admin/dashboard');
+    else if (role === 'member') navigate('/member/dashboard');
+    else setError(t('forbidden_access') || 'Accès non autorisé');
   };
 
   const handleLogin = async (e) => {
@@ -40,18 +51,25 @@ function AdminLoginPage() {
         user: data.user
       }));
 
-      // Vérifier le rôle de l'utilisateur et rediriger vers le bon dashboard
-      const userInfo = await api.auth.me();
+      // Récupérer toutes les églises de l'utilisateur
+      const myChurches = await api.auth.myChurches();
 
-      if (userInfo.church_role === 'super_admin') {
-        navigate('/super-admin/dashboard');
-      } else if (userInfo.church_role === 'church_admin') {
-        navigate('/admin/dashboard');
-      } else if (userInfo.church_role === 'member') {
-        navigate('/member/dashboard');
-      } else {
-        setError(t('forbidden_access') || 'Accès non autorisé');
+      if (myChurches.length > 1) {
+        // Multi-église → afficher le sélecteur
+        setChurches(myChurches);
+        setStep('select_church');
+        setLoading(false);
+        return;
       }
+
+      // Une seule église (ou super_admin) → sélectionner automatiquement
+      if (myChurches.length === 1) {
+        localStorage.setItem('selected_church_id', myChurches[0].church_id);
+      }
+
+      // Vérifier le rôle et rediriger
+      const userInfo = await api.auth.me();
+      navigateByRole(userInfo.church_role);
     } catch (err) {
       setError(getErrorMessage(err, t));
       console.error('Login error:', err);
@@ -59,6 +77,95 @@ function AdminLoginPage() {
       setLoading(false);
     }
   };
+
+  const handleSelectChurch = async (churchId) => {
+    setSelectingChurch(true);
+    setError('');
+    try {
+      localStorage.setItem('selected_church_id', churchId);
+      const userInfo = await api.auth.me();
+      navigateByRole(userInfo.church_role);
+    } catch (err) {
+      setError(getErrorMessage(err, t));
+    } finally {
+      setSelectingChurch(false);
+    }
+  };
+
+  const handleBackToLogin = () => {
+    setStep('login');
+    setChurches([]);
+    localStorage.removeItem('selected_church_id');
+    localStorage.removeItem('supabase.auth.token');
+  };
+
+  // Rendu du sélecteur d'église (étape 2)
+  if (step === 'select_church') {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
+        <div className="w-full max-w-md bg-gray-800 rounded-2xl shadow-2xl border border-gray-700 overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-center">
+            <img src={logo} alt="Logo" className="w-16 h-16 rounded-full mx-auto border-4 border-white/20 mb-3" />
+            <h2 className="text-xl font-bold text-white">{t('select_church')}</h2>
+            <p className="text-indigo-100 text-sm mt-1">{t('select_church_subtitle')}</p>
+          </div>
+
+          {/* Liste des églises */}
+          <div className="p-6 space-y-3">
+            <AlertMessage type="error" message={error} onClose={() => setError('')} />
+
+            {churches.map((c) => (
+              <button
+                key={c.church_id}
+                onClick={() => handleSelectChurch(c.church_id)}
+                disabled={selectingChurch}
+                className="w-full flex items-center gap-4 p-4 bg-gray-700/60 hover:bg-gray-700 border border-gray-600 hover:border-indigo-500 rounded-xl transition-all text-left group disabled:opacity-50"
+              >
+                {/* Logo église */}
+                <div className="w-12 h-12 rounded-full bg-indigo-500/20 flex items-center justify-center flex-shrink-0 overflow-hidden border-2 border-indigo-500/30 group-hover:border-indigo-400">
+                  {c.church_logo ? (
+                    <img src={c.church_logo} alt={c.church_name} className="w-full h-full object-cover" />
+                  ) : (
+                    <MdChurch className="text-indigo-400 text-2xl" />
+                  )}
+                </div>
+
+                {/* Infos église */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-white font-semibold truncate">{c.church_name}</p>
+                  {c.church_location && (
+                    <p className="text-gray-400 text-xs truncate">{c.church_location}</p>
+                  )}
+                  <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                    c.role === 'church_admin'
+                      ? 'bg-purple-500/20 text-purple-300'
+                      : 'bg-blue-500/20 text-blue-300'
+                  }`}>
+                    {c.is_main_admin ? t('church_role_main_admin') :
+                     c.role === 'church_admin' ? t('church_role_church_admin') :
+                     t('church_role_member')}
+                  </span>
+                </div>
+
+                <MdChevronRight className="text-gray-400 group-hover:text-indigo-400 text-xl flex-shrink-0" />
+              </button>
+            ))}
+
+            {/* Retour */}
+            <button
+              onClick={handleBackToLogin}
+              className="w-full flex items-center justify-center gap-2 py-3 text-gray-400 hover:text-white transition-colors text-sm mt-2"
+            >
+              <MdArrowBack />
+              {t('back_to_login')}
+            </button>
+          </div>
+        </div>
+        <InstallPWA />
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">

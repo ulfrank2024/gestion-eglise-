@@ -127,6 +127,59 @@ router.get('/me', protect, async (req, res) => {
   }
 });
 
+// Route pour récupérer toutes les églises de l'utilisateur connecté (multi-église)
+router.get('/my-churches', protect, async (req, res) => {
+  try {
+    // Récupérer toutes les lignes church_users_v2 de l'utilisateur
+    const { data: churchUsers, error } = await supabaseAdmin
+      .from('church_users_v2')
+      .select('church_id, role, permissions, is_main_admin, full_name')
+      .eq('user_id', req.user.id);
+
+    if (error) throw error;
+
+    if (!churchUsers || churchUsers.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    // Récupérer les détails de chaque église (exclure church_id null = super_admin)
+    const churchIds = churchUsers.map(cu => cu.church_id).filter(Boolean);
+    if (churchIds.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    const { data: churches, error: churchError } = await supabaseAdmin
+      .from('churches_v2')
+      .select('id, name, logo_url, subdomain, location')
+      .in('id', churchIds);
+
+    if (churchError) throw churchError;
+
+    // Combiner les données utilisateur + infos église
+    const result = churchUsers
+      .filter(cu => cu.church_id) // exclure super_admin
+      .map(cu => {
+        const church = (churches || []).find(c => c.id === cu.church_id);
+        return {
+          church_id: cu.church_id,
+          role: cu.role,
+          permissions: cu.permissions || ['all'],
+          is_main_admin: cu.is_main_admin || false,
+          full_name: cu.full_name || req.user.email,
+          church_name: church?.name || 'Église',
+          church_logo: church?.logo_url || null,
+          church_subdomain: church?.subdomain || '',
+          church_location: church?.location || '',
+        };
+      });
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error fetching my churches:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Route de demande de réinitialisation de mot de passe
 router.post('/forgot-password', async (req, res) => {
   const { email, userType = 'admin', language = 'fr' } = req.body;

@@ -21,6 +21,11 @@ apiClient.interceptors.request.use(
     // Ajouter les headers no-cache pour éviter les problèmes de réponses 304 vides
     config.headers['Cache-Control'] = 'no-cache';
     config.headers['Pragma'] = 'no-cache';
+    // Support multi-église : envoyer l'église sélectionnée dans le header
+    const selectedChurchId = localStorage.getItem('selected_church_id');
+    if (selectedChurchId) {
+      config.headers['X-Church-Id'] = selectedChurchId;
+    }
     return config;
   },
   (error) => {
@@ -44,6 +49,7 @@ apiClient.interceptors.response.use(
     // 401 → déconnexion et redirection vers login
     if (status === 401) {
       localStorage.removeItem('supabase.auth.token');
+      localStorage.removeItem('selected_church_id');
       const path = window.location.pathname;
       if (path.startsWith('/super-admin')) {
         window.location.href = '/super-admin/login';
@@ -82,6 +88,10 @@ export const api = {
     },
     me: async () => {
       const { data } = await apiClient.get('/auth/me');
+      return data;
+    },
+    myChurches: async () => {
+      const { data } = await apiClient.get('/auth/my-churches');
       return data;
     },
     forgotPassword: async ({ email, userType, language }) => {

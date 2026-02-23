@@ -147,6 +147,7 @@ function MemberLayout() {
       console.error('Logout error:', err);
     } finally {
       localStorage.removeItem('supabase.auth.token');
+      localStorage.removeItem('selected_church_id');
       navigate('/member/login');
     }
   };

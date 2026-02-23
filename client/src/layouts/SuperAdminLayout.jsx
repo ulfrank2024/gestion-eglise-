@@ -61,10 +61,12 @@ function SuperAdminLayout() {
       await api.auth.logout();
       await supabase.auth.signOut();
       localStorage.removeItem('supabase.auth.token');
+      localStorage.removeItem('selected_church_id');
       navigate('/super-admin/login');
     } catch (error) {
       console.error('Logout error:', error);
       localStorage.removeItem('supabase.auth.token');
+      localStorage.removeItem('selected_church_id');
       navigate('/super-admin/login');
     }
   };
