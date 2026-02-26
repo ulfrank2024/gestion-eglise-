@@ -236,10 +236,11 @@ function AdminMembersListPage() {
           </div>
           <button
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all"
+            className="flex items-center gap-2 px-3 py-2 sm:px-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all text-sm sm:text-base"
           >
             <MdAdd size={20} />
-            {t('add_member') || 'Ajouter un membre'}
+            <span className="hidden sm:inline">{t('add_member') || 'Ajouter un membre'}</span>
+            <span className="sm:hidden">{t('add') || 'Ajouter'}</span>
           </button>
         </div>
 
@@ -336,39 +337,131 @@ function AdminMembersListPage() {
         </div>
       )}
 
-      {/* Tableau des membres */}
-      <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-700">
-            <tr>
-              <th className="px-4 py-3 text-left text-gray-300 font-medium">{t('member') || 'Membre'}</th>
-              <th className="px-4 py-3 text-left text-gray-300 font-medium">{t('email')}</th>
-              <th className="px-4 py-3 text-left text-gray-300 font-medium">{t('phone') || 'Téléphone'}</th>
-              <th className="px-4 py-3 text-left text-gray-300 font-medium">{t('roles') || 'Rôles'}</th>
-              <th className="px-4 py-3 text-left text-gray-300 font-medium">{t('joined_at') || 'Inscrit le'}</th>
-              <th className="px-4 py-3 text-center text-gray-300 font-medium">{t('actions')}</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-700">
-            {members.length === 0 ? (
+      {/* État vide */}
+      {members.length === 0 && (
+        <div className="bg-gray-800 rounded-xl border border-gray-700 px-4 py-10 text-center text-gray-400">
+          <MdPeople className="mx-auto text-5xl mb-3 opacity-30" />
+          <p>{showArchived ? t('no_archived_members') || 'Aucun membre archivé' : t('no_members') || 'Aucun membre trouvé'}</p>
+        </div>
+      )}
+
+      {/* Vue MOBILE — cartes (visible uniquement sur xs/sm) */}
+      {members.length > 0 && (
+        <div className="md:hidden space-y-3">
+          {members.map((member) => (
+            <div key={member.id} className="bg-gray-800 rounded-xl border border-gray-700 p-4">
+              {/* En-tête carte : avatar + nom + statut */}
+              <div className="flex items-center gap-3 mb-3">
+                {member.profile_photo_url ? (
+                  <img src={member.profile_photo_url} alt={member.full_name} className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-gray-600 flex items-center justify-center flex-shrink-0">
+                    <MdPerson className="text-gray-400 text-xl" />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-white font-semibold truncate">{member.full_name}</p>
+                  <p className="text-gray-400 text-xs truncate">{member.email}</p>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {member.is_blocked && (
+                      <span className="inline-flex items-center gap-1 text-xs bg-red-900/40 text-red-400 px-2 py-0.5 rounded-full">
+                        <MdBlock size={10} /> {t('blocked')}
+                      </span>
+                    )}
+                    {!member.is_active && !member.is_blocked && (
+                      <span className="text-xs text-amber-400 bg-amber-900/20 px-2 py-0.5 rounded-full">{t('inactive') || 'Inactif'}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Infos secondaires */}
+              <div className="grid grid-cols-2 gap-2 mb-3 text-sm">
+                {member.phone && (
+                  <div>
+                    <p className="text-gray-500 text-xs">{t('phone') || 'Téléphone'}</p>
+                    <p className="text-gray-300">{member.phone}</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-gray-500 text-xs">{t('joined_at') || 'Inscrit le'}</p>
+                  <p className="text-gray-300">
+                    {member.joined_at ? new Date(member.joined_at).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US') : '-'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Rôles */}
+              {member.member_roles_v2?.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-3">
+                  {member.member_roles_v2.map((mr) => (
+                    <span key={mr.id} className="px-2 py-0.5 text-xs rounded-full text-white"
+                      style={{ backgroundColor: mr.church_roles_v2?.color || '#6366f1' }}>
+                      {lang === 'fr' ? mr.church_roles_v2?.name_fr : mr.church_roles_v2?.name_en}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Boutons d'action — grille 2×2 bien visibles */}
+              <div className="grid grid-cols-2 gap-2 pt-3 border-t border-gray-700">
+                <button onClick={() => navigate(`/admin/members/${member.id}`)}
+                  className="flex items-center justify-center gap-2 py-2 px-3 bg-blue-600/20 text-blue-400 rounded-lg hover:bg-blue-600/30 transition-colors text-sm font-medium">
+                  <MdVisibility size={16} /> {t('view_details') || 'Voir'}
+                </button>
+                <button onClick={() => openRolesModal(member)}
+                  className="flex items-center justify-center gap-2 py-2 px-3 bg-purple-600/20 text-purple-400 rounded-lg hover:bg-purple-600/30 transition-colors text-sm font-medium">
+                  <MdBadge size={16} /> {t('roles') || 'Rôles'}
+                </button>
+                <button onClick={() => handleBlock(member.id, !member.is_blocked)}
+                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg transition-colors text-sm font-medium ${
+                    member.is_blocked
+                      ? 'bg-green-600/20 text-green-400 hover:bg-green-600/30'
+                      : 'bg-red-600/20 text-red-400 hover:bg-red-600/30'
+                  }`}>
+                  {member.is_blocked ? <><MdLockOpen size={16} /> {t('unblock_member') || 'Débloquer'}</> : <><MdBlock size={16} /> {t('block_member') || 'Bloquer'}</>}
+                </button>
+                <button onClick={() => handleArchive(member.id, !member.is_archived)}
+                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg transition-colors text-sm font-medium ${
+                    member.is_archived
+                      ? 'bg-green-600/20 text-green-400 hover:bg-green-600/30'
+                      : 'bg-amber-600/20 text-amber-400 hover:bg-amber-600/30'
+                  }`}>
+                  {member.is_archived ? <><MdUnarchive size={16} /> {t('unarchive') || 'Désarchiver'}</> : <><MdArchive size={16} /> {t('archive') || 'Archiver'}</>}
+                </button>
+                {member.is_archived && (
+                  <button onClick={() => handleDelete(member)}
+                    className="col-span-2 flex items-center justify-center gap-2 py-2 px-3 bg-red-600/20 text-red-400 rounded-lg hover:bg-red-600/30 transition-colors text-sm font-medium">
+                    <MdDelete size={16} /> {t('delete') || 'Supprimer définitivement'}
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Vue DESKTOP — tableau (caché sur mobile) */}
+      {members.length > 0 && (
+        <div className="hidden md:block bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-gray-700">
               <tr>
-                <td colSpan="6" className="px-4 py-8 text-center text-gray-400">
-                  {showArchived
-                    ? t('no_archived_members') || 'Aucun membre archivé'
-                    : t('no_members') || 'Aucun membre trouvé'}
-                </td>
+                <th className="px-4 py-3 text-left text-gray-300 font-medium">{t('member') || 'Membre'}</th>
+                <th className="px-4 py-3 text-left text-gray-300 font-medium">{t('email')}</th>
+                <th className="px-4 py-3 text-left text-gray-300 font-medium">{t('phone') || 'Téléphone'}</th>
+                <th className="px-4 py-3 text-left text-gray-300 font-medium">{t('roles') || 'Rôles'}</th>
+                <th className="px-4 py-3 text-left text-gray-300 font-medium">{t('joined_at') || 'Inscrit le'}</th>
+                <th className="px-4 py-3 text-center text-gray-300 font-medium">{t('actions')}</th>
               </tr>
-            ) : (
-              members.map((member) => (
+            </thead>
+            <tbody className="divide-y divide-gray-700">
+              {members.map((member) => (
                 <tr key={member.id} className="hover:bg-gray-700/50 transition-colors">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       {member.profile_photo_url ? (
-                        <img
-                          src={member.profile_photo_url}
-                          alt={member.full_name}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
+                        <img src={member.profile_photo_url} alt={member.full_name} className="w-10 h-10 rounded-full object-cover" />
                       ) : (
                         <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center">
                           <MdPerson className="text-gray-400" />
@@ -392,76 +485,57 @@ function AdminMembersListPage() {
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
                       {member.member_roles_v2?.map((mr) => (
-                        <span
-                          key={mr.id}
-                          className="px-2 py-1 text-xs rounded-full text-white"
-                          style={{ backgroundColor: mr.church_roles_v2?.color || '#6366f1' }}
-                        >
+                        <span key={mr.id} className="px-2 py-1 text-xs rounded-full text-white"
+                          style={{ backgroundColor: mr.church_roles_v2?.color || '#6366f1' }}>
                           {lang === 'fr' ? mr.church_roles_v2?.name_fr : mr.church_roles_v2?.name_en}
                         </span>
                       )) || <span className="text-gray-500">-</span>}
                     </div>
                   </td>
                   <td className="px-4 py-3 text-gray-300">
-                    {member.joined_at
-                      ? new Date(member.joined_at).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US')
-                      : '-'}
+                    {member.joined_at ? new Date(member.joined_at).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US') : '-'}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => navigate(`/admin/members/${member.id}`)}
+                      <button onClick={() => navigate(`/admin/members/${member.id}`)}
                         className="p-2 text-blue-400 hover:text-blue-300 hover:bg-gray-700 rounded-lg transition-colors"
-                        title={t('view_details') || 'Voir les détails'}
-                      >
+                        title={t('view_details') || 'Voir les détails'}>
                         <MdVisibility size={18} />
                       </button>
-                      <button
-                        onClick={() => openRolesModal(member)}
+                      <button onClick={() => openRolesModal(member)}
                         className="p-2 text-purple-400 hover:text-purple-300 hover:bg-gray-700 rounded-lg transition-colors"
-                        title={t('manage_roles') || 'Gérer les rôles'}
-                      >
+                        title={t('manage_roles') || 'Gérer les rôles'}>
                         <MdBadge size={18} />
                       </button>
-                      <button
-                        onClick={() => handleBlock(member.id, !member.is_blocked)}
+                      <button onClick={() => handleBlock(member.id, !member.is_blocked)}
                         className={`p-2 rounded-lg transition-colors ${
-                          member.is_blocked
-                            ? 'text-green-400 hover:text-green-300 hover:bg-gray-700'
-                            : 'text-red-400 hover:text-red-300 hover:bg-gray-700'
+                          member.is_blocked ? 'text-green-400 hover:text-green-300 hover:bg-gray-700' : 'text-red-400 hover:text-red-300 hover:bg-gray-700'
                         }`}
-                        title={member.is_blocked ? t('unblock_member') : t('block_member')}
-                      >
+                        title={member.is_blocked ? t('unblock_member') : t('block_member')}>
                         {member.is_blocked ? <MdLockOpen size={18} /> : <MdBlock size={18} />}
                       </button>
-                      <button
-                        onClick={() => handleArchive(member.id, !member.is_archived)}
+                      <button onClick={() => handleArchive(member.id, !member.is_archived)}
                         className={`p-2 rounded-lg transition-colors ${
-                          member.is_archived
-                            ? 'text-green-400 hover:text-green-300 hover:bg-gray-700'
-                            : 'text-amber-400 hover:text-amber-300 hover:bg-gray-700'
+                          member.is_archived ? 'text-green-400 hover:text-green-300 hover:bg-gray-700' : 'text-amber-400 hover:text-amber-300 hover:bg-gray-700'
                         }`}
-                        title={member.is_archived ? t('unarchive') || 'Désarchiver' : t('archive') || 'Archiver'}
-                      >
+                        title={member.is_archived ? t('unarchive') || 'Désarchiver' : t('archive') || 'Archiver'}>
                         {member.is_archived ? <MdUnarchive size={18} /> : <MdArchive size={18} />}
                       </button>
                       {member.is_archived && (
-                        <button
-                          onClick={() => handleDelete(member)}
+                        <button onClick={() => handleDelete(member)}
                           className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-700 rounded-lg transition-colors"
-                          title={t('delete') || 'Supprimer'}
-                        >
+                          title={t('delete') || 'Supprimer'}>
                           <MdDelete size={18} />
                         </button>
                       )}
                     </div>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Modal d'ajout de membre */}
       {showAddModal && (
