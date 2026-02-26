@@ -8,36 +8,59 @@ if (!user || !pass) {
   throw new Error('Nodemailer email and password are required.');
 }
 
+// Configuration explicite Gmail SMTP (plus fiable que service: 'gmail')
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user,
-    pass,
-  },
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true, // SSL
+  auth: { user, pass },
+  pool: true,           // Réutiliser les connexions
+  maxConnections: 3,
+  maxMessages: 10,
+  rateDelta: 1000,      // Espacer d'1 seconde entre envois
+  rateLimit: 5,         // Max 5 emails par seconde
+  socketTimeout: 30000, // 30s timeout
+  connectionTimeout: 30000,
+  greetingTimeout: 15000,
 });
 
 /**
- * Envoie un email
- * @param {Object} options - Options de l'email
- * @param {string} options.to - Destinataire
- * @param {string} options.subject - Sujet
- * @param {string} options.html - Contenu HTML
- * @param {string} [options.text] - Contenu texte (optionnel)
+ * Délai utilitaire
  */
-async function sendEmail({ to, subject, html, text }) {
-  try {
-    const info = await transporter.sendMail({
-      from: `"MY EDEN X" <${user}>`,
-      to,
-      subject,
-      html,
-      text: text || html.replace(/<[^>]*>/g, '')
-    });
-    console.log('Email sent:', info.messageId);
-    return info;
-  } catch (error) {
-    console.error('Error sending email:', error);
-    throw error;
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Envoie un email avec retry automatique (3 tentatives, backoff exponentiel)
+ * Gère les erreurs temporaires Gmail 421 4.3.0
+ */
+async function sendEmail({ to, subject, html, text }, retries = 3) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const info = await transporter.sendMail({
+        from: `"MY EDEN X" <${user}>`,
+        to,
+        subject,
+        html,
+        text: text || html.replace(/<[^>]*>/g, '')
+      });
+      console.log(`Email sent (attempt ${attempt}):`, info.messageId, '→', to);
+      return info;
+    } catch (error) {
+      const isTemporary =
+        error.responseCode === 421 ||
+        (error.message || '').includes('421') ||
+        (error.message || '').includes('Temporary') ||
+        (error.message || '').includes('try again');
+
+      if (isTemporary && attempt < retries) {
+        const waitMs = attempt * 5000; // 5s, 10s
+        console.warn(`[mailer] Temporary error (attempt ${attempt}/${retries}), retrying in ${waitMs / 1000}s...`, error.message);
+        await delay(waitMs);
+      } else {
+        console.error(`[mailer] Failed to send email to ${to} (attempt ${attempt}/${retries}):`, error.message);
+        throw error;
+      }
+    }
   }
 }
 
