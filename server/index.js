@@ -5,19 +5,16 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware de débogage pour toutes les requêtes entrantes
-app.use((req, res, next) => {
-  console.log('--- Nouvelle requête ---');
-  console.log(`--> ${req.method} ${req.originalUrl}`);
-  console.log('En-têtes:', JSON.stringify(req.headers, null, 2));
-  
-  res.on('finish', () => {
-    console.log(`<-- ${res.statusCode} pour ${req.method} ${req.originalUrl}`);
-    console.log('----------------------\n');
+// Middleware de débogage (désactivé en production Vercel)
+if (process.env.NODE_ENV !== 'production') {
+  app.use((req, res, next) => {
+    console.log(`--> ${req.method} ${req.originalUrl}`);
+    res.on('finish', () => {
+      console.log(`<-- ${res.statusCode} pour ${req.method} ${req.originalUrl}`);
+    });
+    next();
   });
-
-  next();
-});
+}
 
 // Importer le middleware de protection et isSuperAdmin
 const { protect, isSuperAdmin, isSuperAdminOrChurchAdmin, isMember } = require('./middleware/auth');
@@ -100,13 +97,34 @@ app.use('/api/admin/meetings', meetingRoutes); // Gestion des réunions et rappo
 
 // Route de test
 app.get('/', (req, res) => {
-  res.send('API is running...');
+  res.send('MY EDEN X API is running...');
 });
 
-// Démarrer le serveur
-const { initReminderCronJobs } = require('./services/reminderService');
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  initReminderCronJobs();
+// Route déclencheur de rappels (appelée par cron-job.org ou Vercel Cron)
+// Sécurisée par un token secret
+app.post('/api/cron/reminders', async (req, res) => {
+  const token = req.headers['x-cron-secret'] || req.query.secret;
+  if (token !== process.env.CRON_SECRET) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  try {
+    const { sendEventReminders, sendMeetingReminders } = require('./services/reminderService');
+    await Promise.all([sendEventReminders(), sendMeetingReminders()]);
+    res.json({ success: true, message: 'Reminders sent', timestamp: new Date().toISOString() });
+  } catch (err) {
+    console.error('[cron] Error sending reminders:', err);
+    res.status(500).json({ error: err.message });
+  }
 });
+
+// Démarrage local (dev) — sur Vercel on exporte l'app directement
+if (process.env.VERCEL !== '1' && require.main === module) {
+  const { initReminderCronJobs } = require('./services/reminderService');
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    initReminderCronJobs();
+  });
+}
+
+// Export pour Vercel serverless
+module.exports = app;
