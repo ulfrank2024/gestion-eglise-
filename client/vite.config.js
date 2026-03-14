@@ -57,7 +57,7 @@ export default defineConfig({
             }
           },
           {
-            urlPattern: /^https:\/\/my-eden-x\.onrender\.com\/api\/.*/i,
+            urlPattern: /^https:\/\/gestion-eglise-yg6t\.vercel\.app\/api\/.*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',
