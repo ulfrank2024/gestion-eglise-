@@ -4,6 +4,8 @@
 .env.development
 .env.production
 *.env
+# Exception: client public env (VITE_ vars are bundled in JS, safe to commit)
+!client/.env.production
 
 # Dependencies
 node_modules/
