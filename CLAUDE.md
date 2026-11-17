@@ -3649,3 +3649,28 @@ Le free tier dort après 15min. Pour que le cron à 9h s'exécute:
 - ✅ Notification in-app aux admins (événements) et membres (réunions)
 - ✅ Idempotent (anti-doublon via reminder_sent_at)
 - ✅ Commit: `6a632d5`
+
+---
+
+### 2026-11-16 - Migration vers un nouveau projet Supabase (script de schéma complet)
+
+**Contexte:**
+- L'ancien projet Supabase (`mlsrof…`) n'existe plus (DNS `NXDOMAIN`) → application hors service
+- Décision: installer MY EDEN X dans le projet Supabase existant **"projet immigration"** (`aylaukfeebssvzrupvjd`), partagé avec une autre application
+
+**Nouveau fichier: `/server/db/myedenx_full_schema.sql`**
+- Regroupe en un seul script les 22 migrations v2 (état final de chaque table, toutes les colonnes ajoutées par ALTER intégrées)
+- 28 tables + bucket Storage `event_images` (public) et ses politiques
+- **Garde-fou projet partagé:** le script s'arrête sans rien modifier si une table MY EDEN X existe déjà
+- Fonctions préfixées `mex_` pour ne pas écraser celles de l'autre application
+- RLS activé partout sans politique publique (le backend utilise `supabaseAdmin`, aucun accès direct aux tables côté client)
+- Ajout de 2 colonnes lues par le code mais absentes des migrations: `attendees_v2.registered_at`, `meetings_v2.meeting_time`
+- Non repris (inutilisés dans le code): RPC `get_event_attendee_*`, vues `church_usage_stats`/`user_usage_stats`, fonctions `get_user_role`/`get_user_church_id`/`church_has_module`
+- Script testé sur un PostgreSQL local (schémas `auth`/`storage` simulés): 28 tables créées, 2e exécution refusée
+
+**Actions restantes:**
+1. Exécuter `/server/db/myedenx_full_schema.sql` dans le SQL Editor du projet "projet immigration"
+2. Mettre à jour `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (server) et `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (client + Vercel)
+3. Recréer le compte Super Admin dans Supabase Auth (email = `SUPER_ADMIN_EMAIL`)
+4. ⚠️ Les comptes Auth sont partagés avec l'autre application du projet
+5. Les anciennes données sont perdues (aucune sauvegarde accessible)
