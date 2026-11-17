@@ -14,10 +14,16 @@ if (!supabaseServiceRoleKey) {
     throw new Error('Supabase Service Role Key is required.');
 }
 
+// Les tables MY EDEN X vivent dans un schéma PostgreSQL dédié ("xeden"),
+// séparé du schéma "public" des autres applications du même projet Supabase.
+// Le schéma doit être ajouté dans Supabase → Project Settings → Data API → Exposed schemas.
+const dbSchema = process.env.SUPABASE_DB_SCHEMA || 'xeden';
+const options = { db: { schema: dbSchema } };
+
 // Client pour les opérations côté client (respecte RLS, utilise la clé anon)
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabase = createClient(supabaseUrl, supabaseAnonKey, options);
 
 // Client pour les opérations côté serveur (contourne RLS, utilise la clé de service)
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, options);
 
 module.exports = { supabase, supabaseAdmin };

@@ -135,7 +135,7 @@ router.post('/upload-photo', upload.single('photo'), async (req, res) => {
     const fileName = `member-photos/member-${member_id}-${Date.now()}.${fileExt}`;
 
     const { error: uploadError } = await supabaseAdmin.storage
-      .from('event_images')
+      .from('xeden_event_images')
       .upload(fileName, req.file.buffer, {
         contentType: req.file.mimetype,
         cacheControl: '3600',
@@ -148,7 +148,7 @@ router.post('/upload-photo', upload.single('photo'), async (req, res) => {
     }
 
     const { data: { publicUrl } } = supabaseAdmin.storage
-      .from('event_images')
+      .from('xeden_event_images')
       .getPublicUrl(fileName);
 
     // Auto-sauvegarder l'URL directement dans members_v2 (plus fiable qu'un appel séparé)

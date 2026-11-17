@@ -582,7 +582,7 @@ router.post('/upload-photo', protect, isAdminChurch, upload.single('photo'), asy
 
     // Upload vers Supabase Storage avec supabaseAdmin (bypass RLS)
     const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
-      .from('event_images')
+      .from('xeden_event_images')
       .upload(fileName, file.buffer, {
         contentType: file.mimetype,
         cacheControl: '3600',
@@ -596,7 +596,7 @@ router.post('/upload-photo', protect, isAdminChurch, upload.single('photo'), asy
 
     // Récupérer l'URL publique
     const { data: { publicUrl } } = supabaseAdmin.storage
-      .from('event_images')
+      .from('xeden_event_images')
       .getPublicUrl(fileName);
 
     res.status(200).json({ url: publicUrl });

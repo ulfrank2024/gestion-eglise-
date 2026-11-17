@@ -85,7 +85,7 @@ function AdminEventNewPage() {
         const filePath = `event_backgrounds/${fileName}`;
 
         const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('event_images')
+          .from('xeden_event_images')
           .upload(filePath, backgroundImageFile);
 
         if (uploadError) {
@@ -93,7 +93,7 @@ function AdminEventNewPage() {
         }
 
         const { data: publicUrlData } = supabase.storage
-          .from('event_images')
+          .from('xeden_event_images')
           .getPublicUrl(filePath);
 
         finalImageUrl = publicUrlData.publicUrl;

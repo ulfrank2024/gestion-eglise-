@@ -254,10 +254,10 @@ function AdminEventDetailPage() {
         const fileName = `${Date.now()}.${fileExt}`;
         const filePath = `event_backgrounds/${fileName}`;
 
-        const { error: uploadError } = await supabase.storage.from('event_images').upload(filePath, backgroundImageFile);
+        const { error: uploadError } = await supabase.storage.from('xeden_event_images').upload(filePath, backgroundImageFile);
         if (uploadError) throw new Error(`Error uploading image: ${uploadError.message}`);
 
-        const { data: publicUrlData } = supabase.storage.from('event_images').getPublicUrl(filePath);
+        const { data: publicUrlData } = supabase.storage.from('xeden_event_images').getPublicUrl(filePath);
         finalImageUrl = publicUrlData.publicUrl;
       }
 

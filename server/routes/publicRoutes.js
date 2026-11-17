@@ -69,7 +69,7 @@ router.post('/upload-photo', registrationUpload.single('photo'), async (req, res
     const fileName = `member-photos/registration-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${fileExt}`;
 
     const { error: uploadError } = await supabaseAdmin.storage
-      .from('event_images')
+      .from('xeden_event_images')
       .upload(fileName, req.file.buffer, {
         contentType: req.file.mimetype,
         cacheControl: '3600',
@@ -82,7 +82,7 @@ router.post('/upload-photo', registrationUpload.single('photo'), async (req, res
     }
 
     const { data: { publicUrl } } = supabaseAdmin.storage
-      .from('event_images')
+      .from('xeden_event_images')
       .getPublicUrl(fileName);
 
     res.json({ url: publicUrl });
@@ -451,7 +451,7 @@ router.post('/churches/register', registrationUpload.fields([
             const fileName = `${folder}/${subdomain}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${fileExt}`;
 
             const { error: uploadError } = await supabaseAdmin.storage
-                .from('event_images')
+                .from('xeden_event_images')
                 .upload(fileName, file.buffer, {
                     contentType: file.mimetype,
                     cacheControl: '3600',
@@ -464,7 +464,7 @@ router.post('/churches/register', registrationUpload.fields([
             }
 
             const { data: { publicUrl } } = supabaseAdmin.storage
-                .from('event_images')
+                .from('xeden_event_images')
                 .getPublicUrl(fileName);
 
             console.log(`File uploaded to ${folder}: ${publicUrl}`);

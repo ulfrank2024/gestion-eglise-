@@ -113,7 +113,7 @@ function AdminChurchSettingsPage() {
       const fileName = `church-logos/church-${churchId}-${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('event_images')
+        .from('xeden_event_images')
         .upload(fileName, file, {
           cacheControl: '3600',
           upsert: false
@@ -122,7 +122,7 @@ function AdminChurchSettingsPage() {
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
-        .from('event_images')
+        .from('xeden_event_images')
         .getPublicUrl(fileName);
 
       setChurchSettings(prev => ({ ...prev, logo_url: publicUrl }));
