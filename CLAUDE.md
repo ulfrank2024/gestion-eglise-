@@ -3680,3 +3680,14 @@ Le free tier dort après 15min. Pour que le cron à 9h s'exécute:
 3. Recréer le compte Super Admin dans Supabase Auth (email = `SUPER_ADMIN_EMAIL`)
 4. ⚠️ Les comptes Auth sont partagés avec l'autre application du projet
 5. Les anciennes données sont perdues (aucune sauvegarde accessible)
+
+**Mise en service (2026-11-16) - ✅ Terminée:**
+- ✅ Script exécuté dans "projet immigration", schéma `xeden` exposé (Integrations → Data API → Exposed schemas)
+- ✅ Clés mises à jour: `server/.env`, `client/.env.development`, `client/.env.production`, variables Vercel backend + frontend (redéployés)
+- ✅ Tests: 28/28 tables lisibles par `service_role`, accès `anon` refusé, insert/delete OK, backend Vercel lit `xeden`, frontend pointe sur le nouveau projet
+- ✅ Super Admin: ligne `xeden.church_users_v2` (role `super_admin`, church_id NULL) ajoutée → ne dépend plus de `SUPER_ADMIN_EMAIL` (la variable Vercel ne correspondait pas → "Accès interdit")
+- ✅ Connexion Super Admin validée sur https://gestion-eglise-delta.vercel.app/super-admin/dashboard
+
+**Reste à faire:**
+- Corriger l'inscription qui écrase mot de passe/`user_metadata` d'un compte Auth existant (Auth partagé avec l'app immigration) + `listUsers()` limité à 50
+- Login avec mauvais mot de passe → 500 au lieu de 401
