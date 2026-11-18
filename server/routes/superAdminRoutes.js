@@ -1,5 +1,6 @@
 const express = require('express');
 const { supabase, supabaseAdmin } = require('../db/supabase'); // Utiliser supabase et supabaseAdmin pour les routes Super Admin
+const { listAllAuthUsers } = require('../services/authUsers');
 const { protect, isSuperAdmin } = require('../middleware/auth');
 const crypto = require('crypto');
 const { transporter, generateChurchInvitationEmail } = require('../services/mailer');
@@ -243,9 +244,7 @@ router.get('/churches_v2/:churchId/users', protect, isSuperAdmin, async (req, re
 
     // Récupérer les détails des utilisateurs depuis auth.users via Supabase Admin
     const userIds = churchUsers.map(cu => cu.user_id);
-    const { data: { users }, error: authError } = await supabaseAdmin.auth.admin.listUsers();
-
-    if (authError) throw authError;
+    const users = await listAllAuthUsers();
 
     // Filtrer et combiner les données
     const usersWithRoles = churchUsers.map(cu => {
@@ -538,8 +537,7 @@ router.get('/churches_v2/:churchId/members', protect, isSuperAdmin, async (req, 
     // 3. Récupérer les emails des admins depuis auth.users
     let adminMembers = [];
     if (churchAdmins && churchAdmins.length > 0) {
-      const { data: { users }, error: authError } = await supabaseAdmin.auth.admin.listUsers();
-      if (authError) throw authError;
+      const users = await listAllAuthUsers();
 
       adminMembers = churchAdmins.map(admin => {
         const authUser = users.find(u => u.id === admin.user_id);
@@ -810,7 +808,7 @@ router.put('/churches_v2/:churchId/suspend', protect, isSuperAdmin, async (req, 
 
     // Envoyer l'email à l'admin si un message est fourni
     if (message && admins && admins.length > 0) {
-      const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
+      const users = await listAllAuthUsers();
       const adminUser = users.find(u => u.id === admins[0].user_id);
 
       if (adminUser && adminUser.email) {
@@ -933,7 +931,7 @@ router.put('/churches_v2/:churchId/reactivate', protect, isSuperAdmin, async (re
 
     // Envoyer l'email de réactivation
     if (admins && admins.length > 0) {
-      const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
+      const users = await listAllAuthUsers();
       const adminUser = users.find(u => u.id === admins[0].user_id);
 
       if (adminUser && adminUser.email) {
@@ -1051,7 +1049,7 @@ router.post('/churches_v2/:churchId/contact', protect, isSuperAdmin, async (req,
       return res.status(404).json({ error: 'No admin found for this church' });
     }
 
-    const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
+    const users = await listAllAuthUsers();
     const adminUser = users.find(u => u.id === admins[0].user_id);
 
     if (!adminUser || !adminUser.email) {
@@ -1210,7 +1208,7 @@ router.put('/churches_v2/:churchId/modules', protect, isSuperAdmin, async (req, 
         .eq('is_main_admin', true);
 
       if (admins && admins.length > 0) {
-        const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
+        const users = await listAllAuthUsers();
         const adminUser = users.find(u => u.id === admins[0].user_id);
 
         if (adminUser && adminUser.email) {

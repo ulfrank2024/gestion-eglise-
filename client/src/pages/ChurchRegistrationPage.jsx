@@ -5,6 +5,7 @@ import { api } from '../api/api';
 import { MdChurch, MdPerson, MdEmail, MdPhone, MdLocationOn, MdLock, MdImage, MdSubdirectoryArrowRight, MdCameraAlt, MdCake, MdLocationCity } from 'react-icons/md';
 import logo from '../assets/logo_eden.png';
 import { InlineSpinner } from '../components/LoadingSpinner';
+import { getErrorMessage } from '../utils/errorHandler';
 
 const ChurchRegistrationPage = () => {
   const { t, i18n } = useTranslation();
@@ -118,7 +119,7 @@ const ChurchRegistrationPage = () => {
 
     } catch (err) {
       console.error('Church registration error:', err);
-      setError(err.response?.data?.error || err.message || t('church_registration.error_message') || 'Une erreur est survenue lors de l\'inscription.');
+      setError(getErrorMessage(err, t) || t('church_registration.error_message'));
     } finally {
       setLoading(false);
     }

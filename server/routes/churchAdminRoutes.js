@@ -4,6 +4,7 @@ const { supabaseAdmin } = require('../db/supabase');
 const { protect, isAdminChurch, canManageTeam } = require('../middleware/auth');
 const { logActivity, getActivityLogs, MODULES, ACTIONS } = require('../services/activityLogger');
 const { sendEmail, generateAdminInvitationEmail } = require('../services/mailer');
+const { findAuthUserByEmail } = require('../services/authUsers');
 
 const router = express.Router();
 
@@ -35,12 +36,13 @@ router.post('/churches_v2/:churchId/users', protect, isAdminChurch, canManageTea
 
   try {
     // Vérifier si l'utilisateur existe déjà dans Supabase Auth
-    const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserByEmail(email);
+    // (getUserByEmail n'existe pas dans supabase-js v2 → recherche paginée)
+    const existingAuthUser = await findAuthUserByEmail(email);
 
     let userId;
     let isNewUser = false;
 
-    if (userError && userError.message === 'User not found') {
+    if (!existingAuthUser) {
       // Créer un nouvel utilisateur avec un mot de passe temporaire
       const tempPassword = Math.random().toString(36).slice(-12) + 'A1!';
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
@@ -79,39 +81,45 @@ router.post('/churches_v2/:churchId/users', protect, isAdminChurch, canManageTea
         console.error('Error sending invitation email:', emailError);
         // Continue même si l'email échoue
       }
-    } else if (userError) {
-      throw userError;
     } else {
-      userId = userData.user.id;
+      // Compte existant : on garde son mot de passe (pas d'identifiants temporaires)
+      userId = existingAuthUser.id;
     }
 
     // Vérifier si l'utilisateur est déjà associé à cette église
     const { data: existingChurchUser, error: existingChurchUserError } = await supabaseAdmin
       .from('church_users_v2')
-      .select('id')
+      .select('id, role')
       .eq('church_id', churchId)
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
-    if (existingChurchUserError && existingChurchUserError.code !== 'PGRST116') {
-      throw existingChurchUserError;
-    }
-    if (existingChurchUser) {
+    if (existingChurchUserError) throw existingChurchUserError;
+
+    // Déjà admin de cette église → rien à faire
+    if (existingChurchUser && existingChurchUser.role !== 'member') {
       return res.status(409).json({ error: 'User is already associated with this church.' });
     }
 
-    // Ajouter l'utilisateur à l'équipe avec ses permissions
-    const { data, error } = await supabaseAdmin
-      .from('church_users_v2')
-      .insert([{
-        church_id: churchId,
-        user_id: userId,
-        role: role || 'church_admin',
-        permissions: permissions || ['all'],
-        is_main_admin: false,
-        full_name: full_name || email.split('@')[0]
-      }])
-      .select();
+    const teamFields = {
+      role: role || 'church_admin',
+      permissions: permissions || ['all'],
+      is_main_admin: false,
+      full_name: full_name || email.split('@')[0]
+    };
+
+    // Simple membre de l'église → promotion en admin d'équipe (même ligne)
+    // Sinon → nouvelle ligne d'équipe
+    const { data, error } = existingChurchUser
+      ? await supabaseAdmin
+          .from('church_users_v2')
+          .update(teamFields)
+          .eq('id', existingChurchUser.id)
+          .select()
+      : await supabaseAdmin
+          .from('church_users_v2')
+          .insert([{ church_id: churchId, user_id: userId, ...teamFields }])
+          .select();
 
     if (error) throw error;
 

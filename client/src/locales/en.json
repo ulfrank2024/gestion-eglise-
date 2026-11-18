@@ -1122,6 +1122,9 @@
     "confirm_block_member": "Are you sure you want to block this member? They will no longer be able to log in.",
     "confirm_unblock_member": "Are you sure you want to unblock this member?",
     "account_blocked": "Your account has been suspended by the administrator. Please contact your church.",
+    "account_exists_wrong_password": "An account already exists with this email. Enter that account's current password (or use “Forgot password”).",
+    "subdomain_taken": "This subdomain is already used by another church. Please choose another one.",
+    "invalid_credentials": "Invalid credentials. Check your email and password.",
 
     "checkin_form_title": "Confirm My Attendance",
     "checkin_form_subtitle": "Welcome! Fill in this form (optional)",

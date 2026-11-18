@@ -1068,6 +1068,9 @@
     "confirm_block_member": "Êtes-vous sûr de vouloir bloquer ce membre ? Il ne pourra plus se connecter.",
     "confirm_unblock_member": "Êtes-vous sûr de vouloir débloquer ce membre ?",
     "account_blocked": "Votre compte a été suspendu par l'administrateur. Veuillez contacter votre église.",
+    "account_exists_wrong_password": "Un compte existe déjà avec cet email. Entrez le mot de passe actuel de ce compte (ou utilisez « Mot de passe oublié »).",
+    "subdomain_taken": "Ce sous-domaine est déjà utilisé par une autre église. Choisissez-en un autre.",
+    "invalid_credentials": "Identifiants invalides. Vérifiez votre email et mot de passe.",
 
     "checkin_form_title": "Confirmer ma présence",
     "checkin_form_subtitle": "Bienvenue ! Remplissez ce formulaire (optionnel)",

@@ -4,6 +4,7 @@ const { protect } = require('../middleware/auth'); // Importer le middleware cen
 const { sendEmail, generatePasswordResetEmail } = require('../services/mailer');
 const { logActivity, MODULES, ACTIONS } = require('../services/activityLogger');
 const crypto = require('crypto');
+const { findAuthUserByEmail } = require('../services/authUsers');
 const router = express.Router();
 
 // Route de connexion pour l'administrateur
@@ -22,7 +23,8 @@ router.post('/login', async (req, res) => {
         .from('church_users_v2')
         .select('church_id, full_name, role')
         .eq('user_id', data.user.id)
-        .single();
+        .limit(1)
+        .maybeSingle();
 
       // Vérifier si le membre est bloqué (uniquement pour les membres, pas les admins)
       if (churchUser?.role === 'member' && churchUser?.church_id) {
@@ -53,6 +55,10 @@ router.post('/login', async (req, res) => {
 
     res.status(200).json(data);
   } catch (error) {
+    // Identifiants incorrects → 401 (pas une erreur serveur)
+    if (error.status === 400 || error.code === 'invalid_credentials') {
+      return res.status(401).json({ error: 'invalid_credentials' });
+    }
     res.status(500).json({ error: error.message });
   }
 });
@@ -190,14 +196,13 @@ router.post('/forgot-password', async (req, res) => {
     }
 
     // Vérifier si l'utilisateur existe dans Supabase Auth
-    const { data: users, error: searchError } = await supabaseAdmin.auth.admin.listUsers();
-
-    if (searchError) {
+    let user;
+    try {
+      user = await findAuthUserByEmail(email);
+    } catch (searchError) {
       console.error('Error searching users:', searchError);
       return res.status(500).json({ error: 'server_error' });
     }
-
-    const user = users.users.find(u => u.email.toLowerCase() === email.toLowerCase());
 
     if (!user) {
       // Pour des raisons de sécurité, on retourne quand même un succès
@@ -210,7 +215,8 @@ router.post('/forgot-password', async (req, res) => {
       .from('church_users_v2')
       .select('role')
       .eq('user_id', user.id)
-      .single();
+      .limit(1)
+      .maybeSingle();
 
     if (roleError && roleError.code !== 'PGRST116') {
       console.error('Error checking user role:', roleError);
@@ -275,14 +281,13 @@ router.post('/reset-password', async (req, res) => {
     }
 
     // Trouver l'utilisateur par email
-    const { data: users, error: searchError } = await supabaseAdmin.auth.admin.listUsers();
-
-    if (searchError) {
+    let user;
+    try {
+      user = await findAuthUserByEmail(email);
+    } catch (searchError) {
       console.error('Error searching users:', searchError);
       return res.status(500).json({ error: 'server_error' });
     }
-
-    const user = users.users.find(u => u.email.toLowerCase() === email.toLowerCase());
 
     if (!user) {
       return res.status(400).json({ error: 'invalid_reset_token' });

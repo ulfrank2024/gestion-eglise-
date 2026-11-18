@@ -8,6 +8,7 @@ const router = express.Router();
 const { supabaseAdmin } = require('../db/supabase');
 const { protect, isSuperAdminOrChurchAdmin } = require('../middleware/auth');
 const { logActivity, MODULES, ACTIONS } = require('../services/activityLogger');
+const { findAuthUserByEmail } = require('../services/authUsers');
 const {
   sendEmail,
   generateMemberCreatedByAdminEmail,
@@ -300,10 +301,28 @@ router.post('/', async (req, res) => {
 
       // Créer un compte Supabase pour le membre s'il n'existe pas
       let tempPassword = null;
-      const { data: existingUser } = await supabaseAdmin.auth.admin.listUsers();
-      const userExists = existingUser?.users?.find(u => u.email === email);
+      const userExists = await findAuthUserByEmail(email);
 
-      if (!userExists) {
+      if (userExists) {
+        // Compte déjà existant (autre église ou autre application) : on ne touche pas
+        // à son mot de passe, on le relie simplement à ce membre et à cette église.
+        await supabaseAdmin.from('members_v2').update({ user_id: userExists.id }).eq('id', member.id);
+        const { data: link } = await supabaseAdmin
+          .from('church_users_v2')
+          .select('id')
+          .eq('user_id', userExists.id)
+          .eq('church_id', church_id)
+          .maybeSingle();
+        if (!link) {
+          await supabaseAdmin.from('church_users_v2').insert({
+            user_id: userExists.id,
+            church_id,
+            role: 'member',
+            permissions: ['none'],
+            full_name,
+          });
+        }
+      } else {
         tempPassword = Math.random().toString(36).slice(-8) + 'A1!';
         const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
           email,

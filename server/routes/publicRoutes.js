@@ -10,6 +10,7 @@ const {
 } = require('../services/mailer');
 const { logActivity, MODULES, ACTIONS } = require('../services/activityLogger');
 const { notifyAllAdmins, NOTIFICATION_ICONS } = require('../services/notificationService');
+const { getOrCreateAuthUser } = require('../services/authUsers');
 
 // Configuration multer pour l'upload en mémoire (registration)
 const registrationUpload = multer({
@@ -503,46 +504,16 @@ router.post('/churches/register', registrationUpload.fields([
             return res.status(400).json({ error: 'Invitation has expired.' });
         }
 
-        // 2. Créer l'utilisateur ou récupérer l'existant
-        console.log('Step 2: Creating user with email:', invitation.email);
-        let userId;
-
-        // Vérifier si l'utilisateur existe déjà
-        const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
-        const existingUser = existingUsers?.users?.find(u => u.email === invitation.email);
-
-        if (existingUser) {
-            console.log('User already exists, using existing user ID:', existingUser.id);
-            userId = existingUser.id;
-
-            // Mettre à jour le mot de passe et les métadonnées
-            const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-                password,
-                user_metadata: { full_name: adminName },
-            });
-            if (updateError) {
-                console.error('User update error:', updateError);
-                throw new Error('Failed to update existing user: ' + updateError.message);
-            }
-            console.log('Existing user updated successfully');
-        } else {
-            // Créer un nouvel utilisateur
-            const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
-                email: invitation.email,
-                password,
-                user_metadata: { full_name: adminName },
-                email_confirm: true,
-            });
-
-            if (userError) {
-                console.error('User creation error:', userError);
-                throw new Error('Failed to create user: ' + userError.message);
-            }
-
-            userId = userData.user.id;
-            console.log('New user created with ID:', userId);
-        }
-        console.log('User created with ID:', userId);
+        // 2. Créer le compte ou réutiliser l'existant
+        // Compte existant (autre église ou autre application du projet Supabase) :
+        // on ne modifie NI le mot de passe NI les métadonnées → le mot de passe saisi doit être le bon.
+        console.log('Step 2: Resolving user account for:', invitation.email);
+        const { userId, created } = await getOrCreateAuthUser({
+            email: invitation.email,
+            password,
+            fullName: adminName,
+        });
+        console.log(created ? 'New user created with ID:' : 'Existing user reused with ID:', userId);
 
         // 3. Créer l'église (ou récupérer si elle existe déjà - cas de retry)
         console.log('Step 3: Creating church...');
@@ -551,9 +522,14 @@ router.post('/churches/register', registrationUpload.fields([
         let churchId;
         const { data: existingChurch } = await supabaseAdmin
             .from('churches_v2')
-            .select('id')
+            .select('id, logo_url, created_by_user_id')
             .eq('subdomain', subdomain)
             .maybeSingle();
+
+        // Sous-domaine déjà pris par une autre personne → refuser (sinon on « volerait » l'église)
+        if (existingChurch && existingChurch.created_by_user_id && existingChurch.created_by_user_id !== userId) {
+            return res.status(409).json({ error: 'subdomain_taken' });
+        }
 
         if (existingChurch) {
             // L'église existe déjà (tentative précédente partiellement réussie) → la mettre à jour
@@ -604,15 +580,17 @@ router.post('/churches/register', registrationUpload.fields([
         // 4. Lier l'utilisateur à l'église avec le rôle 'church_admin'
         console.log('Step 4: Linking user to church...');
 
-        // Vérifier si l'utilisateur est déjà lié à une église
-        const { data: existingLink, error: linkCheckError } = await supabaseAdmin
+        // Vérifier si l'utilisateur est déjà lié à CETTE église (multi-église : un même
+        // compte peut administrer plusieurs églises → ne jamais toucher aux autres liens)
+        const { data: existingLink } = await supabaseAdmin
             .from('church_users_v2')
             .select('id')
             .eq('user_id', userId)
-            .single();
+            .eq('church_id', churchId)
+            .maybeSingle();
 
         if (existingLink) {
-            console.log('User already linked to a church, updating...');
+            console.log('User already linked to this church, updating...');
             const { error: updateLinkError } = await supabaseAdmin
                 .from('church_users_v2')
                 .update({
@@ -627,7 +605,7 @@ router.post('/churches/register', registrationUpload.fields([
                     city: adminCity || null,
                     date_of_birth: normalizeDOB(adminDateOfBirth)
                 })
-                .eq('user_id', userId);
+                .eq('id', existingLink.id);
 
             if (updateLinkError) {
                 console.error('Role update error:', updateLinkError);
@@ -722,6 +700,9 @@ router.post('/churches/register', registrationUpload.fields([
         console.error('Error name:', error.name);
         console.error('Error message:', error.message);
         console.error('Error stack:', error.stack);
+        if (error.code === 'account_exists_wrong_password') {
+            return res.status(409).json({ error: 'account_exists_wrong_password' });
+        }
         res.status(500).json({ error: error.message || 'An unknown error occurred' });
     }
 });
@@ -918,32 +899,10 @@ router.post('/:churchId/members/register', async (req, res) => {
             return res.status(400).json({ error: 'A member with this email already exists' });
         }
 
-        // Créer l'utilisateur Supabase Auth
-        let userId;
-        const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-        const existingUser = existingUsers?.users?.find(u => u.email === email);
-
-        if (existingUser) {
-            userId = existingUser.id;
-            // Mettre à jour les métadonnées
-            await supabaseAdmin.auth.admin.updateUserById(userId, {
-                password,
-                user_metadata: { full_name }
-            });
-        } else {
-            const { data: newUser, error: userError } = await supabaseAdmin.auth.admin.createUser({
-                email,
-                password,
-                user_metadata: { full_name },
-                email_confirm: true
-            });
-
-            if (userError) {
-                console.error('Error creating user:', userError);
-                throw new Error('Failed to create user account');
-            }
-            userId = newUser.user.id;
-        }
+        // Créer le compte Supabase Auth, ou réutiliser l'existant SANS le modifier.
+        // Sécurité : le lien public est partagé → si l'email a déjà un compte, le mot
+        // de passe saisi doit être le bon (sinon n'importe qui pourrait prendre le compte).
+        const { userId } = await getOrCreateAuthUser({ email, password, fullName: full_name });
 
         // Créer l'entrée membre
         const { data: member, error: memberError } = await supabaseAdmin
@@ -974,7 +933,9 @@ router.post('/:churchId/members/register', async (req, res) => {
             .insert({
                 user_id: userId,
                 church_id: churchDbId,
-                role: 'member'
+                role: 'member',
+                permissions: ['none'],
+                full_name
             });
 
         if (roleError && roleError.code !== '23505') { // Ignorer si existe déjà
@@ -1072,6 +1033,9 @@ router.post('/:churchId/members/register', async (req, res) => {
     } catch (error) {
         console.error('=== MEMBER REGISTRATION ERROR ===');
         console.error('Error:', error.message);
+        if (error.code === 'account_exists_wrong_password') {
+            return res.status(409).json({ error: 'account_exists_wrong_password' });
+        }
         res.status(500).json({ error: error.message });
     }
 });

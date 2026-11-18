@@ -3691,3 +3691,31 @@ Le free tier dort après 15min. Pour que le cron à 9h s'exécute:
 **Reste à faire:**
 - Corriger l'inscription qui écrase mot de passe/`user_metadata` d'un compte Auth existant (Auth partagé avec l'app immigration) + `listUsers()` limité à 50
 - Login avec mauvais mot de passe → 500 au lieu de 401
+
+---
+
+### 2026-11-17 - Sécurité des comptes partagés (Supabase Auth commun avec l'app immigration)
+
+**Contexte:** le projet Supabase est partagé → `auth.users` est commun aux deux applications.
+
+**Nouveau service `/server/services/authUsers.js`:**
+- `listAllAuthUsers()` / `findAuthUserByEmail()` : recherche **paginée** (avant : `listUsers()` ne renvoyait que les 50 premiers comptes), insensible à la casse
+- `verifyPassword()` : vérifie un mot de passe avec un client jetable (n'altère pas la session des clients partagés)
+- `getOrCreateAuthUser()` : crée le compte, ou réutilise l'existant **sans modifier son mot de passe ni ses `user_metadata`** → erreur `account_exists_wrong_password` (409) si le mot de passe ne correspond pas
+
+**Failles / bugs corrigés:**
+1. 🔒 **Faille critique - prise de contrôle de compte** : l'inscription membre via le lien public (et l'inscription d'église) écrasait le mot de passe de tout compte existant → n'importe qui ayant le lien pouvait s'approprier le compte du pasteur ou d'un utilisateur immigration. Corrigé dans `publicRoutes.js`
+2. 🔒 Inscription d'église : un sous-domaine déjà pris par quelqu'un d'autre pouvait être « repris » → maintenant `subdomain_taken` (409). Réutilisation autorisée seulement pour le même créateur (cas de nouvelle tentative)
+3. Inscription d'église : le lien `church_users_v2` existant était déplacé vers la nouvelle église (cassait le multi-église) → recherche par `(user_id, church_id)`
+4. **Invitation d'admin d'équipe cassée** : `auth.admin.getUserByEmail()` n'existe pas dans supabase-js v2 → remplacé par `findAuthUserByEmail()`. Un simple membre de l'église est maintenant **promu** (au lieu de l'erreur « déjà associé »)
+5. Ajout de membre par l'admin : si l'email avait déjà un compte, le membre n'était jamais relié (`user_id` vide, pas de `church_users_v2`) → maintenant relié sans toucher au mot de passe
+6. Login : mauvais identifiants → **401** `invalid_credentials` (au lieu de 500) ; `.single()` remplacé par `.limit(1).maybeSingle()` (multi-église)
+7. Mot de passe oublié / réinitialisation : recherche paginée
+8. `superAdminRoutes.js` : 6 appels `listUsers()` remplacés par `listAllAuthUsers()`
+9. Membres inscrits : `church_users_v2.permissions = ['none']` (avant : `['all']` par défaut)
+
+**Frontend:**
+- Traductions FR/EN : `account_exists_wrong_password`, `subdomain_taken`, `invalid_credentials`
+- `ChurchRegistrationPage.jsx` utilise maintenant `getErrorMessage()` (messages traduits)
+
+**Tests (base réelle):** recherche paginée et insensible à la casse ✅, mauvais mot de passe sur compte existant → 409 ✅, création + réutilisation avec bon mot de passe ✅ (compte test supprimé), serveur local : login mauvais mdp → 401 ✅
